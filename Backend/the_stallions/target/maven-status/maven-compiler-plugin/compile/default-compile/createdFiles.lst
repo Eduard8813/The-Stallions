@@ -1,0 +1,17 @@
+com\aplicacion\movil\the_stallions\model\AuthProvider.class
+com\aplicacion\movil\the_stallions\security\JwtAuthenticationFilter.class
+com\aplicacion\movil\the_stallions\controller\AuthController.class
+com\aplicacion\movil\the_stallions\dto\Request\LoginRequest.class
+com\aplicacion\movil\the_stallions\security\JwtUtils.class
+com\aplicacion\movil\the_stallions\dto\Response\ErrorResponse.class
+com\aplicacion\movil\the_stallions\TheStallionsApplication.class
+com\aplicacion\movil\the_stallions\config\SecurityConfig.class
+com\aplicacion\movil\the_stallions\dto\Request\GoogleAuthRequest.class
+com\aplicacion\movil\the_stallions\config\FirebaseTokenService.class
+com\aplicacion\movil\the_stallions\service\AuthService.class
+com\aplicacion\movil\the_stallions\config\FirebaseConfig.class
+com\aplicacion\movil\the_stallions\repository\UserRepository.class
+com\aplicacion\movil\the_stallions\exception\GlobalExceptionHandler.class
+com\aplicacion\movil\the_stallions\model\User.class
+com\aplicacion\movil\the_stallions\dto\Request\RegisterRequest.class
+com\aplicacion\movil\the_stallions\dto\Response\AuthResponse.class

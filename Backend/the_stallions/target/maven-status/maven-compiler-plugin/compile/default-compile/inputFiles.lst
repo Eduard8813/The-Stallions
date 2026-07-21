@@ -1,0 +1,17 @@
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\config\FirebaseConfig.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\config\FirebaseTokenService.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\config\SecurityConfig.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\controller\AuthController.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\dto\Request\GoogleAuthRequest.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\dto\Request\LoginRequest.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\dto\Request\RegisterRequest.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\dto\Response\AuthResponse.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\dto\Response\ErrorResponse.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\exception\GlobalExceptionHandler.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\model\AuthProvider.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\model\User.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\repository\UserRepository.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\security\JwtAuthenticationFilter.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\security\JwtUtils.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\service\AuthService.java
+C:\Users\eduar\Desktop\The-Stallions\Backend\the_stallions\src\main\java\com\aplicacion\movil\the_stallions\TheStallionsApplication.java
