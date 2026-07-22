@@ -22,6 +22,7 @@ target/
 # Firebase & Secrets
 credentials/
 *firebase-adminsdk*.json
+firebase-credentials.json
 .env
 *.env
 
