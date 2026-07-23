@@ -50,3 +50,6 @@ AGENTS.md
 
 # lock file (optional: remove if team uses it)
 package-lock.json
+
+# Firebase
+**/google-services.json
