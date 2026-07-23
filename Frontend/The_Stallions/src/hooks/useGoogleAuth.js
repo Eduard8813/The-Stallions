@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { firebaseAuth } from '../config/firebaseConfig';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -35,17 +35,21 @@ export function useGoogleAuth(onIdTokenReady) {
       .catch((error) => console.error('Error de Google Sign-In:', error));
   }, [response]);
 
-  const handlePrompt = async () => {
-    if (Platform.OS === 'web') {
-      try {
-        const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+  // Web: captura el resultado del redirect al montar
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    getRedirectResult(firebaseAuth)
+      .then(async (result) => {
+        if (!result) return;
         const idToken = await result.user.getIdToken();
         callbackRef.current(idToken);
-      } catch (error) {
-        if (error?.code !== 'auth/cancelled-popup-request') {
-          console.error('Error de Google Sign-In web:', error);
-        }
-      }
+      })
+      .catch((error) => console.error('Error de Google redirect:', error));
+  }, []);
+
+  const handlePrompt = async () => {
+    if (Platform.OS === 'web') {
+      await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
     } else {
       promptAsync();
     }
