@@ -5,8 +5,10 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class FirebaseConfig {
@@ -15,10 +17,15 @@ public class FirebaseConfig {
     public void init() {
         try {
             if (FirebaseApp.getApps().isEmpty()) {
-                InputStream serviceAccount = getClass().getClassLoader()
-                        .getResourceAsStream("firebase-credentials.json");
-                if (serviceAccount == null) {
-                    throw new IOException("firebase-credentials.json no encontrado en classpath");
+                InputStream serviceAccount;
+                String credentialsJson = System.getenv("FIREBASE_CREDENTIALS_JSON");
+                if (credentialsJson != null && !credentialsJson.isBlank()) {
+                    serviceAccount = new ByteArrayInputStream(credentialsJson.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    serviceAccount = getClass().getClassLoader().getResourceAsStream("firebase-credentials.json");
+                    if (serviceAccount == null) {
+                        throw new IOException("firebase-credentials.json no encontrado en classpath ni en variable de entorno FIREBASE_CREDENTIALS_JSON");
+                    }
                 }
                 FirebaseOptions options = FirebaseOptions.builder()
                         .setCredentials(GoogleCredentials.fromStream(serviceAccount))
