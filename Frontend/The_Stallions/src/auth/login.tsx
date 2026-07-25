@@ -25,8 +25,9 @@ export default function LoginScreen() {
       const { data } = await authService.googleAuth(idToken);
       await signIn(data);
       router.replace('/(tabs)');
-    } catch {
-      setError(t.errorGoogle);
+    } catch (e: any) {
+      console.error('Google login backend error:', e.response?.status, e.response?.data, e.message);
+      setError(e.response?.data?.message || t.errorGoogle);
     } finally {
       setLoading(false);
     }
