@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import { GoogleAuthProvider, signInWithCredential, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from 'firebase/auth';
 import { firebaseAuth } from '../config/firebaseConfig';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -11,14 +12,26 @@ export function useGoogleAuth(onIdTokenReady) {
   const callbackRef = useRef(onIdTokenReady);
   callbackRef.current = onIdTokenReady;
 
+  const redirectUri = makeRedirectUri({
+    scheme: 'thestallions',
+    path: undefined,
+  });
+
   const [request, response, promptAsync] = Google.useAuthRequest(
-    Platform.OS !== 'web'
-      ? {
-          androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '',
-          iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
-          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
-        }
-      : { webClientId: '' }
+    Platform.select({
+      android: {
+        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? '',
+        redirectUri,
+      },
+      ios: {
+        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
+        redirectUri,
+      },
+      default: {
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
+        redirectUri,
+      },
+    })
   );
 
 // Mobile: captura el resultado del auth session
@@ -35,23 +48,13 @@ export function useGoogleAuth(onIdTokenReady) {
       .catch((error) => console.error('Error de Google Sign-In:', error));
   }, [response]);
 
-  // Web: captura el resultado del redirect al montar
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    getRedirectResult(firebaseAuth)
-      .then(async (result) => {
-        if (!result) return;
-        const idToken = await result.user.getIdToken();
-        callbackRef.current(idToken);
-      })
-      .catch((error) => console.error('Error de Google redirect:', error));
-  }, []);
-
   const handlePrompt = async () => {
     if (Platform.OS === 'web') {
-      await signInWithRedirect(firebaseAuth, new GoogleAuthProvider());
+      const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      const idToken = await result.user.getIdToken();
+      await callbackRef.current(idToken);
     } else {
-      promptAsync();
+      await promptAsync();
     }
   };
 
