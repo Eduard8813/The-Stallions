@@ -1,6 +1,6 @@
-# Contributing a The Stallions
+# Contributing a Wani Connect
 
-¡Gracias por tu interés en contribuir a The Stallions! Este documento describe cómo participar de forma ordenada en el repositorio, siguiendo el flujo de trabajo establecido.
+¡Gracias por tu interés en contribuir a Wani Connect! Este documento describe cómo participar de forma ordenada en el repositorio, siguiendo el flujo de trabajo establecido.
 
 ## Índice
 
