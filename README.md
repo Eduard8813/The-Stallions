@@ -1,4 +1,4 @@
-# Wani Connect
+# The Stallions
 
 ![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-0B1F3A)
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-yellow)
@@ -7,7 +7,7 @@
 
 > Aplicación móvil para explorar y conectar con las Ciudades Creativas de Nicaragua.
 
-Wani Connect facilita el descubrimiento de las Ciudades Creativas de Nicaragua — Bluefields, Estelí, Granada, Juigalpa, León, Managua, Masaya, Matagalpa, Nagarote y San Juan de Oriente — mediante un mapa interactivo con rutas turísticas y de navegación. Conecta a visitantes y locales con el patrimonio cultural, artesanal y gastronómico del país, impulsando la economía creativa. El proyecto es un monorepo con un frontend en React Native (Expo) y un backend en Spring Boot.
+The Stallions facilita el descubrimiento de las Ciudades Creativas de Nicaragua — Bluefields, Estelí, Granada, Juigalpa, León, Managua, Masaya, Matagalpa, Nagarote y San Juan de Oriente — mediante un mapa interactivo con rutas turísticas y de navegación. Conecta a visitantes y locales con el patrimonio cultural, artesanal y gastronómico del país, impulsando la economía creativa. El proyecto es un monorepo con un frontend en React Native (Expo) y un backend en Spring Boot.
 
 ---
 
@@ -31,7 +31,7 @@ Wani Connect facilita el descubrimiento de las Ciudades Creativas de Nicaragua �
 
 ## Descripción
 
-Wani Connect es una aplicación móvil (iOS, Android y web) para explorar las Ciudades Creativas de Nicaragua, una red reconocida por el Ministerio de Turismo y UNESCO. Incluye un mapa interactivo del país con detección de ubicación, rutas de navegación entre departamentos, y rutas turísticas con paradas e información de cada ciudad. Busca promover la economía creativa nicaragüense conectando a visitantes con el patrimonio material e inmaterial del país.
+The Stallions es una aplicación móvil (iOS, Android y web) para explorar las Ciudades Creativas de Nicaragua, una red reconocida por el Ministerio de Turismo y UNESCO. Incluye un mapa interactivo del país con detección de ubicación, rutas de navegación entre departamentos, y rutas turísticas con paradas e información de cada ciudad. Busca promover la economía creativa nicaragüense conectando a visitantes con el patrimonio material e inmaterial del país.
 
 ## Características
 
