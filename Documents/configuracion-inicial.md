@@ -4,7 +4,7 @@
 > **Estado:** Completado y verificado  
 > **Fecha:** Julio 2026  
 
-Este documento describe el estado configurado y verificado de cada punto de la configuración inicial del proyecto The Stallions. Todos los ítems han sido implementados y confirmados en el código fuente actual.
+Este documento describe el estado configurado y verificado de cada punto de la configuración inicial del proyecto Wani connect. Todos los ítems han sido implementados y confirmados en el código fuente actual.
 
 ---
 
@@ -72,7 +72,7 @@ bad0df2 feat(frontend): implementar mapa interactivo de Nicaragua
 
 | Campo | Valor |
 |-------|-------|
-| `name` | The Stallions |
+| `name` | Wani connect |
 | `slug` | the-stallions |
 | `version` | 1.0.0 |
 | `orientation` | portrait |
