@@ -9,7 +9,8 @@ import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
-import { validateEmail } from '../utils/validators';
+import { getAuthErrorMessage } from '../utils/errors';
+import { validateEmail, isEmpty } from '../utils/validators';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -27,7 +28,7 @@ export default function LoginScreen() {
       router.replace('/(tabs)');
     } catch (e: any) {
       console.error('Google login backend error:', e.response?.status, e.response?.data, e.message);
-      setError(e.response?.data?.message || t.errorGoogle);
+      setError(getAuthErrorMessage(e, t, t.errorGoogle));
     } finally {
       setLoading(false);
     }
@@ -37,6 +38,8 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setError('');
+    if (isEmpty(email)) { setError(t.errorEmailRequired); return; }
+    if (isEmpty(password)) { setError(t.errorPasswordRequired); return; }
     if (!validateEmail(email)) { setError(t.errorInvalidEmail); return; }
     if (password.length < 8) { setError(t.errorShortPassword); return; }
     try {
@@ -45,7 +48,7 @@ export default function LoginScreen() {
       await signIn(data);
       router.replace('/(tabs)');
     } catch (e: any) {
-      setError(e.response?.data?.message || t.errorLogin);
+      setError(getAuthErrorMessage(e, t, t.errorLogin, true));
     } finally {
       setLoading(false);
     }

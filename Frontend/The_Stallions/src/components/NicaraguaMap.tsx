@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
 
 const MAP_CENTER = '12.87,-85.21';
 
@@ -314,7 +315,7 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
     <button class="nc-toggle-btn active" id="tog-geo" onclick="switchToGeographic()">Geografica</button>
     <button class="nc-toggle-btn" id="tog-city" onclick="switchToRelieve()">Vector Map</button>
   </div>
-  <div class="nc-logout" id="nc-logout" title="Cerrar sesion" onclick="window.parent.postMessage('logout','*')">
+  <div class="nc-logout" id="nc-logout" title="Cerrar sesion" onclick="sendLogout()">
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
   </div>
   <div class="nc-tour-panel" id="tour-panel">
@@ -452,56 +453,78 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       return null;
     }
 
+    function sendLogout() {
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage('logout');
+      } else if (window.parent) {
+        window.parent.postMessage('logout', '*');
+      }
+    }
+
     function getUsersLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(pos) {
-          userLat = pos.coords.latitude;
-          userLng = pos.coords.longitude;
-          if (!userLocMarker) {
-            userLocMarker = L.marker([userLat, userLng], {
-              icon: L.divIcon({
-                className: '',
-                html: '<div class="nc-user-gps"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="10" stroke="#4DABF7" stroke-width="2" fill="rgba(77,171,247,0.12)"/><circle cx="14" cy="14" r="4" fill="#4DABF7"/><line x1="14" y1="0" x2="14" y2="6" stroke="#4DABF7" stroke-width="2"/><line x1="14" y1="22" x2="14" y2="28" stroke="#4DABF7" stroke-width="2"/><line x1="0" y1="14" x2="6" y2="14" stroke="#4DABF7" stroke-width="2"/><line x1="22" y1="14" x2="28" y2="14" stroke="#4DABF7" stroke-width="2"/></svg></div>',
-                iconSize: [28, 28], iconAnchor: [14, 14]
-              }),
-              zIndexOffset: 500
-            }).addTo(map);
-            userLocMarker.bindTooltip('Tu ubicacion', {
-              permanent: false, direction: 'top',
-              className: 'nc-user-tooltip'
-            });
-            userLocMarker.on('click', function() {
-              var found = findUserDepartment(userLat, userLng);
-              if (found) {
-                userDepName = found.name;
-                var html = '<div class="nc-loc-box">' +
-                  '<div class="nc-loc-icon">&#128205;</div>' +
-                  '<div class="nc-loc-title">Tu ubicacion actual</div>' +
-                  '<div class="nc-loc-dept">' + found.name + '</div>' +
-                  '<p class="nc-loc-msg">Estas dentro del departamento de <strong>' + found.name + '</strong>.' +
-                  (found.highlighted ? ' Descubre los atractivos turisticos de esta region con una ruta personalizada.' : ' Explora las rutas turisticas disponibles para ti.') + '</p>' +
-                  (found.highlighted ? '<button class="nc-loc-btn" id="loc-tour-btn">Explorar Ruta Turistica</button>' : '') +
-                  '<button class="nc-loc-btn nc-loc-btn-gray" id="loc-close-btn">Cerrar</button>' +
-                '</div>';
-                L.popup({ closeButton: false, className: 'nc-loc-popup', offset: [0, -18], maxWidth: 270 })
-                  .setLatLng([userLat, userLng])
-                  .setContent(html)
-                  .openOn(map);
-                setTimeout(function() {
-                  var tb = document.getElementById('loc-tour-btn');
-                  var cb = document.getElementById('loc-close-btn');
-                  if (tb) tb.onclick = function() { map.closePopup(); showTourismRoute(found.name); };
-                  if (cb) cb.onclick = function() { map.closePopup(); };
-                }, 50);
-              }
-            });
-          } else {
-            userLocMarker.setLatLng([userLat, userLng]);
-          }
-          var found = findUserDepartment(userLat, userLng);
-          if (found) { userDepName = found.name; }
+          setUserLocation(pos.coords.latitude, pos.coords.longitude);
         }, function() {}, { enableHighAccuracy: true, timeout: 10000 });
       }
+    }
+
+    document.addEventListener('message', function(e) {
+      if (!e.data) return;
+      try {
+        var msg = JSON.parse(e.data);
+        if (msg && msg.type === 'location' && typeof msg.lat === 'number' && typeof msg.lng === 'number') {
+          setUserLocation(msg.lat, msg.lng);
+        }
+      } catch (err) {}
+    });
+
+    function setUserLocation(lat, lng) {
+      userLat = lat;
+      userLng = lng;
+      if (!userLocMarker) {
+        userLocMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: '',
+            html: '<div class="nc-user-gps"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="10" stroke="#4DABF7" stroke-width="2" fill="rgba(77,171,247,0.12)"/><circle cx="14" cy="14" r="4" fill="#4DABF7"/><line x1="14" y1="0" x2="14" y2="6" stroke="#4DABF7" stroke-width="2"/><line x1="14" y1="22" x2="14" y2="28" stroke="#4DABF7" stroke-width="2"/><line x1="0" y1="14" x2="6" y2="14" stroke="#4DABF7" stroke-width="2"/><line x1="22" y1="14" x2="28" y2="14" stroke="#4DABF7" stroke-width="2"/></svg></div>',
+            iconSize: [28, 28], iconAnchor: [14, 14]
+          }),
+          zIndexOffset: 500
+        }).addTo(map);
+        userLocMarker.bindTooltip('Tu ubicacion', {
+          permanent: false, direction: 'top',
+          className: 'nc-user-tooltip'
+        });
+        userLocMarker.on('click', function() {
+          var found = findUserDepartment(userLat, userLng);
+          if (found) {
+            userDepName = found.name;
+            var html = '<div class="nc-loc-box">' +
+              '<div class="nc-loc-icon">&#128205;</div>' +
+              '<div class="nc-loc-title">Tu ubicacion actual</div>' +
+              '<div class="nc-loc-dept">' + found.name + '</div>' +
+              '<p class="nc-loc-msg">Estas dentro del departamento de <strong>' + found.name + '</strong>.' +
+              (found.highlighted ? ' Descubre los atractivos turisticos de esta region con una ruta personalizada.' : ' Explora las rutas turisticas disponibles para ti.') + '</p>' +
+              (found.highlighted ? '<button class="nc-loc-btn" id="loc-tour-btn">Explorar Ruta Turistica</button>' : '') +
+              '<button class="nc-loc-btn nc-loc-btn-gray" id="loc-close-btn">Cerrar</button>' +
+            '</div>';
+            L.popup({ closeButton: false, className: 'nc-loc-popup', offset: [0, -18], maxWidth: 270 })
+              .setLatLng([userLat, userLng])
+              .setContent(html)
+              .openOn(map);
+            setTimeout(function() {
+              var tb = document.getElementById('loc-tour-btn');
+              var cb = document.getElementById('loc-close-btn');
+              if (tb) tb.onclick = function() { map.closePopup(); showTourismRoute(found.name); };
+              if (cb) cb.onclick = function() { map.closePopup(); };
+            }, 50);
+          }
+        });
+      } else {
+        userLocMarker.setLatLng([lat, lng]);
+      }
+      var found = findUserDepartment(lat, lng);
+      if (found) { userDepName = found.name; }
     }
     getUsersLocation();
 
@@ -1297,15 +1320,67 @@ function WebMap() {
 
 function NativeMap() {
   const { WebView } = require('react-native-webview');
+  const { t } = useLang();
+  const webViewRef = useRef<any>(null);
   const { signOut } = useAuth();
   const router = useRouter();
+  const locationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const loadedRef = useRef(false);
+  const [Location] = useState<any>(() => {
+    try {
+      return require('expo-location');
+    } catch {
+      return null;
+    }
+  });
+
+  const sendLocation = () => {
+    const loc = locationRef.current;
+    if (loc && loadedRef.current) {
+      webViewRef.current?.postMessage(JSON.stringify({ type: 'location', lat: loc.lat, lng: loc.lng }));
+    }
+  };
+
+  useEffect(() => {
+    if (!Location) return;
+    let mounted = true;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (!mounted || status !== 'granted') return;
+        const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        locationRef.current = { lat: location.coords.latitude, lng: location.coords.longitude };
+        sendLocation();
+      } catch (error) {
+        console.warn('No se pudo obtener la ubicacion:', error);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [Location]);
+
+  if (!Location) {
+    return (
+      <View style={styles.locationFallback}>
+        <Text style={styles.locationFallbackTitle}>{t.locationUnavailableTitle}</Text>
+        <Text style={styles.locationFallbackMessage}>{t.locationUnavailableMessage}</Text>
+      </View>
+    );
+  }
+
   return (
     <WebView
+      ref={webViewRef}
       style={{ flex: 1 }}
       originWhitelist={['*']}
       source={{ html: leafletHtml(MAP_CENTER) }}
       javaScriptEnabled
       scrollEnabled={false}
+      onLoadEnd={() => {
+        loadedRef.current = true;
+        sendLocation();
+      }}
       onMessage={(e: any) => {
         if (e.nativeEvent.data === 'logout') {
           signOut().then(() => router.replace('/(auth)/login'));
@@ -1325,4 +1400,24 @@ export default function NicaraguaMap() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  locationFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#0B1F3A',
+  },
+  locationFallbackTitle: {
+    color: '#e94560',
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  locationFallbackMessage: {
+    color: '#ffffff',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
 });
