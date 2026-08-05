@@ -36,7 +36,13 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permitir que $(PRODUCT_NAME) use tu ubicacion para mostrar rutas turisticas."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

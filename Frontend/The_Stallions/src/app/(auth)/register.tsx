@@ -9,7 +9,8 @@ import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
 import { useGoogleAuth } from '../../hooks/useGoogleAuth';
-import { validateEmail } from '../../utils/validators';
+import { getAuthErrorMessage } from '../../utils/errors';
+import { validateEmail, isEmpty } from '../../utils/validators';
 
 export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
@@ -27,8 +28,8 @@ export default function RegisterScreen() {
       const { data } = await authService.googleAuth(idToken);
       await signIn(data);
       router.replace('/(tabs)');
-    } catch {
-      setError(t.errorGoogle);
+    } catch (e: any) {
+      setError(getAuthErrorMessage(e, t, t.errorGoogle));
     } finally {
       setLoading(false);
     }
@@ -38,7 +39,10 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     setError('');
-    if (!fullName.trim()) { setError(t.errorFullName); return; }
+    if (isEmpty(fullName)) { setError(t.errorFullName); return; }
+    if (isEmpty(email)) { setError(t.errorEmailRequired); return; }
+    if (isEmpty(password)) { setError(t.errorPasswordRequired); return; }
+    if (isEmpty(confirm)) { setError(t.errorConfirmPassword); return; }
     if (!validateEmail(email)) { setError(t.errorInvalidEmail); return; }
     if (password.length < 8) { setError(t.errorShortPassword); return; }
     if (password !== confirm) { setError(t.errorPasswordMatch); return; }
@@ -48,11 +52,7 @@ export default function RegisterScreen() {
       await signIn(data);
       router.replace('/(tabs)');
     } catch (e: any) {
-      if (e.response?.status === 409) {
-        setError(t.errorEmailTaken);
-      } else {
-        setError(e.response?.data?.message || t.errorRegister);
-      }
+      setError(getAuthErrorMessage(e, t, t.errorRegister));
     } finally {
       setLoading(false);
     }
