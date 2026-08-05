@@ -4,33 +4,26 @@
     "slug": "the-stallions",
     "version": "1.0.0",
     "orientation": "portrait",
-
     "icon": "./assets/images/Icono-principal.png",
-
     "scheme": "thestallions",
-
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/images/Icono-principal.png"
     },
-
     "android": {
       "package": "com.eduard8813steam.thestallions",
-      "predictiveBackGestureEnabled": false,  
-
+      "googleServicesFile": "./google-services.json",
+      "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundColor": "#0B1F3A"
       }
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -42,14 +35,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
     ],
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {
         "root": "src/app"
@@ -58,7 +50,6 @@
         "projectId": "c2e2a501-d62a-4609-9f62-c5366ddeacb3"
       }
     },
-
     "owner": "eduard8813s-team"
   }
 }
