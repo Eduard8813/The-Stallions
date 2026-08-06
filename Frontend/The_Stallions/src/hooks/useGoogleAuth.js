@@ -27,8 +27,9 @@ export function useGoogleAuth(onIdTokenReady) {
     if (GoogleSignin.hasPreviousSignIn()) {
       await GoogleSignin.signOut();
     }
-    await GoogleSignin.signIn();
-    const { idToken } = await GoogleSignin.getTokens();
+    const signInResult = await GoogleSignin.signIn();
+    if (signInResult.type !== 'success') throw new Error('Google Sign-In cancelado');
+    const idToken = signInResult.data.idToken;
     if (!idToken) throw new Error('Google Sign-In no devolvió un idToken');
     const credential = GoogleAuthProvider.credential(idToken);
     const userCredential = await signInWithCredential(firebaseAuth, credential);
