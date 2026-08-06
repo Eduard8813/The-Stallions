@@ -15,8 +15,8 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; overflow: hidden; }
-    .leaflet-container { background: #000; }
+    html, body, #map { width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1923; overflow: hidden; }
+    .leaflet-container { background: #0f1923; }
     .pin-marker { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
     .pin-marker.no-click { cursor: default; }
     .pin-icon { width: 28px; height: 28px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.7)); }
@@ -410,6 +410,10 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
     var animMarker = null;
     var animTimer = null;
     var animIndex = 0;
+    var navDest = null;
+    var activeRouteCoords = null;
+    var rerouting = false;
+    var lastReroute = 0;
     var userLat = null;
     var userLng = null;
     var userLocMarker = null;
@@ -525,6 +529,10 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       }
       var found = findUserDepartment(lat, lng);
       if (found) { userDepName = found.name; }
+      if (followMode) {
+        map.panTo([lat, lng], { animate: true, duration: 0.4 });
+        maybeReroute(lat, lng);
+      }
     }
     getUsersLocation();
 
@@ -555,6 +563,67 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       });
     }
 
+    var maskLayer = null;
+    function buildNicaraguaMask() {
+      if (maskLayer) return;
+      var rings = [];
+      departamentos.forEach(function(dep) {
+        var polys = allPolys[dep.name];
+        if (!polys) return;
+        polys.forEach(function(p) {
+          var ll = p.getLatLngs();
+          var outer = ll[0] || ll;
+          if (!outer || !outer.length) return;
+          rings.push(outer);
+        });
+      });
+      if (!rings.length) return;
+      var bbox = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+      rings.forEach(function(ring) {
+        ring.forEach(function(latlng) {
+          var pt = L.CRS.EPSG3857.latLngToPoint(latlng, 0);
+          if (pt.x < bbox.minX) bbox.minX = pt.x;
+          if (pt.x > bbox.maxX) bbox.maxX = pt.x;
+          if (pt.y < bbox.minY) bbox.minY = pt.y;
+          if (pt.y > bbox.maxY) bbox.maxY = pt.y;
+        });
+      });
+      var MaskLayer = L.GridLayer.extend({
+        createTile: function(coords) {
+          var size = this.getTileSize();
+          var tile = document.createElement('canvas');
+          tile.width = size.x;
+          tile.height = size.y;
+          var ctx = tile.getContext('2d');
+          var scale = Math.pow(2, coords.z);
+          var tx0 = coords.x * size.x / scale;
+          var ty0 = coords.y * size.y / scale;
+          var tx1 = tx0 + size.x / scale;
+          var ty1 = ty0 + size.y / scale;
+          ctx.fillStyle = '#0f1923';
+          if (tx1 < bbox.minX || tx0 > bbox.maxX || ty1 < bbox.minY || ty0 > bbox.maxY) {
+            ctx.fillRect(0, 0, size.x, size.y);
+            return tile;
+          }
+          var ox = coords.x * size.x, oy = coords.y * size.y;
+          ctx.beginPath();
+          ctx.rect(0, 0, size.x, size.y);
+          rings.forEach(function(ring) {
+            for (var i = 0; i < ring.length; i++) {
+              var pt = L.CRS.EPSG3857.latLngToPoint(ring[i], coords.z);
+              if (i === 0) ctx.moveTo(pt.x - ox, pt.y - oy);
+              else ctx.lineTo(pt.x - ox, pt.y - oy);
+            }
+            ctx.closePath();
+          });
+          ctx.fill('evenodd');
+          return tile;
+        }
+      });
+      maskLayer = new MaskLayer({ pane: 'overlayPane' });
+      maskLayer.addTo(map);
+    }
+
     function clearRoute() {
       if (animTimer) { clearInterval(animTimer); animTimer = null; }
       if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
@@ -562,7 +631,12 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
       routeCoords = null;
       animIndex = 0;
+      navDest = null;
+      activeRouteCoords = null;
+      lastReroute = 0;
+      rerouting = false;
       modeLocked = false;
+      followMode = false;
       var nb = document.getElementById('pop-nav');
       if (nb) { nb.textContent = 'Iniciar Ruta'; nb.className = 'nc-btn nc-btn-nav show'; }
     }
@@ -645,6 +719,7 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       clearRoute();
       currentDep = dep;
       currentCenter = latLng;
+      navDest = { lat: latLng.lat, lng: latLng.lng };
       focusDepartment(dep.name);
       var isHere = userDepName === dep.name;
       var html = '<div class="nc-popup">' +
@@ -703,11 +778,8 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
         };
         if (nb) nb.onclick = function() {
           clearTimeout(popupTimer);
-          if (animTimer) {
-            clearInterval(animTimer); animTimer = null;
-            if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
-            nb.textContent = 'Iniciar Ruta';
-            nb.className = 'nc-btn nc-btn-nav show';
+          if (followMode) {
+            stopNavigation();
           } else {
             startNavigation();
           }
@@ -743,6 +815,7 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
         return;
       }
       modeLocked = true;
+      navDest = { lat: currentCenter.lat, lng: currentCenter.lng };
       if (routeLine) { map.removeLayer(routeLine); }
 
       var url = 'https://router.project-osrm.org/route/v1/driving/' +
@@ -752,6 +825,8 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       fetch(url).then(function(r) { return r.json(); }).then(function(data) {
         if (!data.routes || !data.routes.length) {
           routeCoords = [[userLat, userLng], [currentCenter.lat, currentCenter.lng]];
+          activeRouteCoords = routeCoords;
+          lastReroute = Date.now();
           routeLine = L.polyline(routeCoords, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(map);
           var dist = map.distance([userLat, userLng], [currentCenter.lat, currentCenter.lng]);
           showRouteInfo((dist / 1000).toFixed(1), '--');
@@ -760,6 +835,8 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
         var route = data.routes[0];
         var coords = route.geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
         routeCoords = [[userLat, userLng]].concat(coords).concat([[currentCenter.lat, currentCenter.lng]]);
+        activeRouteCoords = coords;
+        lastReroute = Date.now();
         routeLine = L.polyline(coords, { color: '#e94560', weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
 
         userMarker = L.marker([userLat, userLng], {
@@ -776,6 +853,8 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
         map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
       }).catch(function() {
         routeCoords = [[userLat, userLng], [currentCenter.lat, currentCenter.lng]];
+        activeRouteCoords = routeCoords;
+        lastReroute = Date.now();
         routeLine = L.polyline(routeCoords, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(map);
         var dist = map.distance([userLat, userLng], [currentCenter.lat, currentCenter.lng]);
         showRouteInfo((dist / 1000).toFixed(1), '--');
@@ -794,33 +873,147 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
     }
 
     function startNavigation() {
-      if (!routeCoords || routeCoords.length < 2) return;
-      if (animTimer) { clearInterval(animTimer); animTimer = null; }
-      if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
-      animIndex = 0;
-
-      var dotIcon = L.divIcon({
-        className: '',
-        html: '<div class="nc-anim-dot"></div>',
-        iconSize: [20, 20], iconAnchor: [10, 10]
-      });
-
-      animMarker = L.marker(routeCoords[0], { icon: dotIcon, zIndexOffset: 1000 }).addTo(map);
-      map.setView(routeCoords[0], Math.max(map.getZoom(), 11));
-
+      if (followMode) { stopNavigation(); return; }
+      followMode = true;
+      modeLocked = true;
+      lastReroute = Date.now();
+      ensureRoute();
       var nb = document.getElementById('pop-nav');
       if (nb) { nb.textContent = 'Detener'; nb.className = 'nc-btn nc-btn-stop show'; }
+      if (userLat && userLng) {
+        map.setView([userLat, userLng], Math.max(map.getZoom(), 16));
+      } else {
+        getUsersLocation();
+      }
+    }
 
-      animTimer = setInterval(function() {
-        animIndex++;
-        if (animIndex >= routeCoords.length) {
-          clearInterval(animTimer); animTimer = null;
-          if (nb) { nb.textContent = 'Iniciar Ruta'; nb.className = 'nc-btn nc-btn-nav show'; }
-          return;
+    function stopNavigation() {
+      followMode = false;
+      modeLocked = false;
+      var nb = document.getElementById('pop-nav');
+      if (nb) { nb.textContent = 'Iniciar Ruta'; nb.className = 'nc-btn nc-btn-nav show'; }
+    }
+
+    function distToSegment(p, a, b) {
+      var dX = b[1] - a[1], dY = b[0] - a[0];
+      var len2 = dX * dX + dY * dY;
+      var t = len2 === 0 ? 0 : ((p[1] - a[1]) * dX + (p[0] - a[0]) * dY) / len2;
+      t = Math.max(0, Math.min(1, t));
+      return map.distance([p[0], p[1]], [a[0] + t * dY, a[1] + t * dX]);
+    }
+
+    function distToPolyline(p, coords) {
+      var min = Infinity;
+      for (var i = 0; i < coords.length - 1; i++) {
+        var d = distToSegment(p, coords[i], coords[i + 1]);
+        if (d < min) min = d;
+      }
+      return min;
+    }
+
+    function fetchDrivingRoute(from, to, done) {
+      var url = 'https://router.project-osrm.org/route/v1/driving/' +
+        from[1] + ',' + from[0] + ';' + to[1] + ',' + to[0] +
+        '?overview=full&geometries=geojson';
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        if (data.routes && data.routes.length) {
+          var c = data.routes[0].geometry.coordinates.map(function(x) { return [x[1], x[0]]; });
+          done(c, data.routes[0]);
+        } else {
+          done(null, null);
         }
-        animMarker.setLatLng(routeCoords[animIndex]);
-        map.panTo(routeCoords[animIndex], { animate: true, duration: 0.18 });
-      }, 200);
+      }).catch(function() { done(null, null); });
+    }
+
+    function getTourRemainingStops(lat, lng) {
+      var stops = tourismData[tourCurrentDep];
+      if (!stops || !stops.length) return [];
+      var best = 0, bestD = Infinity;
+      for (var i = 0; i < stops.length; i++) {
+        var d = map.distance([lat, lng], [stops[i].lat, stops[i].lng]);
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      return stops.slice(best);
+    }
+
+    function drawRouteLine(coords, route, toLat, toLng) {
+      routeCoords = [[userLat, userLng]].concat(coords).concat([[toLat, toLng]]);
+      activeRouteCoords = coords;
+      if (routeLine) map.removeLayer(routeLine);
+      routeLine = L.polyline(coords, { color: '#e94560', weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+      if (userMarker) userMarker.setLatLng([userLat, userLng]);
+      var km, min;
+      if (route) {
+        km = (route.distance / 1000).toFixed(1);
+        min = Math.round(route.duration / 60);
+      } else {
+        km = (map.distance([userLat, userLng], [toLat, toLng]) / 1000).toFixed(1);
+        min = '--';
+      }
+      showRouteInfo(km, min);
+      lastReroute = Date.now();
+    }
+
+    function ensureRoute() {
+      if (tourActive || routeLine || !navDest || !userLat || !userLng) return;
+      fetchDrivingRoute([userLat, userLng], [navDest.lat, navDest.lng], function(c, route) {
+        if (c) {
+          drawRouteLine(c, route, navDest.lat, navDest.lng);
+        } else {
+          var coords = [[userLat, userLng], [navDest.lat, navDest.lng]];
+          routeCoords = coords;
+          activeRouteCoords = coords;
+          if (routeLine) map.removeLayer(routeLine);
+          routeLine = L.polyline(coords, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(map);
+          showRouteInfo((map.distance([userLat, userLng], [navDest.lat, navDest.lng]) / 1000).toFixed(1), '--');
+        }
+      });
+    }
+
+    function maybeReroute(lat, lng) {
+      if (!followMode || !modeLocked || rerouting) return;
+      if (Date.now() - lastReroute < 10000) return;
+      if (!activeRouteCoords || activeRouteCoords.length < 2) return;
+      var off = distToPolyline([lat, lng], activeRouteCoords);
+      if (off > 80) rerouteToCurrent();
+    }
+
+    function rerouteToCurrent() {
+      if (!userLat || !userLng || rerouting) return;
+      rerouting = true;
+      var url;
+      if (tourActive && tourCurrentDep) {
+        var remaining = getTourRemainingStops(userLat, userLng);
+        if (!remaining.length) { rerouting = false; return; }
+        var wpts = [[userLat, userLng]];
+        remaining.forEach(function(s) { wpts.push([s.lat, s.lng]); });
+        url = 'https://router.project-osrm.org/route/v1/driving/' +
+          wpts.map(function(p) { return p[1] + ',' + p[0]; }).join(';') +
+          '?overview=full&geometries=geojson';
+      } else if (navDest) {
+        url = 'https://router.project-osrm.org/route/v1/driving/' +
+          userLng + ',' + userLat + ';' + navDest.lng + ',' + navDest.lat +
+          '?overview=full&geometries=geojson';
+      } else {
+        rerouting = false;
+        return;
+      }
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        rerouting = false;
+        if (!data.routes || !data.routes.length) return;
+        var c = data.routes[0].geometry.coordinates.map(function(x) { return [x[1], x[0]]; });
+        lastReroute = Date.now();
+        if (tourActive && tourCurrentDep) {
+          var dep = departamentos.find(function(d) { return d.name === tourCurrentDep; });
+          var color = dep ? dep.color : '#e94560';
+          tourOsrmCoords = c;
+          activeRouteCoords = c;
+          if (tourPolyline) map.removeLayer(tourPolyline);
+          tourPolyline = L.polyline(c, { color: color, weight: 3.5, opacity: 0.85, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+        } else {
+          drawRouteLine(c, data.routes[0], navDest.lat, navDest.lng);
+        }
+      }).catch(function() { rerouting = false; });
     }
 
     var tourismData = {
@@ -941,6 +1134,7 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
     var tourPopup = null;
     var tourStopPopup = null;
     var modeLocked = false;
+    var followMode = false;
     var popupTimer = null;
 
     function clearTourism() {
@@ -953,8 +1147,11 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       tourActive = false;
       tourOsrmCoords = null;
       tourCurrentDep = null;
+      activeRouteCoords = null;
+      lastReroute = 0;
       focusedDep = null;
       modeLocked = false;
+      followMode = false;
       document.getElementById('tour-panel').classList.remove('show');
       var ts = document.getElementById('tour-start');
       var tstop = document.getElementById('tour-stop-btn');
@@ -1035,23 +1232,27 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
           if (data.routes && data.routes.length) {
             var routeCoords = data.routes[0].geometry.coordinates.map(function(c) { return [c[1], c[0]]; });
             tourOsrmCoords = routeCoords;
+            activeRouteCoords = routeCoords;
             tourPolyline = L.polyline(routeCoords, {
               color: color, weight: 3.5, opacity: 0.85,
               lineCap: 'round', lineJoin: 'round'
             }).addTo(map);
           } else {
+            activeRouteCoords = allPoints;
             tourPolyline = L.polyline(allPoints, {
               color: color, weight: 3, opacity: 0.8, dashArray: '8, 6'
             }).addTo(map);
           }
           map.fitBounds(tourPolyline.getBounds(), { padding: [60, 60] });
         }).catch(function() {
+          activeRouteCoords = allPoints;
           tourPolyline = L.polyline(allPoints, {
             color: color, weight: 3, opacity: 0.8, dashArray: '8, 6'
           }).addTo(map);
           map.fitBounds(tourPolyline.getBounds(), { padding: [60, 60] });
         });
       } else {
+        activeRouteCoords = allPoints;
         tourPolyline = L.polyline(allPoints, {
           color: color, weight: 3, opacity: 0.8, dashArray: '8, 6'
         }).addTo(map);
@@ -1102,23 +1303,9 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       var stops = tourismData[depName];
       if (!stops || stops.length < 2) return;
       tourActive = true;
-      tourAnimIndex = 0;
 
       var dep = departamentos.find(function(d) { return d.name === depName; });
       var color = dep ? dep.color : '#e94560';
-
-      var dotIcon = L.divIcon({
-        className: '',
-        html: '<div class="nc-anim-dot"></div>',
-        iconSize: [20, 20], iconAnchor: [10, 10]
-      });
-
-      var startLat = userLat || stops[0].lat;
-      var startLng = userLng || stops[0].lng;
-      tourTravelMarker = L.marker([startLat, startLng], { icon: dotIcon, zIndexOffset: 1000 }).addTo(map);
-      tourMarkers.push(tourTravelMarker);
-
-      map.setView([startLat, startLng], 12);
 
       document.getElementById('tour-start').style.display = 'none';
       var tstop = document.getElementById('tour-stop-btn');
@@ -1126,46 +1313,23 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
       tstop.classList.add('show');
       tstop.onclick = function() { stopTourismNav(); };
 
+      followMode = true;
+      modeLocked = true;
+      lastReroute = Date.now();
+      if (userLat && userLng) {
+        map.setView([userLat, userLng], Math.max(map.getZoom(), 16));
+      } else {
+        getUsersLocation();
+      }
+
       showTourStopPopup(stops[0], 0, stops.length, color);
       updateTourPanel(stops, 0);
-
-      var animCoords = tourOsrmCoords || [];
-      if (animCoords.length === 0) {
-        var allPts = [];
-        if (userLat && userLng) allPts.push([userLat, userLng]);
-        stops.forEach(function(s) { allPts.push([s.lat, s.lng]); });
-        animCoords = allPts;
-      }
-
-      if (animCoords.length > 1) {
-        var step = 0;
-        tourAnimTimer = setInterval(function() {
-          step++;
-          if (step >= animCoords.length) {
-            clearInterval(tourAnimTimer); tourAnimTimer = null;
-            tourActive = false;
-            document.getElementById('tour-start').style.display = '';
-            tstop.style.display = 'none';
-            tstop.classList.remove('show');
-            return;
-          }
-          tourTravelMarker.setLatLng(animCoords[step]);
-          map.panTo(animCoords[step], { animate: true, duration: 0.18 });
-          for (var si = 0; si < stops.length; si++) {
-            var dist = Math.abs(animCoords[step][0] - stops[si].lat) + Math.abs(animCoords[step][1] - stops[si].lng);
-            if (dist < 0.02) {
-              updateTourPanel(stops, si);
-              showTourStopPopup(stops[si], si, stops.length, color);
-              break;
-            }
-          }
-        }, 150);
-      }
     }
 
     function stopTourismNav() {
-      if (tourAnimTimer) { clearInterval(tourAnimTimer); tourAnimTimer = null; }
       tourActive = false;
+      followMode = false;
+      modeLocked = false;
       document.getElementById('tour-start').style.display = '';
       var tstop = document.getElementById('tour-stop-btn');
       tstop.style.display = 'none';
@@ -1174,8 +1338,16 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
 
     map.on('popupclose', function() {
       clearTimeout(popupTimer);
+      var tp = document.getElementById('tour-panel');
+      var tourVisible = tp && tp.classList.contains('show');
+      if (followMode || tourActive || tourVisible) return;
       clearRoute();
       currentDep = null;
+    });
+
+    map.on('dragstart', function() {
+      if (tourActive) { stopTourismNav(); return; }
+      if (followMode) stopNavigation();
     });
 
     map.on('zoomend', function() {
@@ -1209,28 +1381,6 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
         .then(function(geo) { allCoords[f] = geo; })
         .catch(function() { allCoords[f] = null; });
     })).then(function() {
-      var maskRings = [];
-      filesToFetch.forEach(function(f) {
-        var geo = allCoords[f];
-        if (!geo) return;
-        geo.features.forEach(function(feat) {
-          var g = feat.geometry;
-          if (g.type === 'Polygon') {
-            maskRings.push(g.coordinates[0].map(function(c) { return [c[1], c[0]]; }));
-          } else if (g.type === 'MultiPolygon') {
-            g.coordinates.forEach(function(poly) {
-              maskRings.push(poly[0].map(function(c) { return [c[1], c[0]]; }));
-            });
-          }
-        });
-      });
-
-      var world = [[-200, -500], [-200, 500], [200, 500], [200, -500]];
-      L.polygon([world].concat(maskRings), {
-        fillColor: '#000000', fillOpacity: 0.92,
-        color: '#000000', weight: 0, opacity: 0
-      }).addTo(map);
-
       departamentos.forEach(function(dep) {
         var geo = allCoords[dep.file];
         if (!geo) return;
@@ -1282,6 +1432,7 @@ const leafletHtml = (center: string) => `<!DOCTYPE html>
           else if (g.type === 'MultiPolygon') { g.coordinates.forEach(addPoly); }
         });
       });
+      buildNicaraguaMask();
     });
   </script>
 </body>
@@ -1344,6 +1495,7 @@ function NativeMap() {
   useEffect(() => {
     if (!Location) return;
     let mounted = true;
+    let subscription: any = null;
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
@@ -1351,12 +1503,21 @@ function NativeMap() {
         const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         locationRef.current = { lat: location.coords.latitude, lng: location.coords.longitude };
         sendLocation();
+        subscription = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, timeInterval: 2000, distanceInterval: 5 },
+          (newLocation: any) => {
+            if (!mounted) return;
+            locationRef.current = { lat: newLocation.coords.latitude, lng: newLocation.coords.longitude };
+            sendLocation();
+          }
+        );
       } catch (error) {
         console.warn('No se pudo obtener la ubicacion:', error);
       }
     })();
     return () => {
       mounted = false;
+      subscription?.remove();
     };
   }, [Location]);
 
