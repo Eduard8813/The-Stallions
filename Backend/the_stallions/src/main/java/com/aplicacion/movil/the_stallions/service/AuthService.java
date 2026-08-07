@@ -2,6 +2,7 @@ package com.aplicacion.movil.the_stallions.service;
 
 import com.aplicacion.movil.the_stallions.dto.Request.*;
 import com.aplicacion.movil.the_stallions.dto.Response.AuthResponse;
+import com.aplicacion.movil.the_stallions.dto.Response.SuccessResponse;
 import com.aplicacion.movil.the_stallions.model.AuthProvider;
 import com.aplicacion.movil.the_stallions.model.TwoFactorChallenge;
 import com.aplicacion.movil.the_stallions.model.User;
@@ -155,6 +156,31 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Código inválido o expirado"));
 
         return buildAuthResponse(user, userAgent, clientIp);
+    }
+
+    /**
+     * Reenvía un código 2FA nuevo reutilizando el mismo desafío: renueva el
+     * hash del código y la expiración a 5 minutos, sin invalidar el challengeId
+     * que ya conoce el frontend.
+     */
+    public SuccessResponse resendTwoFactor(ResendTwoFactorRequest request) {
+        TwoFactorChallenge challenge = twoFactorChallengeRepository
+                .findByChallengeId(request.getChallengeId())
+                .orElseThrow(() -> new IllegalArgumentException("Código inválido o expirado"));
+
+        if (challenge.isUsed()) {
+            throw new IllegalArgumentException("Código inválido o expirado");
+        }
+
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        challenge.setCodeHash(passwordEncoder.encode(code));
+        challenge.setExpiresAt(LocalDateTime.now().plusMinutes(TWO_FACTOR_CODE_MINUTES));
+        challenge.setUsed(false);
+        twoFactorChallengeRepository.save(challenge);
+
+        emailService.sendVerificationCode(challenge.getEmail(), code);
+
+        return new SuccessResponse(true);
     }
 
     public void logout(String token) {
