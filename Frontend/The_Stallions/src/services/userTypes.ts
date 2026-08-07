@@ -43,6 +43,10 @@ export interface ChangePasswordInput {
 
 export interface SecuritySettings {
   twoFactorEnabled: boolean;
+  /** Clave base32 del TOTP. Solo se devuelve al activar 2FA. */
+  secret?: string | null;
+  /** URL otpauth:// para escanear con Google Authenticator/Authy. */
+  otpAuthUrl?: string | null;
 }
 
 export interface UserSession {

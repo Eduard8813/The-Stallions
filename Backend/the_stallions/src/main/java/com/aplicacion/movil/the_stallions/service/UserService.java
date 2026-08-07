@@ -156,6 +156,12 @@ public class UserService {
 
     public SecurityResponse getSecuritySettings() {
         User user = currentUser();
+        if (user.isTwoFactorEnabled() && (user.getTotpSecret() == null || user.getTotpSecret().isBlank())) {
+            user.setTwoFactorEnabled(false);
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+            return new SecurityResponse(false);
+        }
         SecurityResponse response = new SecurityResponse(user.isTwoFactorEnabled());
         if (user.isTwoFactorEnabled() && user.getTotpSecret() != null) {
             response.setSecret(user.getTotpSecret());
