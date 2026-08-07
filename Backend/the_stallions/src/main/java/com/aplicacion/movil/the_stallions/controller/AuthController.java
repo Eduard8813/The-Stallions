@@ -48,6 +48,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyTwoFactor(request, userAgent, clientIp));
     }
 
+    @PostMapping("/2fa/resend")
+    public ResponseEntity<SuccessResponse> resendTwoFactor(@Valid @RequestBody ResendTwoFactorRequest request) {
+        return ResponseEntity.ok(authService.resendTwoFactor(request));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<SuccessResponse> logout(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
         if (authorization != null && authorization.startsWith("Bearer ")) {
