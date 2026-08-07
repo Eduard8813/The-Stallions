@@ -1,9 +1,9 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Text, View, ActivityIndicator } from 'react-native';
+import { Text, View, ActivityIndicator, type ColorValue } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
 const icon = (emoji: string) =>
-  ({ color }: { color: string }) =>
+  ({ color }: { color: ColorValue }) =>
     <Text style={{ fontSize: 22, color }}>{emoji}</Text>;
 
 export default function TabsLayout() {

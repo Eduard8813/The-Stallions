@@ -55,8 +55,23 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateUser = async (partial) => {
+    setUser((prev) => ({ ...(prev ?? {}), ...partial }));
+    if (partial.email !== undefined) {
+      await storage.set('userEmail', partial.email || '');
+    }
+    if (partial.fullName !== undefined) {
+      if (partial.fullName) await storage.set('userFullName', partial.fullName);
+      else await storage.remove('userFullName');
+    }
+    if (partial.photo !== undefined) {
+      if (partial.photo) await storage.set('userPhoto', partial.photo);
+      else await storage.remove('userPhoto');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,6 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, Text } from 'react-na
 import * as ImagePicker from 'expo-image-picker';
 import { useAsync } from '../../hooks/useAsync';
 import { userService } from '../../services/userService';
+import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/validators';
 import { colors } from '../../constants/ui';
 import type { Gender, UpdateProfileInput, UserProfile } from '../../services/userTypes';
@@ -25,6 +26,7 @@ const GENDER_OPTIONS: { label: string; value: Gender }[] = [
 type FieldErrors = Partial<Record<keyof UpdateProfileInput, string>>;
 
 function EditProfileForm({ initialProfile }: { initialProfile: UserProfile }) {
+  const { updateUser } = useAuth();
   const [form, setForm] = useState<UpdateProfileInput>({
     firstName: initialProfile.firstName,
     lastName: initialProfile.lastName,
@@ -109,6 +111,11 @@ function EditProfileForm({ initialProfile }: { initialProfile: UserProfile }) {
         phone: form.phone.trim(),
         city: form.city.trim(),
         bio: form.bio.trim(),
+      });
+      await updateUser({
+        fullName: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
+        email: form.email.trim(),
+        photo: form.photoUrl,
       });
       setSaved(true);
     } catch (e: any) {

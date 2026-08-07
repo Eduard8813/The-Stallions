@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAsync } from '../../hooks/useAsync';
 import { userService } from '../../services/userService';
+import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../constants/ui';
 import Avatar from '../../components/profile/Avatar';
 import Section from '../../components/profile/Section';
@@ -16,6 +17,7 @@ import Button from '../../components/profile/Button';
 
 export default function PerfilScreen() {
   const router = useRouter();
+  const { updateUser } = useAuth();
   const { data: profile, loading, error, refetch, setData } = useAsync(() => userService.getProfile());
   const [signingOut, setSigningOut] = useState(false);
   const [photoUpdating, setPhotoUpdating] = useState(false);
@@ -50,6 +52,7 @@ export default function PerfilScreen() {
     try {
       const { photoUrl } = await userService.uploadProfilePhoto(uri);
       setData((prev) => (prev ? { ...prev, photoUrl } : prev));
+      await updateUser({ photo: photoUrl });
     } catch (e: any) {
       setPhotoError(e?.message ?? 'No se pudo cambiar la foto.');
     } finally {
