@@ -27,6 +27,13 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       const { data } = await authService.googleAuth(idToken);
+      if (data?.requiresTwoFactor) {
+        router.push({
+          pathname: '/(auth)/two-factor',
+          params: { challengeId: data.challengeId, email: googleProfile?.email || data.email },
+        });
+        return;
+      }
       await signIn({
         token: data.token,
         email: googleProfile?.email || data.email,
@@ -53,6 +60,13 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       const { data } = await authService.login(email, password);
+      if (data?.requiresTwoFactor) {
+        router.push({
+          pathname: '/(auth)/two-factor',
+          params: { challengeId: data.challengeId, email: data.email },
+        });
+        return;
+      }
       await signIn(data);
       router.replace('/(tabs)');
     } catch (e: any) {

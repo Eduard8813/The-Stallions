@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useAsync } from '../../hooks/useAsync';
 import { userService } from '../../services/userService';
 import { localSettings } from '../../services/localSettings';
+import { EVENTS, events } from '../../services/events';
 import { colors } from '../../constants/ui';
 import type { AccountProvider, LinkedAccount, UserSession } from '../../services/userTypes';
 import CenterLoading from '../../components/profile/CenterLoading';
@@ -108,6 +110,18 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
 
   const handleBiometrics = async (value: boolean) => {
     setBanner('');
+    if (value) {
+      if (Platform.OS === 'web') {
+        setBanner('El desbloqueo biométrico no está disponible en la web.');
+        return;
+      }
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        setBanner('Este dispositivo no tiene huella o Face ID configurado.');
+        return;
+      }
+    }
     const previous = biometrics;
     setBiometrics(value);
     try {
@@ -122,7 +136,10 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
     setRevokingId(session.id);
     try {
       await userService.revokeSession(session.id);
-      if (session.isCurrent) return; // el servicio emite logged-out -> redirige
+      if (session.isCurrent) {
+        events.emit(EVENTS.loggedOut); // SessionBridge firma sesión y redirige a login
+        return;
+      }
       setSessions((list) => list.filter((s) => s.id !== session.id));
     } finally {
       setRevokingId(null);
