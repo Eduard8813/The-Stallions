@@ -19,7 +19,12 @@ export function useGoogleAuth(onIdTokenReady) {
     if (Platform.OS === 'web') {
       const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
       const idToken = await result.user.getIdToken();
-      await onIdTokenReady(idToken);
+      const googleProfile = {
+        name: result.user.displayName ?? '',
+        email: result.user.email ?? '',
+        photo: result.user.photoURL ?? null,
+      };
+      await onIdTokenReady(idToken, googleProfile);
       return;
     }
 
@@ -31,10 +36,16 @@ export function useGoogleAuth(onIdTokenReady) {
     if (signInResult.type !== 'success') throw new Error('Google Sign-In cancelado');
     const idToken = signInResult.data.idToken;
     if (!idToken) throw new Error('Google Sign-In no devolvió un idToken');
+    const account = signInResult.data.user ?? {};
+    const googleProfile = {
+      name: account.name ?? account.displayName ?? '',
+      email: account.email ?? '',
+      photo: account.photo ?? account.photoURL ?? null,
+    };
     const credential = GoogleAuthProvider.credential(idToken);
     const userCredential = await signInWithCredential(firebaseAuth, credential);
     const firebaseIdToken = await userCredential.user.getIdToken();
-    await onIdTokenReady(firebaseIdToken);
+    await onIdTokenReady(firebaseIdToken, googleProfile);
   };
 
   return { promptAsync: handlePrompt, isReady: true };

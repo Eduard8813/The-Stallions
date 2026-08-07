@@ -1,12 +1,7 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import * as SecureStore from 'expo-secure-store';
-
-const getToken = async () => {
-  if (Platform.OS === 'web') return localStorage.getItem('authToken');
-  return SecureStore.getItemAsync('authToken');
-};
+import { getAuthToken } from './token';
+import { EVENTS, events } from './events';
 
 const getApiBase = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
@@ -24,10 +19,26 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Inyecta el Bearer token en cada request de forma centralizada.
 api.interceptors.request.use(async (config) => {
-  const token = await getToken();
+  const token = await getAuthToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// Si una petición autenticada devuelve 401 (token expirado/inválido),
+// se notifica el fin de sesión para que la app redirija a login.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url ?? '';
+    const hasAuth = !!error?.config?.headers?.Authorization;
+    if (status === 401 && hasAuth && !url.startsWith('/auth/')) {
+      events.emit(EVENTS.sessionExpired);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
