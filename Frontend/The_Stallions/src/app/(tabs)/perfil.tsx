@@ -47,10 +47,14 @@ export default function PerfilScreen() {
     });
     if (result.canceled) return;
 
-    const uri = result.assets[0].uri;
+    const asset = result.assets[0];
+    const uri = asset.uri;
     setPhotoUpdating(true);
     try {
-      const { photoUrl } = await userService.uploadProfilePhoto(uri);
+      const { photoUrl } = await userService.uploadProfilePhoto(uri, {
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      });
       setData((prev) => (prev ? { ...prev, photoUrl } : prev));
       await updateUser({ photo: photoUrl });
     } catch (e: any) {

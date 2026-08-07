@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { useAsync } from '../../hooks/useAsync';
+import * as biometricsService from '../../services/biometrics';
 import { userService } from '../../services/userService';
 import { localSettings } from '../../services/localSettings';
 import { EVENTS, events } from '../../services/events';
@@ -115,8 +115,8 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
         setBanner('El desbloqueo biométrico no está disponible en la web.');
         return;
       }
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      const hasHardware = await biometricsService.hasHardwareAsync();
+      const isEnrolled = await biometricsService.isEnrolledAsync();
       if (!hasHardware || !isEnrolled) {
         setBanner('Este dispositivo no tiene huella o Face ID configurado.');
         return;
