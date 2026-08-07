@@ -4,11 +4,19 @@ public class AuthResponse {
     private String token;
     private String email;
     private String fullName;
+    private Boolean requiresTwoFactor;
+    private String challengeId;
 
     public AuthResponse(String token, String email, String fullName) {
+        this(token, email, fullName, null, null);
+    }
+
+    public AuthResponse(String token, String email, String fullName, Boolean requiresTwoFactor, String challengeId) {
         this.token = token;
         this.email = email;
         this.fullName = fullName;
+        this.requiresTwoFactor = requiresTwoFactor;
+        this.challengeId = challengeId;
     }
 
     // getters y setters
@@ -37,4 +45,19 @@ public class AuthResponse {
         this.fullName = fullName;
     }
 
+    public Boolean getRequiresTwoFactor() {
+        return requiresTwoFactor;
+    }
+
+    public void setRequiresTwoFactor(Boolean requiresTwoFactor) {
+        this.requiresTwoFactor = requiresTwoFactor;
+    }
+
+    public String getChallengeId() {
+        return challengeId;
+    }
+
+    public void setChallengeId(String challengeId) {
+        this.challengeId = challengeId;
+    }
 }
