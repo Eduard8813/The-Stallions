@@ -41,6 +41,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.loginOrRegisterWithGoogle(request, userAgent, clientIp));
     }
 
+    @PostMapping("/2fa/verify")
+    public ResponseEntity<AuthResponse> verifyTwoFactor(@Valid @RequestBody VerifyTwoFactorRequest request,
+                                                        @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent,
+                                                        @RequestHeader(value = "X-Forwarded-For", required = false) String clientIp) {
+        return ResponseEntity.ok(authService.verifyTwoFactor(request, userAgent, clientIp));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<SuccessResponse> logout(@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
         if (authorization != null && authorization.startsWith("Bearer ")) {

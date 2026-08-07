@@ -3,8 +3,10 @@ package com.aplicacion.movil.the_stallions.service;
 import com.aplicacion.movil.the_stallions.dto.Request.*;
 import com.aplicacion.movil.the_stallions.dto.Response.AuthResponse;
 import com.aplicacion.movil.the_stallions.model.AuthProvider;
+import com.aplicacion.movil.the_stallions.model.TwoFactorChallenge;
 import com.aplicacion.movil.the_stallions.model.User;
 import com.aplicacion.movil.the_stallions.model.UserSession;
+import com.aplicacion.movil.the_stallions.repository.TwoFactorChallengeRepository;
 import com.aplicacion.movil.the_stallions.repository.UserRepository;
 import com.aplicacion.movil.the_stallions.repository.UserSessionRepository;
 import com.aplicacion.movil.the_stallions.config.FirebaseTokenService;
@@ -13,26 +15,36 @@ import com.google.firebase.auth.FirebaseToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 public class AuthService {
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final int TWO_FACTOR_CODE_MINUTES = 5;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final FirebaseTokenService firebaseTokenService;
     private final UserSessionRepository userSessionRepository;
+    private final TwoFactorChallengeRepository twoFactorChallengeRepository;
+    private final EmailService emailService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                         JwtUtils jwtUtils, FirebaseTokenService firebaseTokenService,
-                        UserSessionRepository userSessionRepository) {
+                        UserSessionRepository userSessionRepository,
+                        TwoFactorChallengeRepository twoFactorChallengeRepository,
+                        EmailService emailService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.firebaseTokenService = firebaseTokenService;
         this.userSessionRepository = userSessionRepository;
+        this.twoFactorChallengeRepository = twoFactorChallengeRepository;
+        this.emailService = emailService;
     }
 
     public AuthResponse register(RegisterRequest request, String userAgent, String clientIp) {
@@ -62,6 +74,10 @@ public class AuthService {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
+        if (user.isTwoFactorEnabled()) {
+            return requireTwoFactor(user);
+        }
+
         return buildAuthResponse(user, userAgent, clientIp);
     }
 
@@ -88,6 +104,55 @@ public class AuthService {
             user.setUsername(email.split("@")[0]);
         }
         userRepository.save(user);
+
+        if (user.isTwoFactorEnabled()) {
+            return requireTwoFactor(user);
+        }
+
+        return buildAuthResponse(user, userAgent, clientIp);
+    }
+
+    /**
+     * Genera un código de 6 dígitos, lo guarda como desafío (5 min) y lo envía
+     * por email. Devuelve una respuesta sin token que indica que falta el 2FA.
+     */
+    private AuthResponse requireTwoFactor(User user) {
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+
+        TwoFactorChallenge challenge = new TwoFactorChallenge();
+        challenge.setChallengeId(UUID.randomUUID().toString());
+        challenge.setEmail(user.getEmail());
+        challenge.setCodeHash(passwordEncoder.encode(code));
+        challenge.setExpiresAt(LocalDateTime.now().plusMinutes(TWO_FACTOR_CODE_MINUTES));
+        challenge.setUsed(false);
+        twoFactorChallengeRepository.save(challenge);
+
+        emailService.sendVerificationCode(user.getEmail(), code);
+
+        return new AuthResponse(null, user.getEmail(), user.getFullName(), true, challenge.getChallengeId());
+    }
+
+    /**
+     * Valida el código 2FA de un desafío pendiente y, si es correcto, crea la
+     * sesión y devuelve el token igual que un login normal.
+     */
+    public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request, String userAgent, String clientIp) {
+        TwoFactorChallenge challenge = twoFactorChallengeRepository
+                .findByChallengeId(request.getChallengeId())
+                .orElseThrow(() -> new IllegalArgumentException("Código inválido o expirado"));
+
+        if (challenge.isUsed() || challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Código inválido o expirado");
+        }
+        if (!passwordEncoder.matches(request.getCode(), challenge.getCodeHash())) {
+            throw new IllegalArgumentException("Código incorrecto");
+        }
+
+        challenge.setUsed(true);
+        twoFactorChallengeRepository.save(challenge);
+
+        User user = userRepository.findByEmail(challenge.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Código inválido o expirado"));
 
         return buildAuthResponse(user, userAgent, clientIp);
     }
