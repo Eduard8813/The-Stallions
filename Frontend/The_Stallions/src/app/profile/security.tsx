@@ -16,6 +16,7 @@ import ListRow from '../../components/profile/ListRow';
 import Button from '../../components/profile/Button';
 import ConfirmModal from '../../components/profile/ConfirmModal';
 import CenteredBox from '../../components/profile/CenteredBox';
+import TOTPSetupModal from '../../components/profile/TOTPSetupModal';
 
 interface SecurityData {
   twoFactorEnabled: boolean;
@@ -44,6 +45,7 @@ function platformIcon(session: UserSession): string {
 function SecurityContent({ initial }: { initial: SecurityData }) {
   const [twoFactor, setTwoFactor] = useState(initial.twoFactorEnabled);
   const [twoFactorPending, setTwoFactorPending] = useState(false);
+  const [setupData, setSetupData] = useState<{ secret: string; otpAuthUrl: string | null } | null>(null);
   const [biometrics, setBiometrics] = useState(false);
   const [banner, setBanner] = useState('');
 
@@ -99,7 +101,10 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
     const previous = twoFactor;
     setTwoFactor(value);
     try {
-      await userService.setTwoFactor(value);
+      const settings = await userService.setTwoFactor(value);
+      if (value && settings.secret) {
+        setSetupData({ secret: settings.secret, otpAuthUrl: settings.otpAuthUrl ?? null });
+      }
     } catch (e: any) {
       setTwoFactor(previous);
       setBanner(e?.message ?? 'No se pudo actualizar la verificación en dos pasos.');
@@ -188,7 +193,13 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
       </Section>
 
       <Section title="Autenticación">
-        <ToggleRow title="Verificación en dos pasos (2FA)" description="Se pide un código extra al iniciar sesión" value={twoFactor} onValueChange={handleTwoFactor} pending={twoFactorPending} />
+        <ToggleRow
+          title="Verificación en dos pasos (2FA)"
+          description="Con tu app de autenticación (Google Authenticator, Authy)"
+          value={twoFactor}
+          onValueChange={handleTwoFactor}
+          pending={twoFactorPending}
+        />
         <ToggleRow title="Desbloqueo biométrico" description="Huella o Face ID para entrar a la app" value={biometrics} onValueChange={handleBiometrics} last />
       </Section>
 
@@ -254,6 +265,13 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
         loading={pendingAccount === confirmUnlink}
         onConfirm={() => confirmUnlink && handleUnlink(confirmUnlink)}
         onCancel={() => setConfirmUnlink(null)}
+      />
+
+      <TOTPSetupModal
+        visible={!!setupData}
+        secret={setupData?.secret ?? ''}
+        otpAuthUrl={setupData?.otpAuthUrl ?? null}
+        onClose={() => setSetupData(null)}
       />
     </CenteredBox>
   );
