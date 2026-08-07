@@ -81,24 +81,28 @@ export const userService = {
   },
 
   /** POST /user/profile/photo — Subir foto de perfil (multipart/form-data). */
-  async uploadProfilePhoto(uri: string): Promise<{ photoUrl: string }> {
+  async uploadProfilePhoto(
+    uri: string,
+    asset?: { fileName?: string | null; mimeType?: string | null }
+  ): Promise<{ photoUrl: string }> {
     const current = await loadLocalProfile();
+    const fileName = asset?.fileName || 'photo.jpg';
+    const mimeType = asset?.mimeType || 'image/jpeg';
     try {
       const form = new FormData();
       if (Platform.OS === 'web') {
         const blob = await (await fetch(uri)).blob();
-        form.append('photo', blob as any, 'photo.jpg');
+        form.append('photo', blob as any, fileName);
       } else {
-        form.append('photo', { uri, name: 'photo.jpg', type: 'image/jpeg' } as any);
+        form.append('photo', { uri, name: fileName, type: mimeType } as any);
       }
       const { data } = await api.post<{ photoUrl: string }>('/user/profile/photo', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       await profileSource.saveProfile({ ...current, photoUrl: data.photoUrl });
       return { photoUrl: data.photoUrl };
-    } catch {
-      await profileSource.saveProfile({ ...current, photoUrl: uri });
-      return { photoUrl: uri };
+    } catch (e) {
+      throw new Error(extractMessage(e));
     }
   },
 

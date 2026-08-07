@@ -66,13 +66,19 @@ function EditProfileForm({ initialProfile }: { initialProfile: UserProfile }) {
     });
     if (result.canceled) return;
 
-    const uri = result.assets[0].uri;
+    const asset = result.assets[0];
+    const uri = asset.uri;
+    const previous = form.photoUrl;
     setForm((f) => ({ ...f, photoUrl: uri }));
     setUploading(true);
     try {
-      const { photoUrl } = await userService.uploadProfilePhoto(uri);
+      const { photoUrl } = await userService.uploadProfilePhoto(uri, {
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      });
       setForm((f) => ({ ...f, photoUrl }));
     } catch (e: any) {
+      setForm((f) => ({ ...f, photoUrl: previous }));
       setPhotoError(e?.message ?? 'No se pudo subir la foto.');
     } finally {
       setUploading(false);

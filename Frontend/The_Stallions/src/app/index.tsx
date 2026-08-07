@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Redirect } from 'expo-router';
-import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuth } from '../context/AuthContext';
+import * as biometrics from '../services/biometrics';
 import { localSettings, type LocalSettings } from '../services/localSettings';
 
 const BIOMETRICS_SUPPORTED = Platform.OS !== 'web';
@@ -27,7 +27,7 @@ function BiometricGate({ children }: { children: React.ReactNode }) {
     setPrompting(true);
     setError('');
     try {
-      const { success } = await LocalAuthentication.authenticateAsync({
+      const { success } = await biometrics.authenticateAsync({
         promptMessage: 'Desbloqueá la app',
         cancelLabel: 'Cancelar',
         disableDeviceFallback: false,
