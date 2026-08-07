@@ -1,6 +1,7 @@
 package com.aplicacion.movil.the_stallions.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +27,30 @@ public class User {
 
     @Column(name = "ProviderId")
     private String providerId;
+
+    @Column(name = "PhotoUrl")
+    private String photoUrl;
+
+    @Column(name = "Username", unique = true)
+    private String username;
+
+    @Column(name = "Phone")
+    private String phone;
+
+    @Column(name = "BirthDate")
+    private LocalDate birthDate;
+
+    @Column(name = "Gender")
+    private String gender;
+
+    @Column(name = "City")
+    private String city;
+
+    @Column(name = "Bio", length = 2000)
+    private String bio;
+
+    @Column(name = "TwoFactorEnabled", nullable = false)
+    private boolean twoFactorEnabled = false;
 
     @Column(name = "IsEnabled", nullable = false)
     private boolean enabled = true;
@@ -84,6 +109,70 @@ public class User {
 
     public void setProviderId(String providerId) {
         this.providerId = providerId;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public boolean isTwoFactorEnabled() {
+        return twoFactorEnabled;
+    }
+
+    public void setTwoFactorEnabled(boolean twoFactorEnabled) {
+        this.twoFactorEnabled = twoFactorEnabled;
     }
 
     public boolean isEnabled() {
