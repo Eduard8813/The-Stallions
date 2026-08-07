@@ -20,11 +20,19 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
   const { t } = useLang();
 
-  const handleGoogleToken = async (idToken: string) => {
+  const handleGoogleToken = async (
+    idToken: string,
+    googleProfile?: { name: string; email: string; photo: string | null }
+  ) => {
     try {
       setLoading(true);
       const { data } = await authService.googleAuth(idToken);
-      await signIn(data);
+      await signIn({
+        token: data.token,
+        email: googleProfile?.email || data.email,
+        fullName: googleProfile?.name || data.fullName,
+        photo: googleProfile?.photo,
+      });
       router.replace('/(tabs)');
     } catch (e: any) {
       console.error('Google login backend error:', e.response?.status, e.response?.data, e.message);

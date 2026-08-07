@@ -4,19 +4,20 @@
     "slug": "the-stallions",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Icono-principal.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "thestallions",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/Icono-principal.png"
+      "icon": "./assets/images/app-icon.png"
     },
     "android": {
       "package": "com.eduard8813steam.thestallions",
       "googleServicesFile": "./google-services.json",
       "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "foregroundImage": "./assets/images/app-icon-foreground.png",
+        "monochromeImage": "./assets/images/app-icon-monochrome.png",
         "backgroundColor": "#0B1F3A"
       }
     },
@@ -30,13 +31,21 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0B1F3A",
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/app-icon.png",
           "imageWidth": 220
         }
       ],
       "expo-secure-store",
       "expo-web-browser",
       "@react-native-google-signin/google-signin",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permitir que Wani Connect acceda a tus fotos para cambiar tu foto de perfil.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       [
         "expo-location",
         {

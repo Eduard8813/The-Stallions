@@ -28,22 +28,30 @@ export function AuthProvider({ children }) {
       const token = await storage.get('authToken');
       const email = await storage.get('userEmail');
       const fullName = await storage.get('userFullName');
-      if (token && email) setUser({ email, fullName });
+      const photo = await storage.get('userPhoto');
+      if (token && email) setUser({ email, fullName, photo });
       setLoading(false);
     })();
   }, []);
 
-  const signIn = async ({ token, email, fullName }) => {
+  const signIn = async ({ token, email, fullName, photo }) => {
     await storage.set('authToken', token);
     await storage.set('userEmail', email);
     await storage.set('userFullName', fullName || '');
-    setUser({ email, fullName });
+    if (photo) {
+      await storage.set('userPhoto', photo);
+    } else {
+      await storage.remove('userPhoto');
+    }
+    setUser({ email, fullName, photo: photo || null });
   };
 
   const signOut = async () => {
     await storage.remove('authToken');
     await storage.remove('userEmail');
     await storage.remove('userFullName');
+    await storage.remove('userPhoto');
+    await storage.remove('profilePhoto');
     setUser(null);
   };
 
