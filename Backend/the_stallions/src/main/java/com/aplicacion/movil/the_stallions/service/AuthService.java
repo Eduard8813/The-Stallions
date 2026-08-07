@@ -71,7 +71,7 @@ public class AuthService {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
-        if (user.isTwoFactorEnabled()) {
+        if (requiresTwoFactor(user)) {
             return requireTwoFactor(user);
         }
 
@@ -102,11 +102,26 @@ public class AuthService {
         }
         userRepository.save(user);
 
-        if (user.isTwoFactorEnabled()) {
+        if (requiresTwoFactor(user)) {
             return requireTwoFactor(user);
         }
 
         return buildAuthResponse(user, userAgent, clientIp);
+    }
+
+    /**
+     * Solo se exige 2FA si el usuario tiene un secreto TOTP configurado.
+     * Los usuarios que activaron el 2FA viejo por correo quedaron con
+     * TwoFactorEnabled=1 pero sin secreto; se les desactiva el 2FA para que
+     * puedan entrar normal hasta que lo vuelvan a activar desde Seguridad.
+     */
+    private boolean requiresTwoFactor(User user) {
+        if (user.isTwoFactorEnabled() && (user.getTotpSecret() == null || user.getTotpSecret().isBlank())) {
+            user.setTwoFactorEnabled(false);
+            userRepository.save(user);
+            return false;
+        }
+        return user.isTwoFactorEnabled();
     }
 
     /**
