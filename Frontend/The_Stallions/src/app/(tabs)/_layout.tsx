@@ -1,11 +1,24 @@
-import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Tabs, Redirect } from 'expo-router';
+import { Text, View, ActivityIndicator } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 
 const icon = (emoji: string) =>
   ({ color }: { color: string }) =>
     <Text style={{ fontSize: 22, color }}>{emoji}</Text>;
 
 export default function TabsLayout() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (!user) return <Redirect href="/(auth)/login" />;
+
   return (
     <Tabs
       screenOptions={{
