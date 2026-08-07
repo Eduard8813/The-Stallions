@@ -1,5 +1,7 @@
 package com.aplicacion.movil.the_stallions.security;
 
+import com.aplicacion.movil.the_stallions.model.UserSession;
+import com.aplicacion.movil.the_stallions.repository.UserSessionRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,9 +18,11 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
+    private final UserSessionRepository userSessionRepository;
 
-    public JwtAuthenticationFilter(JwtUtils jwtUtils) {
+    public JwtAuthenticationFilter(JwtUtils jwtUtils, UserSessionRepository userSessionRepository) {
         this.jwtUtils = jwtUtils;
+        this.userSessionRepository = userSessionRepository;
     }
 
     @Override
@@ -32,8 +36,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (jwtUtils.isTokenValid(token)) {
                 String email = jwtUtils.getEmailFromToken(token);
-                var auth = new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                String tokenId = jwtUtils.getTokenIdFromToken(token);
+                UserSession session = tokenId != null
+                        ? userSessionRepository.findByTokenId(tokenId).orElse(null)
+                        : null;
+
+                if (session != null && session.isActive()) {
+                    var auth = new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+                    auth.setDetails(session.getId());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
             }
         }
         filterChain.doFilter(request, response);
