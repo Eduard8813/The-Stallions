@@ -46,6 +46,9 @@ const translations = {
     twoFactorError: 'Ingresá el código de 6 dígitos.',
     twoFactorInvalid: 'El código es incorrecto o expiró.',
     twoFactorBack: 'Volver a iniciar sesión',
+    twoFactorResend: 'Reenviar código',
+    twoFactorResent: 'Te enviamos un código nuevo a {email}',
+    twoFactorResendWait: 'Podés reenviar en {seconds}s',
     locationUnavailableTitle: 'Mapa no disponible',
     locationUnavailableMessage:
       'La versión instalada de la app no incluye el módulo de ubicación. Instala el dev build actualizado e inténtalo de nuevo.',
@@ -95,6 +98,9 @@ const translations = {
     twoFactorError: 'Enter the 6-digit code.',
     twoFactorInvalid: 'The code is incorrect or expired.',
     twoFactorBack: 'Back to login',
+    twoFactorResend: 'Resend code',
+    twoFactorResent: 'We sent a new code to {email}',
+    twoFactorResendWait: 'You can resend in {seconds}s',
     locationUnavailableTitle: 'Map unavailable',
     locationUnavailableMessage:
       'The installed app version does not include the location module. Install the updated dev build and try again.',
