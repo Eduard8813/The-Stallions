@@ -9,6 +9,8 @@ import com.aplicacion.movil.the_stallions.service.UserService;
 import tools.jackson.databind.JsonNode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +44,15 @@ public class UserController {
     public ResponseEntity<PhotoResponse> uploadPhoto(@RequestParam("photo") MultipartFile file,
                                                      HttpServletRequest request) {
         return ResponseEntity.ok(userService.updatePhoto(file, request));
+    }
+
+    @GetMapping("/photo/{userId}")
+    public ResponseEntity<byte[]> getPhoto(@PathVariable Long userId) {
+        UserService.UserPhoto photo = userService.getPhoto(userId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(photo.contentType() != null ? photo.contentType() : "image/jpeg"))
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=86400")
+                .body(photo.bytes());
     }
 
     // Seguridad

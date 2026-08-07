@@ -12,18 +12,17 @@ import com.aplicacion.movil.the_stallions.repository.UserRepository;
 import com.aplicacion.movil.the_stallions.repository.UserSessionRepository;
 import com.aplicacion.movil.the_stallions.config.FirebaseTokenService;
 import com.aplicacion.movil.the_stallions.security.JwtUtils;
+import com.aplicacion.movil.the_stallions.security.TOTP;
 import com.google.firebase.auth.FirebaseToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 public class AuthService {
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int TWO_FACTOR_CODE_MINUTES = 5;
 
     private final UserRepository userRepository;
@@ -32,20 +31,17 @@ public class AuthService {
     private final FirebaseTokenService firebaseTokenService;
     private final UserSessionRepository userSessionRepository;
     private final TwoFactorChallengeRepository twoFactorChallengeRepository;
-    private final EmailService emailService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                         JwtUtils jwtUtils, FirebaseTokenService firebaseTokenService,
                         UserSessionRepository userSessionRepository,
-                        TwoFactorChallengeRepository twoFactorChallengeRepository,
-                        EmailService emailService) {
+                        TwoFactorChallengeRepository twoFactorChallengeRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.firebaseTokenService = firebaseTokenService;
         this.userSessionRepository = userSessionRepository;
         this.twoFactorChallengeRepository = twoFactorChallengeRepository;
-        this.emailService = emailService;
     }
 
     public AuthResponse register(RegisterRequest request, String userAgent, String clientIp) {
@@ -114,28 +110,24 @@ public class AuthService {
     }
 
     /**
-     * Genera un código de 6 dígitos, lo guarda como desafío (5 min) y lo envía
-     * por email. Devuelve una respuesta sin token que indica que falta el 2FA.
+     * Crea un desafío 2FA pendiente (5 min) y devuelve una respuesta sin token
+     * que indica que falta verificar el código TOTP de la app de autenticación.
      */
     private AuthResponse requireTwoFactor(User user) {
-        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
-
         TwoFactorChallenge challenge = new TwoFactorChallenge();
         challenge.setChallengeId(UUID.randomUUID().toString());
         challenge.setEmail(user.getEmail());
-        challenge.setCodeHash(passwordEncoder.encode(code));
+        challenge.setCodeHash("totp");
         challenge.setExpiresAt(LocalDateTime.now().plusMinutes(TWO_FACTOR_CODE_MINUTES));
         challenge.setUsed(false);
         twoFactorChallengeRepository.save(challenge);
-
-        emailService.sendVerificationCode(user.getEmail(), code);
 
         return new AuthResponse(null, user.getEmail(), user.getFullName(), true, challenge.getChallengeId());
     }
 
     /**
-     * Valida el código 2FA de un desafío pendiente y, si es correcto, crea la
-     * sesión y devuelve el token igual que un login normal.
+     * Valida el código TOTP del desafío pendiente contra el secreto del usuario
+     * y, si es correcto, crea la sesión y devuelve el token igual que un login normal.
      */
     public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request, String userAgent, String clientIp) {
         TwoFactorChallenge challenge = twoFactorChallengeRepository
@@ -145,23 +137,24 @@ public class AuthService {
         if (challenge.isUsed() || challenge.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Código inválido o expirado");
         }
-        if (!passwordEncoder.matches(request.getCode(), challenge.getCodeHash())) {
+
+        User user = userRepository.findByEmail(challenge.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("Código inválido o expirado"));
+
+        if (!TOTP.verify(user.getTotpSecret(), request.getCode(), 1)) {
             throw new IllegalArgumentException("Código incorrecto");
         }
 
         challenge.setUsed(true);
         twoFactorChallengeRepository.save(challenge);
 
-        User user = userRepository.findByEmail(challenge.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Código inválido o expirado"));
-
         return buildAuthResponse(user, userAgent, clientIp);
     }
 
     /**
-     * Reenvía un código 2FA nuevo reutilizando el mismo desafío: renueva el
-     * hash del código y la expiración a 5 minutos, sin invalidar el challengeId
-     * que ya conoce el frontend.
+     * Reenvío de 2FA: con TOTP no hay reenvío (el código se regenera solo cada
+     * 30 segundos en la app de autenticación). Se valida el desafío y se responde
+     * OK para no romper el flujo existente en el frontend.
      */
     public SuccessResponse resendTwoFactor(ResendTwoFactorRequest request) {
         TwoFactorChallenge challenge = twoFactorChallengeRepository
@@ -171,14 +164,6 @@ public class AuthService {
         if (challenge.isUsed()) {
             throw new IllegalArgumentException("Código inválido o expirado");
         }
-
-        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
-        challenge.setCodeHash(passwordEncoder.encode(code));
-        challenge.setExpiresAt(LocalDateTime.now().plusMinutes(TWO_FACTOR_CODE_MINUTES));
-        challenge.setUsed(false);
-        twoFactorChallengeRepository.save(challenge);
-
-        emailService.sendVerificationCode(challenge.getEmail(), code);
 
         return new SuccessResponse(true);
     }

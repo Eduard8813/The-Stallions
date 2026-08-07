@@ -31,6 +31,13 @@ public class User {
     @Column(name = "PhotoUrl")
     private String photoUrl;
 
+    @Lob
+    @Column(name = "PhotoData")
+    private byte[] photoData;
+
+    @Column(name = "PhotoContentType", length = 100)
+    private String photoContentType;
+
     @Column(name = "Username", unique = true)
     private String username;
 
@@ -51,6 +58,9 @@ public class User {
 
     @Column(name = "TwoFactorEnabled", nullable = false)
     private boolean twoFactorEnabled = false;
+
+    @Column(name = "TotpSecret", length = 64)
+    private String totpSecret;
 
     @Column(name = "IsEnabled", nullable = false)
     private boolean enabled = true;
@@ -119,6 +129,22 @@ public class User {
         this.photoUrl = photoUrl;
     }
 
+    public byte[] getPhotoData() {
+        return photoData;
+    }
+
+    public void setPhotoData(byte[] photoData) {
+        this.photoData = photoData;
+    }
+
+    public String getPhotoContentType() {
+        return photoContentType;
+    }
+
+    public void setPhotoContentType(String photoContentType) {
+        this.photoContentType = photoContentType;
+    }
+
     public String getUsername() {
         return username;
     }
@@ -173,6 +199,14 @@ public class User {
 
     public void setTwoFactorEnabled(boolean twoFactorEnabled) {
         this.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
     }
 
     public boolean isEnabled() {
