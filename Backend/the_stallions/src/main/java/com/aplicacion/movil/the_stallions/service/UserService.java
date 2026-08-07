@@ -6,6 +6,7 @@ import com.aplicacion.movil.the_stallions.dto.Response.*;
 import com.aplicacion.movil.the_stallions.exception.NotFoundException;
 import com.aplicacion.movil.the_stallions.model.*;
 import com.aplicacion.movil.the_stallions.repository.*;
+import com.aplicacion.movil.the_stallions.security.TOTP;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -18,9 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,8 +44,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.upload-dir:uploads}")
-    private String uploadDir;
+    @Value("${app.base-url:}")
+    private String baseUrlOverride;
 
     public UserService(UserRepository userRepository, UserSessionRepository userSessionRepository,
                        LinkedAccountRepository linkedAccountRepository, BlockedUserRepository blockedUserRepository,
@@ -121,34 +119,49 @@ public class UserService {
         }
 
         try {
-            Path dir = Paths.get(uploadDir);
-            Files.createDirectories(dir);
+            byte[] bytes = file.getBytes();
+            String contentType = file.getContentType();
 
-            String original = Optional.ofNullable(file.getOriginalFilename()).orElse("photo.jpg");
-            String extension = original.contains(".")
-                    ? original.substring(original.lastIndexOf('.')) : ".jpg";
-            String filename = user.getId() + "-" + System.currentTimeMillis() + extension;
-            Path target = dir.resolve(filename);
-            file.transferTo(target.toFile());
-
-            String relative = "/uploads/" + filename;
-            String baseUrl = request.getRequestURL().toString().replace(request.getRequestURI(), "");
-            String photoUrl = baseUrl + request.getContextPath() + relative;
-
-            user.setPhotoUrl(photoUrl);
+            user.setPhotoData(bytes);
+            user.setPhotoContentType(contentType);
+            user.setPhotoUrl(buildPhotoUrl(request, user.getId(), System.currentTimeMillis()));
             user.setUpdatedAt(LocalDateTime.now());
             userRepository.save(user);
 
-            return new PhotoResponse(photoUrl);
+            return new PhotoResponse(user.getPhotoUrl());
         } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar la imagen");
+            throw new IllegalStateException("No se pudo leer la imagen seleccionada");
         }
     }
+
+    public UserPhoto getPhoto(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        if (user.getPhotoData() == null) {
+            throw new NotFoundException("El usuario no tiene foto");
+        }
+        return new UserPhoto(user.getPhotoData(), user.getPhotoContentType());
+    }
+
+    private String buildPhotoUrl(HttpServletRequest request, Long userId, long version) {
+        String baseUrl = (baseUrlOverride != null && !baseUrlOverride.isBlank())
+                ? baseUrlOverride
+                : request.getRequestURL().toString().replace(request.getRequestURI(), "");
+        return baseUrl + request.getContextPath() + "/api/user/photo/" + userId + "?v=" + version;
+    }
+
+    public record UserPhoto(byte[] bytes, String contentType) {}
 
     // ---------- Seguridad ----------
 
     public SecurityResponse getSecuritySettings() {
-        return new SecurityResponse(currentUser().isTwoFactorEnabled());
+        User user = currentUser();
+        SecurityResponse response = new SecurityResponse(user.isTwoFactorEnabled());
+        if (user.isTwoFactorEnabled() && user.getTotpSecret() != null) {
+            response.setSecret(user.getTotpSecret());
+            response.setOtpAuthUrl(TOTP.buildOtpAuthUrl(user.getTotpSecret(), user.getEmail()));
+        }
+        return response;
     }
 
     public SuccessResponse changePassword(ChangePasswordRequest request) {
@@ -171,8 +184,17 @@ public class UserService {
         User user = currentUser();
         user.setTwoFactorEnabled(enabled);
         user.setUpdatedAt(LocalDateTime.now());
+        if (enabled && (user.getTotpSecret() == null || user.getTotpSecret().isBlank())) {
+            user.setTotpSecret(TOTP.generateSecret());
+        }
         userRepository.save(user);
-        return new SecurityResponse(enabled);
+
+        SecurityResponse response = new SecurityResponse(enabled);
+        if (enabled && user.getTotpSecret() != null) {
+            response.setSecret(user.getTotpSecret());
+            response.setOtpAuthUrl(TOTP.buildOtpAuthUrl(user.getTotpSecret(), user.getEmail()));
+        }
+        return response;
     }
 
     // ---------- Sesiones ----------
