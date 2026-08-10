@@ -1,7 +1,6 @@
 package com.aplicacion.movil.the_stallions.controller;
 
 import com.aplicacion.movil.the_stallions.dto.Request.ChangePasswordRequest;
-import com.aplicacion.movil.the_stallions.dto.Request.LinkAccountRequest;
 import com.aplicacion.movil.the_stallions.dto.Request.TwoFactorRequest;
 import com.aplicacion.movil.the_stallions.dto.Request.UpdateProfileRequest;
 import com.aplicacion.movil.the_stallions.dto.Response.*;
@@ -82,23 +81,6 @@ public class UserController {
     @DeleteMapping("/sessions/{id}")
     public ResponseEntity<RevokedResponse> revokeSession(@PathVariable Long id) {
         return ResponseEntity.ok(userService.revokeSession(id));
-    }
-
-    // Cuentas vinculadas
-
-    @GetMapping("/accounts")
-    public ResponseEntity<List<LinkedAccountResponse>> getLinkedAccounts() {
-        return ResponseEntity.ok(userService.getLinkedAccounts());
-    }
-
-    @PostMapping("/accounts")
-    public ResponseEntity<LinkedAccountResponse> linkAccount(@Valid @RequestBody LinkAccountRequest request) {
-        return ResponseEntity.ok(userService.linkAccount(request.getProvider()));
-    }
-
-    @DeleteMapping("/accounts/{provider}")
-    public ResponseEntity<UnlinkedResponse> unlinkAccount(@PathVariable String provider) {
-        return ResponseEntity.ok(userService.unlinkAccount(provider));
     }
 
     // Notificaciones
