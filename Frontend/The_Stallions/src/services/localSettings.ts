@@ -6,6 +6,7 @@ import { storage } from './storage';
  */
 export interface LocalSettings {
   biometricsEnabled: boolean;
+  notificationChannelId?: string;
   permissions: {
     location: boolean;
     notifications: boolean;

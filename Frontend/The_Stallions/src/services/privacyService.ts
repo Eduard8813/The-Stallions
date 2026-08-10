@@ -1,11 +1,14 @@
 import { EVENTS, events } from './events';
 import { mockRequest } from './mockApi';
+import { storage } from './storage';
 import type {
   BlockedUser,
   DataExportResult,
   PrivacySettings,
   PrivacySettingsPatch,
 } from './userTypes';
+
+const STORAGE_KEY = 'privacySettings';
 
 const EMPTY_PRIVACY: PrivacySettings = {
   visibility: 'public',
@@ -18,14 +21,18 @@ const EMPTY_PRIVACY: PrivacySettings = {
 export const privacyService = {
   /** GET /user/privacy — Configuración de privacidad. */
   async getSettings(): Promise<PrivacySettings> {
+    const saved = await storage.get<PrivacySettings>(STORAGE_KEY);
     // Real: return (await api.get('/user/privacy')).data;
-    return mockRequest<PrivacySettings>(() => ({ ...EMPTY_PRIVACY }));
+    return mockRequest<PrivacySettings>(() => ({ ...(saved ?? EMPTY_PRIVACY) }));
   },
 
-  /** PATCH /user/privacy — Actualizar privacidad (merge parcial). */
+  /** PATCH /user/privacy — Actualizar privacidad (merge parcial, persistente). */
   async updateSettings(patch: PrivacySettingsPatch): Promise<PrivacySettings> {
+    const saved = await storage.get<PrivacySettings>(STORAGE_KEY);
+    const merged = { ...(saved ?? EMPTY_PRIVACY), ...patch };
+    await storage.set(STORAGE_KEY, merged);
     // Real: return (await api.patch('/user/privacy', patch)).data;
-    return mockRequest<PrivacySettings>(() => ({ ...EMPTY_PRIVACY, ...patch }));
+    return mockRequest<PrivacySettings>(() => ({ ...merged }));
   },
 
   /** GET /user/blocked — Usuarios bloqueados. */
