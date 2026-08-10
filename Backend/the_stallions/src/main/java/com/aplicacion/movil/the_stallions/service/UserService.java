@@ -29,14 +29,12 @@ import java.util.*;
 public class UserService {
 
     private static final DateTimeFormatter BIRTH_DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final List<String> ALLOWED_PROVIDERS = List.of("google", "apple", "facebook");
     private static final List<String> ALLOWED_GENDERS = List.of("male", "female", "other", "prefer_not_to_say");
     private static final List<String> ALLOWED_VISIBILITIES = List.of("public", "contacts", "private");
     private static final long MAX_PHOTO_BYTES = 10L * 1024 * 1024;
 
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
-    private final LinkedAccountRepository linkedAccountRepository;
     private final BlockedUserRepository blockedUserRepository;
     private final UserNotificationsRepository userNotificationsRepository;
     private final UserPrivacyRepository userPrivacyRepository;
@@ -48,13 +46,12 @@ public class UserService {
     private String baseUrlOverride;
 
     public UserService(UserRepository userRepository, UserSessionRepository userSessionRepository,
-                       LinkedAccountRepository linkedAccountRepository, BlockedUserRepository blockedUserRepository,
+                       BlockedUserRepository blockedUserRepository,
                        UserNotificationsRepository userNotificationsRepository, UserPrivacyRepository userPrivacyRepository,
                        DataExportRepository dataExportRepository, PasswordEncoder passwordEncoder,
                        ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
-        this.linkedAccountRepository = linkedAccountRepository;
         this.blockedUserRepository = blockedUserRepository;
         this.userNotificationsRepository = userNotificationsRepository;
         this.userPrivacyRepository = userPrivacyRepository;
@@ -235,51 +232,6 @@ public class UserService {
         return new RevokedResponse(true);
     }
 
-    // ---------- Cuentas vinculadas ----------
-
-    public List<LinkedAccountResponse> getLinkedAccounts() {
-        User user = currentUser();
-        Map<String, LinkedAccount> linked = new HashMap<>();
-        linkedAccountRepository.findByUserId(user.getId())
-                .forEach(a -> linked.put(a.getProvider(), a));
-
-        return ALLOWED_PROVIDERS.stream().map(provider -> {
-            LinkedAccountResponse response = new LinkedAccountResponse();
-            response.setProvider(provider);
-            LinkedAccount account = linked.get(provider);
-            response.setConnected(account != null);
-            response.setEmail(account != null ? account.getAccountEmail() : null);
-            return response;
-        }).toList();
-    }
-
-    public LinkedAccountResponse linkAccount(String provider) {
-        User user = currentUser();
-        String normalized = normalizeProvider(provider);
-
-        LinkedAccount account = linkedAccountRepository.findByUserIdAndProvider(user.getId(), normalized)
-                .orElseGet(() -> {
-                    LinkedAccount created = new LinkedAccount();
-                    created.setUser(user);
-                    created.setProvider(normalized);
-                    created.setAccountEmail(normalized.equals("google") ? user.getEmail() : null);
-                    return linkedAccountRepository.save(created);
-                });
-
-        LinkedAccountResponse response = new LinkedAccountResponse();
-        response.setProvider(normalized);
-        response.setConnected(true);
-        response.setEmail(account.getAccountEmail());
-        return response;
-    }
-
-    public UnlinkedResponse unlinkAccount(String provider) {
-        User user = currentUser();
-        String normalized = normalizeProvider(provider);
-        linkedAccountRepository.deleteByUserIdAndProvider(user.getId(), normalized);
-        return new UnlinkedResponse(false);
-    }
-
     // ---------- Notificaciones ----------
 
     public JsonNode getNotificationSettings() {
@@ -381,7 +333,6 @@ public class UserService {
         userNotificationsRepository.deleteByUserId(userId);
         userPrivacyRepository.deleteByUserId(userId);
         blockedUserRepository.deleteByUserId(userId);
-        linkedAccountRepository.deleteByUserId(userId);
         userSessionRepository.deleteByUserId(userId);
         userRepository.delete(user);
 
@@ -459,13 +410,6 @@ public class UserService {
             throw new IllegalArgumentException("Género no válido");
         }
         return value;
-    }
-
-    private String normalizeProvider(String provider) {
-        if (provider == null || !ALLOWED_PROVIDERS.contains(provider.toLowerCase())) {
-            throw new IllegalArgumentException("Proveedor no válido");
-        }
-        return provider.toLowerCase();
     }
 
     private ObjectNode loadNotifications(User user) {
