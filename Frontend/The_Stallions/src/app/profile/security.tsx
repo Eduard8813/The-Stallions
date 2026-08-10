@@ -6,7 +6,7 @@ import { userService } from '../../services/userService';
 import { localSettings } from '../../services/localSettings';
 import { EVENTS, events } from '../../services/events';
 import { colors } from '../../constants/ui';
-import type { AccountProvider, LinkedAccount, UserSession } from '../../services/userTypes';
+import type { UserSession } from '../../services/userTypes';
 import CenterLoading from '../../components/profile/CenterLoading';
 import ErrorState from '../../components/profile/ErrorState';
 import Section from '../../components/profile/Section';
@@ -14,27 +14,13 @@ import Field from '../../components/profile/Field';
 import ToggleRow from '../../components/profile/ToggleRow';
 import ListRow from '../../components/profile/ListRow';
 import Button from '../../components/profile/Button';
-import ConfirmModal from '../../components/profile/ConfirmModal';
 import CenteredBox from '../../components/profile/CenteredBox';
 import TOTPSetupModal from '../../components/profile/TOTPSetupModal';
 
 interface SecurityData {
   twoFactorEnabled: boolean;
   sessions: UserSession[];
-  accounts: LinkedAccount[];
 }
-
-const PROVIDER_LABELS: Record<AccountProvider, string> = {
-  google: 'Google',
-  apple: 'Apple',
-  facebook: 'Facebook',
-};
-
-const PROVIDER_ICONS: Record<AccountProvider, string> = {
-  google: '🔴',
-  apple: '',
-  facebook: '🔵',
-};
 
 function platformIcon(session: UserSession): string {
   if (session.platform === 'ios') return '📱';
@@ -51,10 +37,6 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
 
   const [sessions, setSessions] = useState(initial.sessions);
   const [revokingId, setRevokingId] = useState<string | null>(null);
-
-  const [accounts, setAccounts] = useState(initial.accounts);
-  const [pendingAccount, setPendingAccount] = useState<AccountProvider | null>(null);
-  const [confirmUnlink, setConfirmUnlink] = useState<AccountProvider | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -126,6 +108,14 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
         setBanner('Este dispositivo no tiene huella o Face ID configurado.');
         return;
       }
+      const auth = await biometricsService.authenticateAsync({
+        promptMessage: 'Confirmá tu identidad para activar el desbloqueo biométrico',
+        cancelLabel: 'Cancelar',
+      });
+      if (!auth.success) {
+        setBanner('No se pudo verificar tu identidad. Intentá de nuevo.');
+        return;
+      }
     }
     const previous = biometrics;
     setBiometrics(value);
@@ -148,32 +138,6 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
       setSessions((list) => list.filter((s) => s.id !== session.id));
     } finally {
       setRevokingId(null);
-    }
-  };
-
-  const handleLink = async (provider: AccountProvider) => {
-    setPendingAccount(provider);
-    setBanner('');
-    try {
-      const account = await userService.linkAccount(provider);
-      setAccounts((list) => list.map((a) => (a.provider === provider ? account : a)));
-    } catch (e: any) {
-      setBanner(e?.message ?? 'No se pudo vincular la cuenta.');
-    } finally {
-      setPendingAccount(null);
-    }
-  };
-
-  const handleUnlink = async (provider: AccountProvider) => {
-    setConfirmUnlink(null);
-    setPendingAccount(provider);
-    try {
-      await userService.unlinkAccount(provider);
-      setAccounts((list) => list.map((a) => (a.provider === provider ? { ...a, connected: false, email: null } : a)));
-    } catch (e: any) {
-      setBanner(e?.message ?? 'No se pudo desvincular la cuenta.');
-    } finally {
-      setPendingAccount(null);
     }
   };
 
@@ -231,42 +195,6 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
         )}
       </Section>
 
-      <Section title="Cuentas vinculadas">
-        {accounts.map((account) => (
-          <ListRow
-            key={account.provider}
-            icon={PROVIDER_ICONS[account.provider] || '🍎'}
-            title={PROVIDER_LABELS[account.provider]}
-            subtitle={account.connected ? account.email ?? 'Vinculada' : 'No vinculada'}
-            last={account === accounts[accounts.length - 1]}
-            right={
-              pendingAccount === account.provider ? (
-                <Text style={styles.miniBtnText}>…</Text>
-              ) : account.connected ? (
-                <TouchableOpacity onPress={() => setConfirmUnlink(account.provider)} style={styles.miniBtn} activeOpacity={0.7}>
-                  <Text style={styles.miniBtnTextDanger}>Desvincular</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity onPress={() => handleLink(account.provider)} style={styles.miniBtn} activeOpacity={0.7}>
-                  <Text style={styles.miniBtnText}>Vincular</Text>
-                </TouchableOpacity>
-              )
-            }
-          />
-        ))}
-      </Section>
-
-      <ConfirmModal
-        visible={!!confirmUnlink}
-        title={`¿Desvincular ${confirmUnlink ? PROVIDER_LABELS[confirmUnlink] : ''}?`}
-        message="Dejarás de usar esta cuenta para iniciar sesión en Wani Connect."
-        confirmLabel="Desvincular"
-        destructive
-        loading={pendingAccount === confirmUnlink}
-        onConfirm={() => confirmUnlink && handleUnlink(confirmUnlink)}
-        onCancel={() => setConfirmUnlink(null)}
-      />
-
       <TOTPSetupModal
         visible={!!setupData}
         secret={setupData?.secret ?? ''}
@@ -279,12 +207,11 @@ function SecurityContent({ initial }: { initial: SecurityData }) {
 
 export default function SecurityScreen() {
   const load = async (): Promise<SecurityData> => {
-    const [settings, sessions, accounts] = await Promise.all([
+    const [settings, sessions] = await Promise.all([
       userService.getSecuritySettings(),
       userService.getSessions(),
-      userService.getLinkedAccounts(),
     ]);
-    return { twoFactorEnabled: settings.twoFactorEnabled, sessions, accounts };
+    return { twoFactorEnabled: settings.twoFactorEnabled, sessions };
   };
   const { data, loading, error, refetch } = useAsync(load);
 

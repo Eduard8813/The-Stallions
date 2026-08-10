@@ -3,6 +3,7 @@ import { Slot, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { LangProvider } from '../context/LangContext';
 import { EVENTS, events } from '../services/events';
+import BiometricUnlockGate from '../components/BiometricUnlockGate';
 
 /**
  * Listens to global auth events (session expired, logged out) emitted by the
@@ -33,7 +34,9 @@ export default function RootLayout() {
     <LangProvider>
       <AuthProvider>
         <SessionBridge />
-        <Slot />
+        <BiometricUnlockGate>
+          <Slot />
+        </BiometricUnlockGate>
       </AuthProvider>
     </LangProvider>
   );

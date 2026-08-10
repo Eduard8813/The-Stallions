@@ -51,6 +51,14 @@
         {
           "locationWhenInUsePermission": "Permitir que $(PRODUCT_NAME) use tu ubicacion para mostrar rutas turisticas."
         }
+      ],
+      "expo-image",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default",
+          "color": "#6366F1"
+        }
       ]
     ],
     "experiments": {

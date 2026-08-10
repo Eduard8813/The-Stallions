@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Modal, View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Image } from 'expo-image';
 import qrcodeFactory from 'qrcode-generator';
 import { colors } from '../../constants/ui';
 import Button from './Button';
@@ -11,33 +12,15 @@ interface TOTPSetupModalProps {
   onClose: () => void;
 }
 
-function QRCode({ value, size }: { value: string; size: number }) {
-  const { count, dark } = useMemo(() => {
+function QRImage({ value, size }: { value: string; size: number }) {
+  const source = useMemo(() => {
     const qr = qrcodeFactory(0, 'M');
     qr.addData(value);
     qr.make();
-    const c = qr.getModuleCount();
-    const grid = Array.from({ length: c }, (_, r) =>
-      Array.from({ length: c }, (_, col) => qr.isDark(r, col))
-    );
-    return { count: c, dark: grid };
+    return { uri: qr.createDataURL(8, 2) };
   }, [value]);
 
-  const cellSize = Math.max(2, Math.floor(size / count));
-  const margin = 10;
-  const side = count * cellSize;
-
-  return (
-    <View style={[styles.qrBox, { width: side + margin * 2, height: side + margin * 2, padding: margin }]}>
-      {dark.map((row, r) => (
-        <View key={r} style={styles.qrRow}>
-          {row.map((isDark, c) => (
-            <View key={c} style={[styles.qrCell, { width: cellSize, height: cellSize }, isDark && styles.qrCellDark]} />
-          ))}
-        </View>
-      ))}
-    </View>
-  );
+  return <Image source={source} style={{ width: size, height: size }} contentFit="contain" />;
 }
 
 function groupSecret(secret: string): string {
@@ -54,7 +37,7 @@ export default function TOTPSetupModal({ visible, secret, otpAuthUrl, onClose }:
             <Text style={styles.subtitle}>Abrí Google Authenticator o Authy y agregá esta cuenta.</Text>
 
             <View style={styles.qrWrap}>
-              <QRCode value={otpAuthUrl ?? secret} size={240} />
+              <QRImage value={otpAuthUrl ?? secret} size={220} />
             </View>
 
             <Text style={styles.hint}>¿No podés escanearlo? Ingresá la clave manualmente:</Text>
@@ -98,14 +81,6 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  qrBox: {
-    backgroundColor: '#fff',
-    borderRadius: 6,
-    alignSelf: 'center',
-  },
-  qrRow: { flexDirection: 'row' },
-  qrCell: { backgroundColor: '#fff' },
-  qrCellDark: { backgroundColor: '#111827' },
   hint: { fontSize: 12, color: colors.subtext, textAlign: 'center', marginBottom: 8 },
   secret: {
     fontSize: 15,

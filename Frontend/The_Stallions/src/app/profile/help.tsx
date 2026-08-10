@@ -10,7 +10,6 @@ import DeleteAccountModal from '../../components/profile/DeleteAccountModal';
 import CenteredBox from '../../components/profile/CenteredBox';
 
 const SUPPORT_ITEMS = [
-  { icon: '📖', title: 'Centro de ayuda', subtitle: 'Guías, preguntas frecuentes y tutoriales' },
   { icon: '💬', title: 'Contactar soporte', subtitle: 'Escribinos y te respondemos a la brevedad' },
   { icon: '📄', title: 'Términos y Condiciones', subtitle: 'Reglas de uso de Wani Connect' },
   { icon: '🛡️', title: 'Política de privacidad', subtitle: 'Cómo usamos y protegemos tus datos' },
