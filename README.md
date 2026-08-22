@@ -38,6 +38,11 @@ Wani connect es una aplicación móvil (iOS, Android y web) para explorar las Ci
 - **Mapa interactivo de Nicaragua** con polígonos departamentales, marcadores por ciudad y modos de vista satelital y vectorial.
 - **Rutas de navegación** entre la ubicación del usuario y cada ciudad creativa, con distancia y tiempo estimado (servicio OSRM).
 - **Rutas turísticas** con paradas, descripciones e imágenes para las ciudades creativas del proyecto.
+- **Sección de Eventos**: calendario mensual navegable que marca los días con eventos y lista los del mes visible; si el mes no tiene eventos, indica en qué meses hay y permite saltar a ellos con un toque.
+- **Notificaciones**: push (Firebase Cloud Messaging) para eventos próximos, enviadas automáticamente por el backend; y notificaciones locales programables por evento desde su detalle.
+- **Panel de administración web** (`/admin`) para crear, editar y eliminar eventos, protegido con login propio independiente del flujo de la app.
+- **Perfil**: foto guardada en la base de datos y servida por una URL pública con versión.
+- **Seguridad**: verificación en dos pasos con app autenticadora (TOTP) y cambio de contraseña.
 - **Autenticación** por correo/contraseña y con Google (Firebase Auth + JWT).
 - **Soporte multiplataforma**: Android, iOS y web.
 - **Interfaz bilingüe** (español/inglés) y tema oscuro/claro.
@@ -46,10 +51,10 @@ Wani connect es una aplicación móvil (iOS, Android y web) para explorar las Ci
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
-| **Frontend** | React Native + Expo | SDK 57 (React Native 0.86.0) |
+| **Frontend** | React Native + Expo | SDK 57 (React Native 0.86.2) |
 | **Frontend (UI)** | React | 19.2.3 |
 | **Frontend (lenguaje)** | TypeScript | ~6.0.3 |
-| **Navegación** | expo-router | ~57.0.6 |
+| **Navegación** | expo-router | ~57.0.11 |
 | **HTTP client** | Axios | ^1.18.1 |
 | **Autenticación (cliente)** | Firebase Auth (SDK JS) | ^12.16.0 |
 | **Mapas** | Leaflet + OSRM (WebView/iframe) | Leaflet 1.9.4 |
@@ -82,6 +87,8 @@ Wani connect es una aplicación móvil (iOS, Android y web) para explorar las Ci
 - **Android Studio** — emulador Android
 - **Xcode** — simulador iOS (solo macOS)
 - **EAS CLI** — builds en la nube: `npm install -g eas-cli`
+
+> **Nota para builds Android locales:** el prebuild nativo (`expo prebuild` / Gradle) puede requerir JDK 17. Si tu JDK por defecto es más nuevo y la compilación nativa falla, fija la ruta con `org.gradle.java.home=<RUTA_JDK_17>` en `Frontend/The_Stallions/android/gradle.properties`. El backend sí compila y corre con JDK 21+.
 
 ## Instalación
 
@@ -150,6 +157,13 @@ jwt.secret=<SECRETO_JWT_MÍNIMO_32_CARACTERES>
 jwt.expiration-ms=3600000
 
 firebase.credentials-path=firebase-credentials.json
+
+# URL pública del backend (para construir enlaces en notificaciones y fotos)
+app.base-url=<URL_BASE>
+
+# Panel de administración (/admin/login)
+app.admin.username=<USUARIO_ADMIN>
+app.admin.password=<PASSWORD_ADMIN>
 ```
 
 - `firebase-credentials.json` es la *service account* de Firebase que debe existir en el classpath (`src/main/resources/`).
@@ -181,6 +195,14 @@ npm run android   # emulador/dispositivo Android
 npm run ios       # simulador iOS
 npm run web       # navegador
 ```
+
+Panel de administración de eventos (con el backend corriendo):
+
+```
+http://localhost:8080/admin/login
+```
+
+Entra con las credenciales definidas en `app.admin.username` / `app.admin.password`. Desde ahí se crean, editan y eliminan los eventos que consume la app.
 
 ### Producción
 
@@ -222,15 +244,16 @@ The-Stallions/
 │       ├── package.json
 │       ├── .env                    # Variables de entorno locales (no versionar)
 │       └── src/
-│           ├── app/                # Rutas (expo-router)
+│           ├── app/                # Rutas (expo-router): (auth), (tabs), eventos/, profile/
 │           ├── auth/               # Pantallas de login/registro
-│           ├── components/         # Componentes (mapa, botones, inputs)
+│           ├── components/         # Componentes (mapa, botones, inputs, calendario de eventos)
 │           ├── config/             # Configuración de Firebase
 │           ├── constants/          # Tema y constantes de UI
 │           ├── context/            # Contextos (Auth, Lang)
 │           ├── hooks/              # Hooks (Google Auth, tema)
 │           ├── screens/            # Pantallas (en desarrollo)
 │           ├── services/           # Cliente HTTP y servicios de la API
+│           ├── types/              # Tipos de TypeScript compartidos
 │           └── utils/              # Validadores y utilidades
 ├── Documents/                      # Documentación técnica del proyecto
 └── README.md
