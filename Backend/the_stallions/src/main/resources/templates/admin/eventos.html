@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Eventos | Admin - The Stallions</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #0F1115; color: #F2F4F8; padding: 32px 16px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        h1 { font-size: 24px; }
+        .btn { display: inline-block; padding: 9px 16px; border-radius: 8px; border: none; background: #6366F1; color: #fff; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
+        .btn:hover { background: #4F52E0; }
+        .btn.sec { background: #232733; color: #98A1B3; }
+        .btn.danger { background: rgba(239,68,68,0.12); color: #EF4444; border: 1px solid rgba(239,68,68,0.35); }
+        .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 18px; background: rgba(34,197,94,0.12); color: #22C55E; }
+        table { width: 100%; border-collapse: collapse; background: #1A1D24; border-radius: 12px; overflow: hidden; }
+        th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #98A1B3; background: #232733; padding: 12px 16px; }
+        td { padding: 13px 16px; border-top: 1px solid #2A2F3B; font-size: 14px; vertical-align: top; }
+        td.desc { color: #98A1B3; max-width: 320px; }
+        .cat { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .FERIADO { background: rgba(239,68,68,0.12); color: #EF4444; }
+        .CONMEMORACION { background: rgba(245,158,11,0.14); color: #F59E0B; }
+        .CELEBRACION { background: rgba(34,197,94,0.14); color: #22C55E; }
+        .actions { display: flex; gap: 8px; }
+        form.inline { display: inline; }
+        .empty { text-align: center; color: #98A1B3; padding: 40px; background: #1A1D24; border-radius: 12px; }
+        nav.top { display: flex; gap: 16px; margin-bottom: 20px; font-size: 14px; }
+        nav.top a { color: #98A1B3; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <nav class="top">
+        <a href="/admin/eventos">Eventos</a>
+        <form th:action="@{/admin/logout}" method="post" style="margin-left:auto">
+            <button type="submit" class="btn sec">Cerrar sesión</button>
+        </form>
+    </nav>
+
+    <header>
+        <h1>Eventos</h1>
+        <a class="btn" th:href="@{/admin/eventos/nuevo}">+ Nuevo evento</a>
+    </header>
+
+    <div class="alert" th:if="${param.creado}">Evento creado correctamente.</div>
+    <div class="alert" th:if="${param.actualizado}">Evento actualizado correctamente.</div>
+    <div class="alert" th:if="${param.eliminado}">Evento eliminado correctamente.</div>
+
+    <table th:if="${not #lists.isEmpty(eventos)}">
+        <thead>
+        <tr>
+            <th>Título</th>
+            <th>Fecha</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="e : ${eventos}">
+            <td th:text="${e.titulo}">Título</td>
+            <td th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
+            <td><span class="cat" th:classappend="${e.categoria.name()}" th:text="${e.categoria}">FERIADO</span></td>
+            <td class="desc" th:text="${e.descripcion}">Descripción</td>
+            <td>
+                <div class="actions">
+                    <a class="btn sec" th:href="@{'/admin/eventos/' + ${e.id} + '/editar'}">Editar</a>
+                    <form class="inline" th:action="@{'/admin/eventos/' + ${e.id} + '/eliminar'}" method="post"
+                          onsubmit="return confirm('¿Eliminar este evento?');">
+                        <button type="submit" class="btn danger">Eliminar</button>
+                    </form>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="empty" th:if="${#lists.isEmpty(eventos)}">
+        Todavía no hay eventos cargados.
+    </div>
+</div>
+</body>
+</html>

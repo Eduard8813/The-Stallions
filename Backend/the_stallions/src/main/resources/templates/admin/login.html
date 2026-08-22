@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Admin | The Stallions</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #0F1115; color: #F2F4F8; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: #1A1D24; border: 1px solid #2A2F3B; border-radius: 12px; padding: 32px; width: 100%; max-width: 380px; }
+        h1 { font-size: 20px; margin-bottom: 4px; }
+        p.sub { color: #98A1B3; font-size: 13px; margin-bottom: 24px; }
+        label { display: block; font-size: 13px; color: #98A1B3; margin: 14px 0 6px; }
+        input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2A2F3B; background: #14171E; color: #F2F4F8; font-size: 14px; }
+        input:focus { outline: none; border-color: #6366F1; }
+        button { width: 100%; margin-top: 22px; padding: 11px; border: none; border-radius: 8px; background: #6366F1; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+        button:hover { background: #4F52E0; }
+        .error { background: rgba(239,68,68,0.12); color: #EF4444; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>The Stallions</h1>
+    <p class="sub">Panel de administración de eventos</p>
+
+    <div class="error" th:if="${param.error}">Usuario o contraseña incorrectos.</div>
+    <div class="error" style="color:#22C55E;background:rgba(34,197,94,0.12)" th:if="${param.logout}">Sesión cerrada correctamente.</div>
+
+    <form th:action="@{/admin/login}" method="post">
+        <label for="username">Usuario</label>
+        <input type="text" id="username" name="username" required autofocus/>
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" required/>
+        <button type="submit">Iniciar sesión</button>
+    </form>
+</div>
+</body>
+</html>
