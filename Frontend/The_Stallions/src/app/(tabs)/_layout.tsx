@@ -30,9 +30,10 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index"    options={{ title: 'Explorar', tabBarIcon: icon('🧭') }} />
-      <Tabs.Screen name="mensajes" options={{ title: 'Mensajes', tabBarIcon: icon('💬') }} />
-      <Tabs.Screen name="mapa"     options={{ title: 'Mapa',     tabBarIcon: icon('🌍') }} />
+      <Tabs.Screen name="eventos"  options={{ title: 'Eventos',  tabBarIcon: icon('★') }} />
       <Tabs.Screen name="perfil"   options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
+      <Tabs.Screen name="mensajes" options={{ href: null }} />
+      <Tabs.Screen name="mapa"     options={{ href: null }} />
     </Tabs>
   );
 }
