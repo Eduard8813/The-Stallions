@@ -1,6 +1,7 @@
 import api from './api';
 import * as Notifications from 'expo-notifications';
 import { SchedulableTriggerInputTypes } from 'expo-notifications';
+import { Platform } from 'react-native';
 import type { CategoriaEvento, Evento } from '../types/evento';
 
 export async function obtenerEventos(categoria?: CategoriaEvento): Promise<Evento[]> {
@@ -15,6 +16,44 @@ export async function obtenerEventoPorId(id: string): Promise<Evento> {
   // GET /api/eventos/{id}
   const { data } = await api.get<Evento>(`/eventos/${id}`);
   return data;
+}
+
+/** POST /api/eventos/{id}/foto — Subir/reemplazar la foto del evento (multipart). */
+export async function subirFotoEvento(
+  id: string,
+  uri: string,
+  asset?: { fileName?: string | null; mimeType?: string | null }
+): Promise<{ fotoUrl: string }> {
+  const fileName = asset?.fileName || 'foto-evento.jpg';
+  const mimeType = asset?.mimeType || 'image/jpeg';
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(uri)).blob();
+    form.append('foto', blob as any, fileName);
+  } else {
+    form.append('foto', { uri, name: fileName, type: mimeType } as any);
+  }
+  const { data } = await api.post<{ fotoUrl: string }>(`/eventos/${id}/foto`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+
+/** Todas las fechas ISO que abarca el evento (fecha..fechaFin inclusive). */
+export function fechasDelEvento(evento: Evento): string[] {
+  if (!evento.fechaFin || evento.fechaFin <= evento.fecha) return [evento.fecha];
+  const fechas: string[] = [];
+  const cursor = new Date(`${evento.fecha}T12:00:00`);
+  const fin = new Date(`${evento.fechaFin}T12:00:00`);
+  while (cursor.getTime() <= fin.getTime() && fechas.length < 366) {
+    fechas.push(
+      `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(
+        cursor.getDate()
+      ).padStart(2, '0')}`
+    );
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return fechas;
 }
 
 export async function activarNotificaciones(evento: Evento, activar: boolean): Promise<void> {
