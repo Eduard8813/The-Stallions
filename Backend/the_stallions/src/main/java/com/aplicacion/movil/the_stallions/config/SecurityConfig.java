@@ -100,7 +100,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/user/photo/**").permitAll()
-                .requestMatchers("/api/eventos/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/eventos/**").permitAll()
+                .requestMatchers("/api/eventos/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

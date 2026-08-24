@@ -11,12 +11,15 @@
         label { display: block; font-size: 13px; color: #98A1B3; margin: 14px 0 6px; }
         input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2A2F3B; background: #14171E; color: #F2F4F8; font-size: 14px; }
         textarea { min-height: 110px; resize: vertical; }
+        input[type="file"] { padding: 8px; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #6366F1; }
         .error { color: #EF4444; font-size: 12px; margin-top: 5px; }
         .row { display: flex; gap: 12px; margin-top: 24px; }
         button, .btn { padding: 10px 18px; border-radius: 8px; border: none; background: #6366F1; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; text-align: center; }
         button:hover, .btn:hover { background: #4F52E0; }
         .btn.sec { background: #232733; color: #98A1B3; flex: 0 0 auto; }
+        .preview { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #2A2F3B; margin-top: 8px; }
+        .ayuda { color: #4A5264; font-size: 12px; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -24,14 +27,25 @@
     <h1 th:text="${idEvento != null} ? 'Editar evento' : 'Nuevo evento'">Nuevo evento</h1>
 
     <form th:action="${idEvento != null} ? @{'/admin/eventos/' + ${idEvento}} : @{/admin/eventos}"
-          th:object="${evento}" method="post">
+          th:object="${evento}" method="post" enctype="multipart/form-data">
         <label for="titulo">Título</label>
         <input type="text" id="titulo" th:field="*{titulo}" maxlength="150"/>
         <div class="error" th:if="${#fields.hasErrors('titulo')}" th:errors="*{titulo}"></div>
 
-        <label for="fecha">Fecha</label>
+        <label for="fecha">Fecha de inicio</label>
         <input type="date" id="fecha" th:field="*{fecha}"/>
         <div class="error" th:if="${#fields.hasErrors('fecha')}" th:errors="*{fecha}"></div>
+
+        <label for="fechaFin">Fecha de fin (opcional)</label>
+        <input type="date" id="fechaFin" th:field="*{fechaFin}"/>
+        <p class="ayuda">Dejalo vacío si el evento es de un solo día.</p>
+        <div class="error" th:if="${#fields.hasErrors('fechaFin')}" th:errors="*{fechaFin}"></div>
+        <div class="error" th:if="${#fields.hasErrors('rangoValido')}" th:errors="*{rangoValido}"></div>
+
+        <label for="foto">Foto (opcional)</label>
+        <input type="file" id="foto" name="foto" accept="image/*"/>
+        <p class="ayuda">JPG o PNG, hasta 10 MB. Si el evento ya tiene foto y subís otra, se reemplaza.</p>
+        <img th:if="${fotoActual != null}" class="preview" th:src="${fotoActual}" alt="Foto actual"/>
 
         <label for="categoria">Categoría</label>
         <select id="categoria" th:field="*{categoria}">

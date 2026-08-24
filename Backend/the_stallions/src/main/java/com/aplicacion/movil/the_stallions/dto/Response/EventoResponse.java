@@ -10,8 +10,10 @@ public class EventoResponse {
     private Long id;
     private String titulo;
     private LocalDate fecha;
+    private LocalDate fechaFin;
     private CategoriaEvento categoria;
     private String descripcion;
+    private String fotoUrl;
 
     public EventoResponse() {
     }
@@ -20,8 +22,10 @@ public class EventoResponse {
         this.id = evento.getId();
         this.titulo = evento.getTitulo();
         this.fecha = evento.getFecha();
+        this.fechaFin = evento.getFechaFin();
         this.categoria = evento.getCategoria();
         this.descripcion = evento.getDescripcion();
+        this.fotoUrl = evento.getFotoUrl();
     }
 
     public Long getId() {
@@ -34,6 +38,14 @@ public class EventoResponse {
 
     public LocalDate getFecha() {
         return fecha;
+    }
+
+    public LocalDate getFechaFin() {
+        return fechaFin;
+    }
+
+    public String getFotoUrl() {
+        return fotoUrl;
     }
 
     public CategoriaEvento getCategoria() {

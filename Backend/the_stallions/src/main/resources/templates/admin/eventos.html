@@ -27,6 +27,8 @@
         .empty { text-align: center; color: #98A1B3; padding: 40px; background: #1A1D24; border-radius: 12px; }
         nav.top { display: flex; gap: 16px; margin-bottom: 20px; font-size: 14px; }
         nav.top a { color: #98A1B3; text-decoration: none; }
+        td img.foto { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; border: 1px solid #2A2F3B; display: block; }
+        .sinFoto { color: #4A5264; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -50,6 +52,7 @@
     <table th:if="${not #lists.isEmpty(eventos)}">
         <thead>
         <tr>
+            <th>Foto</th>
             <th>Título</th>
             <th>Fecha</th>
             <th>Categoría</th>
@@ -59,8 +62,14 @@
         </thead>
         <tbody>
         <tr th:each="e : ${eventos}">
+            <td>
+                <img class="foto" th:if="${e.fotoUrl != null}" th:src="${e.fotoUrl}" alt="Foto del evento"/>
+                <span class="sinFoto" th:if="${e.fotoUrl == null}">—</span>
+            </td>
             <td th:text="${e.titulo}">Título</td>
-            <td th:text="${#temporals.format(e.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
+            <td th:text="${e.fechaFin != null} ?
+                    ${#temporals.format(e.fecha, 'dd/MM/yyyy') + ' – ' + #temporals.format(e.fechaFin, 'dd/MM/yyyy')} :
+                    ${#temporals.format(e.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
             <td><span class="cat" th:classappend="${e.categoria.name()}" th:text="${e.categoria}">FERIADO</span></td>
             <td class="desc" th:text="${e.descripcion}">Descripción</td>
             <td>
