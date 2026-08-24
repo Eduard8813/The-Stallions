@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image } from 'expo-image';
 import { colors } from '../../constants/ui';
 import type { Evento } from '../../types/evento';
 
@@ -14,6 +15,9 @@ export default function EventoListItem({ evento, onPress }: Props) {
     day: 'numeric',
     month: 'short',
   });
+  const rango = evento.fechaFin
+    ? `${evento.fecha.slice(8)}/${evento.fecha.slice(5, 7)} – ${evento.fechaFin.slice(8)}/${evento.fechaFin.slice(5, 7)}`
+    : null;
   return (
     <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.fechaBox}>
@@ -25,8 +29,14 @@ export default function EventoListItem({ evento, onPress }: Props) {
         <Text style={styles.titulo} numberOfLines={1}>
           {evento.titulo}
         </Text>
-        <Text style={[styles.categoria, styles[evento.categoria]]}>{evento.categoria}</Text>
+        <View style={styles.metaRow}>
+          <Text style={[styles.categoria, styles[evento.categoria]]}>{evento.categoria}</Text>
+          {rango && <Text style={styles.rango}>{rango}</Text>}
+        </View>
       </View>
+      {evento.fotoUrl ? (
+        <Image source={{ uri: evento.fotoUrl }} style={styles.foto} contentFit="cover" />
+      ) : null}
       <Text style={styles.chevron}>›</Text>
     </TouchableOpacity>
   );
@@ -56,7 +66,16 @@ const styles = StyleSheet.create({
   fechaMes: { color: colors.subtext, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
   info: { flex: 1, gap: 4 },
   titulo: { color: colors.text, fontSize: 15, fontWeight: '700' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   categoria: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  rango: { color: colors.subtext, fontSize: 11, fontWeight: '600' },
+  foto: {
+    width: 46,
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   FERIADO: { color: colors.danger },
   CONMEMORACION: { color: '#F59E0B' },
   CELEBRACION: { color: colors.success },

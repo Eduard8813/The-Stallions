@@ -3,7 +3,7 @@ import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAsync } from '../../hooks/useAsync';
-import { obtenerEventos } from '../../services/eventosService';
+import { fechasDelEvento, obtenerEventos } from '../../services/eventosService';
 import { colors } from '../../constants/ui';
 import CalendarioEventos from '../../components/eventos/CalendarioEventos';
 import EventoListItem from '../../components/eventos/EventoListItem';
@@ -28,20 +28,24 @@ export default function EventosScreen() {
   const eventos = useMemo(() => data ?? [], [data]);
   const eventosDelMes = useMemo(
     () =>
-      eventos.filter((e) => {
-        const [y, m] = e.fecha.split('-').map(Number);
-        return y === mesVisible.anio && m - 1 === mesVisible.mes;
-      }),
+      eventos.filter((e) =>
+        fechasDelEvento(e).some((f) => {
+          const [y, m] = f.split('-').map(Number);
+          return y === mesVisible.anio && m - 1 === mesVisible.mes;
+        })
+      ),
     [eventos, mesVisible]
   );
 
   const mesesConEventos = useMemo<MesConEventos[]>(() => {
     const mapa = new Map<string, MesConEventos>();
     for (const e of eventos) {
-      const [y, m] = e.fecha.split('-').map(Number);
-      const key = `${y}-${m}`;
-      const actual = mapa.get(key);
-      mapa.set(key, { anio: y, mes: m - 1, count: (actual?.count ?? 0) + 1 });
+      for (const fechaISO of fechasDelEvento(e)) {
+        const [y, m] = fechaISO.split('-').map(Number);
+        const key = `${y}-${m}`;
+        const actual = mapa.get(key);
+        mapa.set(key, { anio: y, mes: m - 1, count: (actual?.count ?? 0) + 1 });
+      }
     }
     return [...mapa.values()].sort((a, b) => a.anio - b.anio || a.mes - b.mes);
   }, [eventos]);

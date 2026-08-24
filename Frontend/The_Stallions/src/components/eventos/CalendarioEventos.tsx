@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors } from '../../constants/ui';
 import type { Evento } from '../../types/evento';
+import { fechasDelEvento } from '../../services/eventosService';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -18,14 +19,14 @@ interface Props {
 }
 
 export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: Props) {
-  const diasConEvento = new Set(
-    eventos
-      .filter((e) => {
-        const [y, m] = e.fecha.split('-').map(Number);
-        return y === anio && m - 1 === mes;
-      })
-      .map((e) => Number(e.fecha.slice(8)))
-  );
+  // Días (del mes visible) que están cubiertos por el rango de algún evento.
+  const diasConEvento = new Set<number>();
+  for (const e of eventos) {
+    for (const fechaISO of fechasDelEvento(e)) {
+      const [y, m, d] = fechaISO.split('-').map(Number);
+      if (y === anio && m - 1 === mes) diasConEvento.add(d);
+    }
+  }
 
   const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
   const diasDelMes = new Date(anio, mes + 1, 0).getDate();
