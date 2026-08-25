@@ -4,27 +4,36 @@ import com.aplicacion.movil.the_stallions.dto.Response.CommentResponse;
 import com.aplicacion.movil.the_stallions.dto.Response.NotificationResponse;
 import com.aplicacion.movil.the_stallions.dto.Response.PhotoResponse;
 import com.aplicacion.movil.the_stallions.exception.NotFoundException;
-import com.aplicacion.movil.the_stallions.model.User;
-import com.aplicacion.movil.the_stallions.model.Photo;
 import com.aplicacion.movil.the_stallions.model.Comment;
 import com.aplicacion.movil.the_stallions.model.Notification;
-import com.aplicacion.movil.the_stallions.model.enums.Visibilidad;
-import com.aplicacion.movil.the_stallions.repository.UserRepository;
-import com.aplicacion.movil.the_stallions.repository.PhotoRepository;
+import com.aplicacion.movil.the_stallions.model.Photo;
+import com.aplicacion.movil.the_stallions.model.User;
+import com.aplicacion.movil.the_stallions.model.Visibilidad;
 import com.aplicacion.movil.the_stallions.repository.CommentRepository;
 import com.aplicacion.movil.the_stallions.repository.NotificationRepository;
-import jakarta.servlet.http.HttpServletRequest;
+import com.aplicacion.movil.the_stallions.repository.PhotoRepository;
+import com.aplicacion.movil.the_stallions.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 public class FotoService {
+
+    private static final DateTimeFormatter FECHA_FORMATO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Autowired
     private PhotoRepository photoRepository;
@@ -41,255 +50,281 @@ public class FotoService {
     @Value("${app.base-url}")
     private String baseUrl;
 
-    /**
-     * Subir una nueva foto
-     * - Valida token para obtener userId
-     * - Guarda la imagen como blob en la entidad Photo
-     * - Genera URL de acceso
-     * - Asocia la foto al usuario con visibilidad especificada
-     */
-    public PhotoResponse subirFoto(MultipartFile file, String visibilidad, String token) {
-        // Validar token y obtener userId
-        String userId = validarTokenYObtenerUserId(token);
+    // ==================== FOTOS ====================
 
-        // Validar archivo
+    /**
+     * Subir una nueva foto. El usuario se obtiene desde el token (SecurityContext),
+     * nunca desde un valor enviado por el cliente.
+     */
+    public PhotoResponse subirFoto(MultipartFile file, String visibilidad, User usuario) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("No se proporcionó ninguna imagen");
         }
-        if (!file.getContentType().startsWith("image/")) {
+        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
             throw new IllegalArgumentException("El archivo debe ser una imagen");
         }
         if (file.getSize() > 10 * 1024 * 1024) { // 10MB
             throw new IllegalArgumentException("La imagen no puede superar los 10 MB");
         }
 
+        Visibilidad vis = parseVisibilidad(visibilidad);
+
         try {
-            // Buscar usuario
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-
-            // Crear entidad Photo
             Photo photo = new Photo();
-            photo.setUser(user);
-            photo.setVisibilidad(Visibilidad.valueOf(visibilidad.toUpperCase()));
-            photo.setUrl(generarUrlFoto(user.getId(), photo.getId()));
+            photo.setUser(usuario);
+            photo.setVisibilidad(vis);
             photo.setFechaUpload(LocalDateTime.now());
-
-            // Guardar datos binarios
-            byte[] bytes = file.getBytes();
-            photo.setPhotoData(bytes);
+            photo.setPhotoData(file.getBytes());
             photo.setContentType(file.getContentType());
-            photoRepository.save(photo);
+            photo.setUsuariosLike("");
 
-            // Retornar respuesta con URL
-            return new PhotoResponse(photo.getUrl());
+            Photo saved = photoRepository.save(photo);
+            saved.setUrl(baseUrl + "/api/fotos/" + saved.getId() + "/imagen");
+            saved = photoRepository.save(saved);
+
+            return desde(saved, usuario);
         } catch (IOException e) {
             throw new RuntimeException("Error al procesar la imagen", e);
         }
     }
 
-    /**
-     * Obtener las fotos del usuario autenticado
-     */
-    public List<PhotoResponse> obtenerFotosMias(String token) {
-        String userId = validarTokenYObtenerUserId(token);
-        List<Photo> fotos = photoRepository.findByUserIdAndVisibilidad(userId, Visibilidad.PUBLICA);
-        return fotos.stream()
-                .map(photo -> new PhotoResponse(photo.getUrl()))
+    /** Todas las fotos (privadas y públicas) del usuario autenticado. */
+    public List<PhotoResponse> obtenerFotosMias(User usuario) {
+        return photoRepository.findByUserIdOrderByFechaUploadDesc(usuario.getId()).stream()
+                .map(p -> desde(p, usuario))
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtener fotos públicas para la comunidad
-     */
-    public List<PhotoResponse> obtenerFotosComunidad() {
-        List<Photo> fotos = photoRepository.findByVisibilidad(Visibilidad.PUBLICA);
-        return fotos.stream()
-                .map(photo -> {
-                    try {
-                        User user = userRepository.findById(photo.getUser().getId()).orElse(null);
-                        return new PhotoResponse(photo.getUrl(), user != null ? user.getFullName() : "Desconocido");
-                    } catch (Exception e) {
-                        return new PhotoResponse(photo.getUrl());
-                    }
-                })
+    /** Solo fotos públicas de cualquier usuario, con paginación. */
+    public List<PhotoResponse> obtenerFotosComunidad(User actual, int page, int pageSize) {
+        Pageable pageable = PageRequest.of(Math.max(page - 1, 0), Math.min(Math.max(pageSize, 1), 50));
+        return photoRepository.findByVisibilidadOrderByFechaUploadDesc(Visibilidad.PUBLICA, pageable)
+                .getContent().stream()
+                .map(p -> desde(p, actual))
                 .collect(Collectors.toList());
     }
 
+    /** Cambiar visibilidad de una foto propia. */
+    public PhotoResponse cambiarVisibilidad(Long fotoId, String visibilidad, User usuario) {
+        Photo photo = photoRepository.findById(fotoId)
+                .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
+        validarDueno(photo, usuario);
+        photo.setVisibilidad(parseVisibilidad(visibilidad));
+        return desde(photoRepository.save(photo), usuario);
+    }
+
+    /** Eliminar una foto propia (registro + datos). */
+    public void eliminarFoto(Long fotoId, User usuario) {
+        Photo photo = photoRepository.findById(fotoId)
+                .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
+        validarDueno(photo, usuario);
+        commentRepository.findByPhotoOrderByFechaAsc(photo).forEach(commentRepository::delete);
+        photoRepository.delete(photo);
+    }
+
     /**
-     * Dar/quitar like a una foto
+     * Dar/quitar like (toggle) a una foto.
+     * Los likes se guardan como IDs de usuario separados por coma.
+     * Genera notificación para el dueño si quien da like no es él mismo.
      */
-    public PhotoResponse darLike(Long id, String token) {
-        Photo photo = photoRepository.findById(id)
+    public PhotoResponse darLike(Long fotoId, User usuario) {
+        Photo photo = photoRepository.findById(fotoId)
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
 
-        // Lógica de like - alternar entre liked y unliked
-        if (photo.getUsuariosQueDieronLike() != null && photo.getUsuariosQueDieronLike().contains(token)) {
-            photo.getUsuariosQueDieronLike().remove(token);
+        List<String> ids = idsDeLikes(photo);
+        String miId = String.valueOf(usuario.getId());
+        boolean yaDioLike = ids.contains(miId);
+
+        if (yaDioLike) {
+            ids.remove(miId);
         } else {
-            if (photo.getUsuariosQueDieronLike() == null) {
-                photo.setUsuariosQueDieronLike(java.util.Collections.singletonList(token));
-            } else {
-                photo.getUsuariosQueDieronLike().add(token);
-            }
+            ids.add(miId);
+            notificar(photo.getUser(), usuario, "like", photo);
         }
 
-        photoRepository.save(photo);
-
-        // Emitir notificación al dueño de la foto si quien da like no es el dueño
-        // TODO: Obtener userId desde el token y notificar si es diferente
-
-        return new PhotoResponse(photo.getUrl());
+        photo.setUsuariosLike(String.join(",", ids));
+        return desde(photoRepository.save(photo), usuario);
     }
 
-    // ==================== MÉTODOS DE COMENTARIOS ====================
+    // ==================== IMAGEN ====================
 
-    /**
-     * Obtener comentarios de una foto
-     */
-    public List<CommentResponse> obtenerComentarios(Long id) {
-        Photo photo = photoRepository.findById(id)
+    /** Devuelve los bytes de la imagen (privadas solo para su dueño). */
+    public Photo obtenerFotoConDatos(Long fotoId, User actual) {
+        Photo photo = photoRepository.findById(fotoId)
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
-        List<Comment> comentarios = commentRepository.findByPhotoOrderByFechaDesc(photo);
-        return comentarios.stream()
-                .map(this::convertirAResponse)
+        if (photo.getVisibilidad() == Visibilidad.PRIVADA) {
+            validarDueno(photo, actual);
+        }
+        return photo;
+    }
+
+    // ==================== COMENTARIOS ====================
+
+    public List<CommentResponse> obtenerComentarios(Long fotoId) {
+        Photo photo = photoRepository.findById(fotoId)
+                .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
+        return commentRepository.findByPhotoOrderByFechaAsc(photo).stream()
+                .map(this::desde)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Agregar un comentario a una foto
-     */
-    public CommentResponse agregarComentario(Long id, String texto, String token) {
-        Photo photo = photoRepository.findById(id)
+    public CommentResponse agregarComentario(Long fotoId, String texto, User autor) {
+        if (texto == null || texto.isBlank()) {
+            throw new IllegalArgumentException("El comentario no puede estar vacío");
+        }
+        Photo photo = photoRepository.findById(fotoId)
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
-
-        // Validar token y obtener userId
-        String userId = validarTokenYObtenerUserId(token);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
         Comment comentario = new Comment();
         comentario.setPhoto(photo);
-        comentario.setUsuario(user);
-        comentario.setTexto(texto);
+        comentario.setUsuario(autor);
+        comentario.setTexto(texto.trim());
         comentario.setFecha(LocalDateTime.now());
         comentario.setEditado(false);
-
         Comment saved = commentRepository.save(comentario);
 
-        // Emitir notificación al dueño de la foto
-        notificarNuevoComentario(photo.getUser(), user, photo);
-
-        return convertirAResponse(saved);
+        notificar(photo.getUser(), autor, "comentario", photo);
+        return desde(saved);
     }
 
-    /**
-     * Editar un comentario propio
-     */
-    public CommentResponse editarComentario(Long comentidoId, String nuevoTexto, String token) {
-        String userId = validarTokenYObtenerUserId(token);
-        Comment comentario = commentRepository.findById(comentidoId)
-                .orElseThrow(() -> new NotFoundException("Comentario no encontrado"));
-
-                // Validar que el usuario sea el autor del comentario
-        if (!comentario.getUsuario().getId().equals(userId)) {
-            throw new SecurityException("No tienes permiso para editar este comentario");
-        }
-
-        comentario.setTexto(nuevoTexto);
-        comentario.setEditado(true);
-        Comment saved = commentRepository.save(comentario);
-        return convertirAResponse(saved);
-    }
-
-    /**
-     * Eliminar un comentario propio
-     */
-    public void eliminarComentario(Long comentarioId, String token) {
-        String userId = validarTokenYObtenerUserId(token);
+    public CommentResponse editarComentario(Long comentarioId, String nuevoTexto, User usuario) {
         Comment comentario = commentRepository.findById(comentarioId)
                 .orElseThrow(() -> new NotFoundException("Comentario no encontrado"));
+        validarAutor(comentario, usuario);
+        comentario.setTexto(nuevoTexto.trim());
+        comentario.setEditado(true);
+        return desde(commentRepository.save(comentario));
+    }
 
-        // Validar que el usuario sea el autor del comentario
-        if (!comentario.getUsuario().getId().equals(userId)) {
-            throw new SecurityException("No tienes permiso para eliminar este comentario");
-        }
-
+    public void eliminarComentario(Long comentarioId, User usuario) {
+        Comment comentario = commentRepository.findById(comentarioId)
+                .orElseThrow(() -> new NotFoundException("Comentario no encontrado"));
+        validarAutor(comentario, usuario);
         commentRepository.delete(comentario);
     }
 
-    // ==================== MÉTODOS DE NOTIFICACIONES ====================
+    // ==================== NOTIFICACIONES ====================
 
-    /**
-     * Obtener notificaciones del usuario
-     */
-    public List<NotificationResponse> obtenerNotificaciones(String token) {
-        String userId = validarTokenYObtenerUserId(token);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
-
-        return notificationRepository.findByUsuarioOrderByFechaDesc(user).stream()
-                .map(this::convertirAResponseNotificacion)
+    public List<NotificationResponse> obtenerNotificaciones(User usuario) {
+        return notificationRepository.findByUsuarioDestinoOrderByFechaDesc(usuario).stream()
+                .map(this::desdeNotificacion)
                 .collect(Collectors.toList());
     }
 
-    // Métodos auxiliares privados
+    public void marcarNotificacionLeida(Long id, User usuario) {
+        Notification n = notificationRepository.findByIdAndUsuarioDestino(id, usuario)
+                .orElseThrow(() -> new NotFoundException("Notificación no encontrada"));
+        n.setLeida(true);
+        notificationRepository.save(n);
+    }
 
-    private String validarTokenYObtenerUserId(String token) {
-        // En un implementación real, aquí decodificaríamos el JWT
-        // Por ahora, extraemos el userId del SecurityContext o lo validamos
-        // Este es un placeholder que asume que el sistema ya validó el token
-        // a través del filter JwtAuthenticationFilter
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String userId;
-        try {
-            userId = principal.toString();
-        } catch (Exception e) {
-            // Si no hay autenticación, intentar extraer del token manualmente
-            // Esto es solo para desarrollo; en producción el filter ya debería haberlo puesto en el contexto
+    // ==================== USUARIO ACTUAL (desde token) ====================
+
+    /**
+     * Obtiene el usuario autenticado desde el SecurityContext.
+     * El JwtAuthenticationFilter coloca el email como principal.
+     */
+    public User usuarioActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof String email)) {
             throw new SecurityException("Token inválido o sesión expirada");
         }
-        return userId;
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new SecurityException("Usuario no encontrado"));
     }
 
-    private String generarUrlFoto(Long userId, Long photoId) {
-        return baseUrl + "/api/user/photo/" + userId + "?fotoId=" + photoId;
+    /** Igual que usuarioActual() pero devuelve null si no hay sesión (endpoints públicos). */
+    public User usuarioOpcional() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof String email)) {
+            return null;
+        }
+        return userRepository.findByEmail(email).orElse(null);
     }
 
-    private PhotoResponse convertirAResponse(Photo photo) {
-        return new PhotoResponse(photo.getUrl());
+    // ==================== AUXILIARES ====================
+
+    private Visibilidad parseVisibilidad(String valor) {
+        try {
+            return Visibilidad.valueOf(valor.trim().toUpperCase());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Visibilidad inválida: use 'privada' o 'publica'");
+        }
     }
 
-    private CommentResponse convertirAResponse(Comment comentario) {
+    private void validarDueno(Photo photo, User usuario) {
+        if (!photo.getUser().getId().equals(usuario.getId())) {
+            throw new SecurityException("No tienes permiso sobre esta foto");
+        }
+    }
+
+    private void validarAutor(Comment comentario, User usuario) {
+        if (!comentario.getUsuario().getId().equals(usuario.getId())) {
+            throw new SecurityException("No tienes permiso sobre este comentario");
+        }
+    }
+
+    private List<String> idsDeLikes(Photo photo) {
+        if (photo.getUsuariosLike() == null || photo.getUsuariosLike().isBlank()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(Arrays.asList(photo.getUsuariosLike().split(",")));
+    }
+
+    private void notificar(User destino, User origen, String tipo, Photo photo) {
+        if (destino.getId().equals(origen.getId())) {
+            return; // no notificarse a sí mismo
+        }
+        Notification n = new Notification();
+        n.setTipo(tipo);
+        n.setUsuarioOrigen(origen);
+        n.setUsuarioDestino(destino);
+        n.setRelacionId(String.valueOf(photo.getId()));
+        n.setLeida(false);
+        n.setFecha(LocalDateTime.now());
+        notificationRepository.save(n);
+    }
+
+    private PhotoResponse desde(Photo p, User actual) {
+        List<String> ids = idsDeLikes(p);
+        boolean likedByMe = actual != null && ids.contains(String.valueOf(actual.getId()));
+        User dueno = p.getUser();
+        return new PhotoResponse(
+                p.getId(),
+                p.getUrl(),
+                dueno != null ? dueno.getFullName() : "Usuario",
+                dueno != null ? baseUrl + "/api/user/photo/" + dueno.getId() : null,
+                p.getFechaUpload() != null ? p.getFechaUpload().format(FECHA_FORMATO) : null,
+                p.getVisibilidad() == Visibilidad.PUBLICA ? "publica" : "privada",
+                ids.size(),
+                likedByMe,
+                commentRepository.countByPhoto(p)
+        );
+    }
+
+    private CommentResponse desde(Comment c) {
         return new CommentResponse(
-                comentario.getId(),
-                comentario.getUsuario() != null ? comentario.getUsuario().getFullName() : "Anónimo",
-                comentario.getTexto(),
-                comentario.getFecha(),
-                comentario.isEditado()
+                c.getId(),
+                c.getUsuario() != null ? c.getUsuario().getId() : null,
+                c.getUsuario() != null ? c.getUsuario().getFullName() : "Anónimo",
+                c.getTexto(),
+                c.getFecha() != null ? c.getFecha().format(FECHA_FORMATO) : null,
+                c.isEditado()
         );
     }
 
-    private NotificationResponse convertirAResponseNotificacion(Notification notificacion) {
+    private NotificationResponse desdeNotificacion(Notification n) {
+        String nombre = n.getUsuarioOrigen() != null ? n.getUsuarioOrigen().getFullName() : "Alguien";
+        String mensaje = "comentario".equals(n.getTipo())
+                ? nombre + " comentó tu foto"
+                : nombre + " le dio me gusta a tu foto";
         return new NotificationResponse(
-                notificacion.getId(),
-                notificacion.getTipo(),
-                notificacion.getUsuarioOrigen() != null ? notificacion.getUsuarioOrigen().getFullName() : "Sistema",
-                notificacion.getFecha(),
-                notificacion.isLeida()
+                n.getId(),
+                n.getTipo(),
+                nombre,
+                mensaje,
+                n.getFecha() != null ? n.getFecha().format(FECHA_FORMATO) : null,
+                n.isLeida()
         );
-    }
-
-    private void notificarNuevoComentario(User userFoto, User usuarioComentario, Photo photo) {
-        // Crear notificación para el dueño de la foto
-        Notification notificacion = new Notification();
-        notificacion.setTipo("comentario");
-        notificacion.setUsuarioOrigen(usuarioComentario);
-        notificacion.setUsuarioDestino(userFoto);
-        notificacion.setRelacionId(photo.getId().toString());
-        notificacion.setLeida(false);
-        notificacion.setFecha(LocalDateTime.now());
-
-        notificationRepository.save(notificacion);
     }
 }

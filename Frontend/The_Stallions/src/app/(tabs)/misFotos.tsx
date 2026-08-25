@@ -1,152 +1,191 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, RefreshControl, StatusBar, TouchableOpacity, Image as RNImage } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useAuth } from '../../context/AuthContext';
+import React, { useCallback, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import api from '../../services/api';
 
-export default function MisFotosScreen() {
-  const router = useRouter();
-  const { user } = useAuth();
+type Foto = {
+  id: number;
+  url: string;
+  visibilidad: 'privada' | 'publica';
+};
 
-  const [tab, setTab] = useState<'misFotos' | 'comunidad'>('misFotos');
-  const [fotos, setFotos] = useState<any[]>([]);
+export default function MisFotosScreen() {
+  const [fotos, setFotos] = useState<Foto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   const loadFotos = useCallback(async () => {
-    setLoading(true);
     try {
-      const token = await (await import('../../services/token')).getAuthToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      if (tab === 'misFotos') {
-        const { data } = await api.get<any[]>('/fotos/mias', { headers });
-        setFotos(data);
-      } else {
-        const { data } = await api.get<any[]>('/fotos/comunidad', { headers });
-        setFotos(data);
-      }
+      const { data } = await api.get<Foto[]>('/fotos/mias');
+      setFotos(data);
     } catch (e: any) {
-      console.error('Error loading fotos:', e?.message);
+      Alert.alert('Error', e?.response?.data?.message || 'No se pudieron cargar tus fotos');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [tab]);
+  }, []);
 
-  useFocusEffect(() => {
-    loadFotos();
-  });
+  useFocusEffect(
+    useCallback(() => {
+      loadFotos();
+    }, [loadFotos])
+  );
 
-  const handleRefresh = () => {
-    setTab(tab => tab === 'misFotos' ? 'comunidad' : 'misFotos');
+  const toggleVisibilidad = async (foto: Foto) => {
+    setBusyId(foto.id);
+    try {
+      const nueva = foto.visibilidad === 'publica' ? 'privada' : 'publica';
+      await api.put(`/fotos/${foto.id}`, { visibilidad: nueva });
+      setFotos((prev) => prev.map((f) => (f.id === foto.id ? { ...f, visibilidad: nueva } : f)));
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'No se pudo cambiar la visibilidad');
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  if (!user) return null;
+  const eliminarFoto = (foto: Foto) => {
+    Alert.alert('Eliminar foto', '¿Seguro que deseas eliminar esta foto?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          setBusyId(foto.id);
+          try {
+            await api.delete(`/fotos/${foto.id}`);
+            setFotos((prev) => prev.filter((f) => f.id !== foto.id));
+          } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'No se pudo eliminar la foto');
+          } finally {
+            setBusyId(null);
+          }
+        },
+      },
+    ]);
+  };
+
+  const renderItem = ({ item }: { item: Foto }) => (
+    <View style={styles.gridItem}>
+      <Image source={{ uri: item.url }} style={styles.gridImage} />
+      <View
+        style={[
+          styles.badge,
+          { backgroundColor: item.visibilidad === 'publica' ? '#1b8a3f' : '#555' },
+        ]}
+      >
+        <Text style={styles.badgeText}>
+          {item.visibilidad === 'publica' ? '🌍 Pública' : '🔒 Privada'}
+        </Text>
+      </View>
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          disabled={busyId === item.id}
+          onPress={() => toggleVisibilidad(item)}
+        >
+          <Text style={styles.actionText}>{busyId === item.id ? '…' : 'Cambiar'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.deleteBtn]}
+          disabled={busyId === item.id}
+          onPress={() => eliminarFoto(item)}
+        >
+          <Text style={[styles.actionText, { color: '#ff5c5c' }]}>Borrar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <View style={styles.topBar}>
-        <Text style={styles.title}>Wani Connect</Text>
-        <TouchableOpacity style={styles.tabBtn} onPress={() => setTab('misFotos')}>
-          <Text style={[styles.tabText, { color: tab === 'misFotos' ? '#e40077' : '#aaa' }]}>Mis fotos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabBtn} onPress={() => setTab('comunidad')}>
-          <Text style={[styles.tabText, { color: tab === 'comunidad' ? '#e40077' : '#aaa' }]}>Comunidad</Text>
-        </TouchableOpacity>
+        <Text style={styles.title}>Mis fotos</Text>
       </View>
-      <View style={styles.content}>
-        {loading ? (
-          <View style={styles.loading}>
-            <Text>Cargando fotos...</Text>
-            {refreshing && <RefreshControl refreshing={true} onRefresh={handleRefresh} />}
-          </View>
-        ) : fotos.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>
-              {tab === 'misFotos' ? 'Aún no tienes fotos. Sube tu primera usando el botón de cámara.' : 'Aún no hay fotos en la comunidad.'}
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.gridContainer}>
-            {fotos.map((foto) => (
-              <View key={foto.id} style={styles.gridItem}>
-                <RNImage source={{ uri: foto.url }} style={styles.gridImage} />
-                <View style={styles.infoContainer}>
-                  <Text style={styles.infoTitle}>{foto.usuarioNombre || 'Usuario'}</Text>
-                  <Text style={styles.infoDate}>{foto.fecha}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+      {loading ? (
+        <ActivityIndicator style={styles.center} size="large" color="#e40077" />
+      ) : fotos.length === 0 ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyIcon}>📸</Text>
+          <Text style={styles.emptyText}>Aún no has subido fotos</Text>
+          <Text style={styles.emptyHint}>Usa el botón de cámara para subir tu primera foto</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={fotos}
+          keyExtractor={(f) => String(f.id)}
+          numColumns={3}
+          renderItem={renderItem}
+          contentContainerStyle={styles.grid}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={loadFotos} tintColor="#e40077" />
+          }
+        />
+      )}
     </View>
   );
 }
 
+const GRID_GAP = 2;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   topBar: {
-    height: 50,
-    backgroundColor: '#1a1a1a',
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    flexDirection: 'row',
+    height: 56,
+    justifyContent: 'center',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: '#222',
   },
-  title: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    marginRight: 16,
-  },
-  tabBtn: {
-    padding: 8,
-  },
-  tabText: {
-    color: '#aaa',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  content: { flex: 1, padding: 16 },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: { color: '#666', fontSize: 14 },
-  infoContainer: {
-    padding: 8,
-  },
-  infoTitle: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  infoDate: {
-    color: '#666',
-    fontSize: 10,
-  },
-  gridContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
+  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  center: { flex: 1 },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  emptyHint: { color: '#777', fontSize: 13, marginTop: 6, textAlign: 'center' },
+  grid: { padding: GRID_GAP },
   gridItem: {
-    width: '48%',
+    flex: 1 / 3,
     aspectRatio: 1,
-    marginBottom: 16,
+    margin: GRID_GAP / 2,
+    position: 'relative',
+    borderRadius: 4,
     overflow: 'hidden',
   },
-  gridImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  gridImage: { width: '100%', height: '100%' },
+  badge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  actions: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  actionBtn: { flex: 1, paddingVertical: 6, alignItems: 'center' },
+  deleteBtn: { borderLeftWidth: 1, borderLeftColor: 'rgba(255,255,255,0.2)' },
+  actionText: { color: '#fff', fontSize: 11, fontWeight: '700' },
 });
