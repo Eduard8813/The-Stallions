@@ -2,8 +2,8 @@ import { Tabs, Redirect } from 'expo-router';
 import { Text, View, ActivityIndicator, StyleSheet, type ColorValue } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
-function TabIcon({ emoji, color }: { emoji: string; color: ColorValue }) {
-  return <Text style={{ fontSize: 22, color }}>{emoji}</Text>;
+function TabIcon({ emoji, color, size }: { emoji: string; color: ColorValue; size?: number }) {
+  return <Text style={{ fontSize: size ?? 22, color }}>{emoji}</Text>;
 }
 
 const icon = (emoji: string) => {
@@ -12,6 +12,14 @@ const icon = (emoji: string) => {
   }
   return Icono;
 };
+
+function CameraIcon({ color }: { color: ColorValue }) {
+  return (
+    <View style={styles.cameraBtn}>
+      <Text style={styles.cameraEmoji}>📷</Text>
+    </View>
+  );
+}
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
@@ -30,64 +38,63 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#111', borderTopColor: '#222', height: 80, paddingBottom: 8 },
+        tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: '#555',
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
-      <Tabs.Screen name="index"          options={{ title: 'Explorar', tabBarIcon: icon('🧭') }} />
-      <Tabs.Screen name="eventos"        options={{ title: 'Eventos',  tabBarIcon: icon('★') }} />
-<<<<<<< HEAD
-      <Tabs.Screen name="camera"         options={{
-        tabBarIcon: ({ color }: { color: ColorValue }) => (
-          <View style={styles.cameraContainer}>
-            <Text style={[styles.cameraIcon, { color }]}>📷</Text>
-          </View>
-        ),
-        title: ' ',
-      }} />
-      <Tabs.Screen name="comunidad"      options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
-=======
-      <Tabs.Screen name="misFotosComunidad" options={{ title: 'Mis fotos', tabBarIcon: icon('📸') }} />
->>>>>>> frontend
-      <Tabs.Screen name="perfil"         options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
-      <Tabs.Screen name="notificaciones" options={{ href: null }} />
-      <Tabs.Screen name="mensajes"       options={{ href: null }} />
-      <Tabs.Screen name="mapa"           options={{ href: null }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: 'Explorar', tabBarIcon: icon('🧭') }}
+      />
+      <Tabs.Screen
+        name="eventos"
+        options={{ title: 'Eventos', tabBarIcon: icon('★') }}
+      />
+      <Tabs.Screen
+        name="camera"
+        options={{
+          title: '',
+          tabBarIcon: CameraIcon,
+          tabBarLabel: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="comunidad"
+        options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }}
+      />
+      <Tabs.Screen
+        name="perfil"
+        options={{ title: 'Perfil', tabBarIcon: icon('👤') }}
+      />
+      <Tabs.Screen name="misFotos"           options={{ href: null }} />
+      <Tabs.Screen name="misFotosComunidad"  options={{ href: null }} />
+      <Tabs.Screen name="notificaciones"     options={{ href: null }} />
+      <Tabs.Screen name="mensajes"           options={{ href: null }} />
+      <Tabs.Screen name="mapa"               options={{ href: null }} />
     </Tabs>
-    <View style={styles.fabContainer}>
-      <TouchableOpacity style={styles.fabButton} onPress={() => router.push('/(tabs)/camera')}>
-        <Text style={styles.fabIcon}>📷</Text>
-      </TouchableOpacity>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fabContainer: {
-    position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
+  tabBar: {
+    backgroundColor: '#111',
+    borderTopColor: '#222',
+    height: 80,
+    paddingBottom: 8,
   },
-  fabButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  cameraBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#e40077',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: -20,
     boxShadow: '0 4px 12px rgba(228, 0, 119, 0.4)',
   },
-  fabIcon: {
-    width: 32,
-    height: 32,
-    color: '#fff',
-    fontSize: 32,
+  cameraEmoji: {
+    fontSize: 26,
   },
 });
