@@ -201,11 +201,25 @@ export default function PerfilScreen() {
 
         <Section title="Cuenta">
           <ListRow
+            icon="📸"
+            title="Mis fotos"
+            subtitle="Fotos subidas, visibilidad y borrado"
+            chevron
+            onPress={() => router.push('/(tabs)/misFotos')}
+          />
+          <ListRow
             icon="✏️"
             title="Editar perfil"
             subtitle="Datos personales y foto"
             chevron
             onPress={() => router.push('/profile/edit')}
+          />
+          <ListRow
+            icon="🔔"
+            title="Notificaciones"
+            subtitle="Likes y comentarios en tus fotos"
+            chevron
+            onPress={() => router.push('/(tabs)/notificaciones')}
           />
           <ListRow
             icon="🔒"

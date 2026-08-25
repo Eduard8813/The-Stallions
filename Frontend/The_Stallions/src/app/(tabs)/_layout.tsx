@@ -2,9 +2,16 @@ import { Tabs, Redirect } from 'expo-router';
 import { Text, View, ActivityIndicator, StyleSheet, type ColorValue } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
-const icon = (emoji: string) =>
-  ({ color }: { color: ColorValue }) =>
-    <Text style={{ fontSize: 22, color }}>{emoji}</Text>;
+function TabIcon({ emoji, color }: { emoji: string; color: ColorValue }) {
+  return <Text style={{ fontSize: 22, color }}>{emoji}</Text>;
+}
+
+const icon = (emoji: string) => {
+  function Icono({ color }: { color: ColorValue }) {
+    return <TabIcon emoji={emoji} color={color} />;
+  }
+  return Icono;
+};
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
@@ -29,10 +36,9 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
-      <Tabs.Screen name="index"    options={{ title: 'Explorar', tabBarIcon: icon('🧭') }} />
-      <Tabs.Screen name="eventos"  options={{ title: 'Eventos',  tabBarIcon: icon('★') }} />
-      <Tabs.Screen name="perfil"   options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
-      <Tabs.Screen name="camera"   options={{ 
+      <Tabs.Screen name="index"          options={{ title: 'Explorar', tabBarIcon: icon('🧭') }} />
+      <Tabs.Screen name="eventos"        options={{ title: 'Eventos',  tabBarIcon: icon('★') }} />
+      <Tabs.Screen name="camera"         options={{
         tabBarIcon: ({ color }: { color: ColorValue }) => (
           <View style={styles.cameraContainer}>
             <Text style={[styles.cameraIcon, { color }]}>📷</Text>
@@ -40,10 +46,12 @@ export default function TabsLayout() {
         ),
         title: ' ',
       }} />
-      <Tabs.Screen name="misFotos"   options={{ title: 'Mis fotos', tabBarIcon: icon('📸') }} />
-      <Tabs.Screen name="comunidad"  options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
-      <Tabs.Screen name="mensajes" options={{ href: null }} />
-      <Tabs.Screen name="mapa"     options={{ href: null }} />
+      <Tabs.Screen name="comunidad"      options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
+      <Tabs.Screen name="perfil"         options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
+      <Tabs.Screen name="misFotos"       options={{ href: null }} />
+      <Tabs.Screen name="notificaciones" options={{ href: null }} />
+      <Tabs.Screen name="mensajes"       options={{ href: null }} />
+      <Tabs.Screen name="mapa"           options={{ href: null }} />
     </Tabs>
   );
 }
