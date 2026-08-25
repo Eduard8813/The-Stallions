@@ -1,9 +1,0 @@
-feat: merge integracion completa modulo camera, fotos, comunidad y notificaciones  
-ECHO est  activado.
-'Backend: endpoints API POST /api/fotos (multipart + visibilidad), GET /mias, GET /comunidad con paginacion, PUT/cambiar visibilidad, DELETE eliminar.'  
-'Likes: toggle POST /{id}/like, comentarios CRUD con editar/eliminar propias, notificaciones GET/Marcar leida.'  
-'Frontend: boton camera central tipo TikTok en navigation, selector tabs superior Mis fotos/Comunidad estilo TikTok.'  
-'Notificaciones: icono campana mostrando " Juan commented tu "foto / Juan" dio like a tu "foto.'  
-'Seguridad: usuario desde token JWT (SecurityContext), validacion autoria fotos y comentarios - nunca desde valor cliente.'  
-'Almacenamiento: URL referencia en base de datos, nombre unico Guid + nombre original.'  
-'Estados vacios cuando corresponden, sin datos mocks ni placeholders.'  

@@ -21,7 +21,7 @@ public class Photo {
     @Enumerated(EnumType.STRING)
     private Visibilidad visibilidad;
 
-    @Column(name = "url", nullable = false, length = 500)
+    @Column(name = "url", length = 500)
     private String url;
 
     @Column(name = "photo_data", columnDefinition = "varbinary(max)")
