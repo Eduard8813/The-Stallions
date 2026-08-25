@@ -3,6 +3,8 @@ package com.aplicacion.movil.the_stallions.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "Users")
@@ -65,11 +67,23 @@ public class User {
     @Column(name = "IsEnabled", nullable = false)
     private boolean enabled = true;
 
-    @Column(name = "CreatedAt", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
     @Column(name = "UpdatedAt")
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Photo> photos = new HashSet<>();
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Comment> comentarios = new HashSet<>();
+
+    @OneToMany(mappedBy = "usuarioDestino", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Notification> notificacionesRecibidas = new HashSet<>();
+
+    @OneToMany(mappedBy = "usuarioOrigen", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Notification> notificacionesEnviadas = new HashSet<>();
 
     // Getters and Setters
 
