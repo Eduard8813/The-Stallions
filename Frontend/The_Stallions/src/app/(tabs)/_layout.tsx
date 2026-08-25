@@ -43,6 +43,16 @@ export default function TabsLayout() {
       <Tabs.Screen name="comunidad"  options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
       <Tabs.Screen name="notificaciones" options={{ title: 'Notificaciones', tabBarIcon: icon('🔔') }} />
       <Tabs.Screen name="perfil"   options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
+      <Tabs.Screen name="camera"   options={{ 
+        tabBarIcon: ({ color }: { color: ColorValue }) => (
+          <View style={styles.cameraContainer}>
+            <Text style={[styles.cameraIcon, { color }]}>📷</Text>
+          </View>
+        ),
+        title: ' ',
+      }} />
+      <Tabs.Screen name="misFotos"   options={{ title: 'Mis fotos', tabBarIcon: icon('📸') }} />
+      <Tabs.Screen name="comunidad"  options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
       <Tabs.Screen name="mensajes" options={{ href: null }} />
       <Tabs.Screen name="mapa"     options={{ href: null }} />
     </Tabs>
