@@ -38,6 +38,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index"          options={{ title: 'Explorar', tabBarIcon: icon('🧭') }} />
       <Tabs.Screen name="eventos"        options={{ title: 'Eventos',  tabBarIcon: icon('★') }} />
+<<<<<<< HEAD
       <Tabs.Screen name="camera"         options={{
         tabBarIcon: ({ color }: { color: ColorValue }) => (
           <View style={styles.cameraContainer}>
@@ -47,29 +48,46 @@ export default function TabsLayout() {
         title: ' ',
       }} />
       <Tabs.Screen name="comunidad"      options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
+=======
+      <Tabs.Screen name="misFotosComunidad" options={{ title: 'Mis fotos', tabBarIcon: icon('📸') }} />
+>>>>>>> frontend
       <Tabs.Screen name="perfil"         options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
-      <Tabs.Screen name="misFotos"       options={{ href: null }} />
       <Tabs.Screen name="notificaciones" options={{ href: null }} />
       <Tabs.Screen name="mensajes"       options={{ href: null }} />
       <Tabs.Screen name="mapa"           options={{ href: null }} />
     </Tabs>
+    <View style={styles.fabContainer}>
+      <TouchableOpacity style={styles.fabButton} onPress={() => router.push('/(tabs)/camera')}>
+        <Text style={styles.fabIcon}>📷</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cameraContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  fabContainer: {
+    position: 'absolute',
+    bottom: 16,
+    left: 0,
+    right: 0,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  fabButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#e40077',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    boxShadow: '0 4px 12px rgba(228, 0, 119, 0.4)',
   },
-  cameraIcon: {
-    width: 28,
-    height: 28,
+  fabIcon: {
+    width: 32,
+    height: 32,
     color: '#fff',
-    fontSize: 28,
+    fontSize: 32,
   },
 });
