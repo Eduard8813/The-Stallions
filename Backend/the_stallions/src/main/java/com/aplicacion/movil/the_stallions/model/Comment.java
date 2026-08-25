@@ -19,7 +19,7 @@ public class Comment {
     @JoinColumn(name = "user_id", nullable = false)
     private User usuario;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(columnDefinition = "nvarchar(max)", nullable = false)
     private String texto;
 
     @Column(name = "fecha", nullable = false)

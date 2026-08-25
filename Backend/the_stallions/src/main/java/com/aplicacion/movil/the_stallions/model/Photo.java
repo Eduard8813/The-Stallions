@@ -24,7 +24,7 @@ public class Photo {
     @Column(name = "url", nullable = false, length = 500)
     private String url;
 
-    @Column(name = "photo_data", columnDefinition = "LONGTEXT")
+    @Column(name = "photo_data", columnDefinition = "varbinary(max)")
     private byte[] photoData;
 
     @Column(name = "content_type", length = 100)
@@ -33,7 +33,7 @@ public class Photo {
     @Column(name = "fecha_upload", nullable = false)
     private LocalDateTime fechaUpload;
 
-    @Column(name = "usuarios_like", columnDefinition = "JSON")
+    @Column(name = "usuarios_like", columnDefinition = "nvarchar(max)")
     private String usuariosLike; // Almacenaremos los token/userId como JSON simple
 
     @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -33,8 +33,7 @@ public class User {
     @Column(name = "PhotoUrl")
     private String photoUrl;
 
-    @Lob
-    @Column(name = "PhotoData")
+    @Column(name = "PhotoData", columnDefinition = "varbinary(max)")
     private byte[] photoData;
 
     @Column(name = "PhotoContentType", length = 100)
