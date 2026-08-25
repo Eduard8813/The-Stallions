@@ -13,7 +13,7 @@ import api from '../../services/api';
 
 type Notificacion = {
   id: number;
-  tipo: string;
+  tipo: 'like' | 'comentario';
   usuarioNombre: string;
   mensaje: string;
   fecha: string;
@@ -56,6 +56,9 @@ export default function NotificacionesScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <View style={styles.topBar}>
         <Text style={styles.title}>Notificaciones</Text>
+        <TouchableOpacity style={styles.campana} onPress={() => {}}>
+          <Text style={{ fontSize: 20, color: '#e40077' }}>🔔</Text>
+        </TouchableOpacity>
       </View>
       {loading ? (
         <ActivityIndicator style={styles.center} size="large" color="#e40077" />
@@ -100,12 +103,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#222',
     backgroundColor: '#000',
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    position: 'relative',
   },
   title: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  campana: {
+    position: 'absolute',
+    right: 14,
+    top: 0,
+    bottom: 0,
+    padding: 4,
+  },
   center: { flex: 1 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { color: '#999', fontSize: 15 },
+
   item: {
     flexDirection: 'row',
     alignItems: 'center',
