@@ -11,8 +11,10 @@ import {
   RefreshControl,
   ScrollView,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { Alert } from 'react-native';
 
 const PAGE_SIZE = 10;
 
@@ -135,11 +137,17 @@ export default function MisFotosComunidadScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <View style={styles.topBar}>
         <Text style={styles.tabTitle}>{tab === 'misFotos' ? 'Mis fotos' : 'Comunidad'}</Text>
-        <TouchableOpacity style={styles.tabBtn} onPress={() => toggleTab('misFotos')}>
-          <Text style={styles.tabBtnText}>{tab === 'misFotos' ? 'Activo' : 'Mis fotos'}</Text>
+        <TouchableOpacity
+          style={[styles.tabBtn, { backgroundColor: tab === 'misFotos' ? '#e40077' : '#333' }]}
+          onPress={() => toggleTab('misFotos')}
+        >
+          <Text style={styles.tabBtnText}>Mis fotos</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabBtn} onPress={() => toggleTab('comunidad')}>
-          <Text style={styles.tabBtnText}>{tab === 'comunidad' ? 'Activo' : 'Comunidad'}</Text>
+        <TouchableOpacity
+          style={[styles.tabBtn, { backgroundColor: tab === 'comunidad' ? '#e40077' : '#333' }]}
+          onPress={() => toggleTab('comunidad')}
+        >
+          <Text style={styles.tabBtnText}>Comunidad</Text>
         </TouchableOpacity>
       </View>
 
@@ -288,7 +296,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: tab === 'misFotos' ? '#e40077' : '#333',
   },
   tabBtnText: {
     color: '#fff',
