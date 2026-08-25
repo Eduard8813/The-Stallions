@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Text, View, ActivityIndicator, type ColorValue } from 'react-native';
+import { Text, View, ActivityIndicator, StyleSheet, type ColorValue } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 
 const icon = (emoji: string) =>
@@ -23,7 +23,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#111', borderTopColor: '#222', height: 64, paddingBottom: 8 },
+        tabBarStyle: { backgroundColor: '#111', borderTopColor: '#222', height: 80, paddingBottom: 8 },
         tabBarActiveTintColor: '#fff',
         tabBarInactiveTintColor: '#555',
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
@@ -32,8 +32,36 @@ export default function TabsLayout() {
       <Tabs.Screen name="index"    options={{ title: 'Explorar', tabBarIcon: icon('🧭') }} />
       <Tabs.Screen name="eventos"  options={{ title: 'Eventos',  tabBarIcon: icon('★') }} />
       <Tabs.Screen name="perfil"   options={{ title: 'Perfil',   tabBarIcon: icon('👤') }} />
+      <Tabs.Screen name="camera"   options={{ 
+        tabBarIcon: ({ color }: { color: ColorValue }) => (
+          <View style={styles.cameraContainer}>
+            <Text style={[styles.cameraIcon, { color }]}>📷</Text>
+          </View>
+        ),
+        title: ' ',
+      }} />
+      <Tabs.Screen name="misFotos"   options={{ title: 'Mis fotos', tabBarIcon: icon('📸') }} />
+      <Tabs.Screen name="comunidad"  options={{ title: 'Comunidad', tabBarIcon: icon('🌍') }} />
       <Tabs.Screen name="mensajes" options={{ href: null }} />
       <Tabs.Screen name="mapa"     options={{ href: null }} />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  cameraContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#e40077',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  cameraIcon: {
+    width: 28,
+    height: 28,
+    color: '#fff',
+    fontSize: 28,
+  },
+});
