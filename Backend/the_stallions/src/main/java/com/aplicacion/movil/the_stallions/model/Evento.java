@@ -35,8 +35,7 @@ public class Evento {
     @Column(name = "UpdatedAt")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @Lob
-    @Column(name = "FotoData")
+    @Column(name = "FotoData", columnDefinition = "varbinary(max)")
     private byte[] fotoData;
 
     @Column(name = "FotoContentType", length = 100)
