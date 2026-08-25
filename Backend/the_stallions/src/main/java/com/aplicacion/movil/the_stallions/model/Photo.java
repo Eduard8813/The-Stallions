@@ -104,12 +104,4 @@ public class Photo {
     public void setComentarios(Set<Comment> comentarios) {
         this.comentarios = comentarios;
     }
-
-    public String getUsuariosLike() {
-        return usuariosLike;
-    }
-
-    public void setUsuariosLike(String usuariosLike) {
-        this.usuariosLike = usuariosLike;
-    }
 }

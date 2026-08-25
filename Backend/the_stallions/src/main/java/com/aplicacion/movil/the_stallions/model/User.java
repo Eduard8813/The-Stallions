@@ -67,12 +67,6 @@ public class User {
     @Column(name = "IsEnabled", nullable = false)
     private boolean enabled = true;
 
-    @Column(name = "CreatedAt", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "UpdatedAt")
-    private LocalDateTime updatedAt;
-
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Photo> photos = new HashSet<>();
 
