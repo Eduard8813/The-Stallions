@@ -160,6 +160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   modalContainer: {
+    margin: 20,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 24,

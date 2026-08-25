@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import api from './api';
 import { EVENTS, events } from './events';
 import { profileSource } from './profileSource';
+import { getAuthToken } from './token';
 import type {
   AccountProvider,
   ChangePasswordInput,
@@ -104,6 +105,94 @@ export const userService = {
     } catch (e) {
       throw new Error(extractMessage(e));
     }
+  },
+
+  /** POST /api/fotos — Subir una nueva foto (multipart/form-data).
+   *  Requiere token en header (inyectado por el interceptor API).
+   *  El backend decodifica el token para obtener user_id.
+   */
+  async uploadFoto(
+    uri: string,
+    visibilidad: 'privada' | 'publica'
+  ): Promise<{ success: boolean; url?: string; usuarioId?: string }> {
+    const current = await loadLocalProfile();
+    const fileName = `photo_${Date.now()}.jpg`;
+    const mimeType = 'image/jpeg';
+    try {
+      const form = new FormData();
+      form.append('photo', { uri, name: fileName, type: mimeType } as any);
+      form.append('visibilidad', visibilidad);
+      const { data } = await api.post<{ success: boolean; url?: string; usuarioId?: string }>('/fotos', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    } catch (e: any) {
+      throw new Error(extractMessage(e));
+    }
+  },
+
+  /** GET /api/fotos/mias - Obtener fotos del usuario autenticado */
+  async getFotosMias(): Promise<any[]> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.get<any[]>('/fotos/mias', { headers });
+    return data;
+  },
+
+  /** GET /api/fotos/comunidad - Obtener fotos públicas */
+  async getFotosComunidad(): Promise<any[]> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.get<any[]>('/fotos/comunidad', { headers });
+    return data;
+  },
+
+  /** POST /api/fotos/:id/like - Dar/quitar like a una foto */
+  async likeFoto(fotoId: string): Promise<{ success: boolean }> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.post<{ success: boolean }>(`/fotos/${fotoId}/like`, {}, { headers });
+    return data;
+  },
+
+  /** GET /api/fotos/:id/comentarios - Obtener comentarios de una foto */
+  async getComentariosFoto(fotoId: string): Promise<any[]> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.get<any[]>(`/fotos/${fotoId}/comentarios`, { headers });
+    return data;
+  },
+
+  /** POST /api/fotos/:id/comentarios - Agregar un comentario a una foto */
+  async agregarComentario(fotoId: string, texto: string): Promise<{ exito: boolean; comentario?: any }> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.post<{ exito: boolean; comentario?: any }>(`/fotos/${fotoId}/comentarios`, { texto }, { headers });
+    return data;
+  },
+
+  /** PUT /api/comentarios/:id - Editar un comentario propio */
+  async editarComentario(comentarioId: string, texto: string): Promise<{ exito: boolean }> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.put<{ exito: boolean }>(`/comentarios/${comentarioId}`, { texto }, { headers });
+    return data;
+  },
+
+  /** DELETE /api/comentarios/:id - Eliminar un comentario propio */
+  async eliminarComentario(comentarioId: string): Promise<{ exito: boolean }> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.delete<{ exito: boolean }>(`/comentarios/${comentarioId}`, { headers });
+    return data;
+  },
+
+  /** GET /api/notificaciones - Obtener notificaciones del usuario */
+  async getNotificaciones(): Promise<any[]> {
+    const token = getAuthToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const { data } = await api.get<any[]>(`/api/notificaciones`, { headers });
+    return data;
   },
 
   /** GET /user/security — Estado de seguridad (2FA). */
