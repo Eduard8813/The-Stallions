@@ -56,36 +56,41 @@ public class FotoService {
      * Subir una nueva foto. El usuario se obtiene desde el token (SecurityContext),
      * nunca desde un valor enviado por el cliente.
      */
-    public PhotoResponse subirFoto(MultipartFile file, String visibilidad, User usuario) {
+    public PhotoResponse subirFoto(MultipartFile file, String visibilidad, String descripcion, User usuario) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("No se proporcionó ninguna imagen");
-        }
-        if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
-            throw new IllegalArgumentException("El archivo debe ser una imagen");
         }
         if (file.getSize() > 10 * 1024 * 1024) { // 10MB
             throw new IllegalArgumentException("La imagen no puede superar los 10 MB");
         }
 
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("No se pudo leer el archivo de imagen");
+        }
+        if (bytes.length == 0) {
+            throw new IllegalArgumentException("El archivo de imagen está vacío");
+        }
+
         Visibilidad vis = parseVisibilidad(visibilidad);
 
-        try {
-            Photo photo = new Photo();
-            photo.setUser(usuario);
-            photo.setVisibilidad(vis);
-            photo.setFechaUpload(LocalDateTime.now());
-            photo.setPhotoData(file.getBytes());
-            photo.setContentType(file.getContentType());
-            photo.setUsuariosLike("");
+        Photo photo = new Photo();
+        photo.setUser(usuario);
+        photo.setVisibilidad(vis);
+        photo.setDescripcion(descripcion != null ? descripcion.trim() : null);
+        photo.setFechaUpload(LocalDateTime.now());
+        photo.setPhotoData(bytes);
+        // Content type real del archivo, o fallback razonable según extensión.
+        photo.setContentType(resolverContentType(file));
+        photo.setUsuariosLike("");
 
-            Photo saved = photoRepository.save(photo);
-            saved.setUrl(baseUrl + "/api/fotos/" + saved.getId() + "/imagen");
-            saved = photoRepository.save(saved);
+        Photo saved = photoRepository.save(photo);
+        saved.setUrl(publicBaseUrl() + "/api/fotos/" + saved.getId() + "/imagen");
+        saved = photoRepository.save(saved);
 
-            return desde(saved, usuario);
-        } catch (IOException e) {
-            throw new RuntimeException("Error al procesar la imagen", e);
-        }
+        return desde(saved, usuario);
     }
 
     /** Todas las fotos (privadas y públicas) del usuario autenticado. */
@@ -252,6 +257,39 @@ public class FotoService {
         }
     }
 
+    /**
+     * Resuelve el content type de la imagen. Acepta cualquier tipo de imagen.
+     * Si el header no viene (o es un tipo genérico), infiere desde la extensión.
+     */
+    private String resolverContentType(MultipartFile file) {
+        String ct = file.getContentType();
+        if (ct != null && !ct.isBlank()) {
+            return ct;
+        }
+        String nombre = file.getOriginalFilename();
+        if (nombre != null) {
+            String lower = nombre.toLowerCase();
+            if (lower.endsWith(".png")) return "image/png";
+            if (lower.endsWith(".gif")) return "image/gif";
+            if (lower.endsWith(".webp")) return "image/webp";
+            if (lower.endsWith(".bmp")) return "image/bmp";
+            if (lower.endsWith(".heic") || lower.endsWith(".heif")) return "image/heic";
+            if (lower.endsWith(".jpeg") || lower.endsWith(".jpg")) return "image/jpeg";
+        }
+        return "image/jpeg";
+    }
+
+    /**
+     * Si app.base-url está configurado lo usa; si no, devuelve vacío para que
+     * el front resuelva la URL relativa con su propio host. Nunca guarda una URL rota.
+     */
+    private String publicBaseUrl() {
+        if (baseUrl != null && !baseUrl.isBlank()) {
+            return baseUrl.replaceAll("/+$", "");
+        }
+        return "";
+    }
+
     private void validarDueno(Photo photo, User usuario) {
         if (!photo.getUser().getId().equals(usuario.getId())) {
             throw new SecurityException("No tienes permiso sobre esta foto");
@@ -296,6 +334,7 @@ public class FotoService {
                 dueno != null ? baseUrl + "/api/user/photo/" + dueno.getId() : null,
                 p.getFechaUpload() != null ? p.getFechaUpload().format(FECHA_FORMATO) : null,
                 p.getVisibilidad() == Visibilidad.PUBLICA ? "publica" : "privada",
+                p.getDescripcion(),
                 ids.size(),
                 likedByMe,
                 commentRepository.countByPhoto(p)

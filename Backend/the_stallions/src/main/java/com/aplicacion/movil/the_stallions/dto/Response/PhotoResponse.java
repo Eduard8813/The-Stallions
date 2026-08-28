@@ -7,6 +7,7 @@ public class PhotoResponse {
     private String usuarioAvatar;
     private String fecha;
     private String visibilidad; // "privada" | "publica"
+    private String descripcion;
     private long likes;
     private boolean likedByMe;
     private long comentarios;
@@ -20,13 +21,15 @@ public class PhotoResponse {
     }
 
     public PhotoResponse(Long id, String url, String usuarioNombre, String usuarioAvatar,
-                         String fecha, String visibilidad, long likes, boolean likedByMe, long comentarios) {
+                         String fecha, String visibilidad, String descripcion, long likes,
+                         boolean likedByMe, long comentarios) {
         this.id = id;
         this.url = url;
         this.usuarioNombre = usuarioNombre;
         this.usuarioAvatar = usuarioAvatar;
         this.fecha = fecha;
         this.visibilidad = visibilidad;
+        this.descripcion = descripcion;
         this.likes = likes;
         this.likedByMe = likedByMe;
         this.comentarios = comentarios;
@@ -78,6 +81,14 @@ public class PhotoResponse {
 
     public void setVisibilidad(String visibilidad) {
         this.visibilidad = visibilidad;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
     public long getLikes() {
