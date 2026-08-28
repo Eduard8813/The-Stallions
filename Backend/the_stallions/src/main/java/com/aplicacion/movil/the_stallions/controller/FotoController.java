@@ -86,8 +86,12 @@ public class FotoController {
     /** GET /api/fotos/{id}/imagen — bytes de la imagen (privadas solo para el dueño) */
 
     @GetMapping("/{id}/imagen")
-    public ResponseEntity<byte[]> obtenerImagen(@PathVariable Long id) {
-        Photo photo = fotoService.obtenerFotoConDatos(id, fotoService.usuarioOpcional());
+    public ResponseEntity<byte[]> obtenerImagen(@PathVariable Long id,
+                                                @RequestParam(value = "token", required = false) String token) {
+        User actual = token != null && !token.isBlank()
+                ? fotoService.usuarioDesdeQueryToken(token)
+                : fotoService.usuarioOpcional();
+        Photo photo = fotoService.obtenerFotoConDatos(id, actual);
         String contentType = photo.getContentType() != null ? photo.getContentType() : "image/jpeg";
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
