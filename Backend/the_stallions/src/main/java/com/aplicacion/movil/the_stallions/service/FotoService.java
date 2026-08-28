@@ -85,8 +85,11 @@ public class FotoService {
         // Content type real del archivo, o fallback razonable según extensión.
         photo.setContentType(resolverContentType(file));
         photo.setUsuariosLike("");
+        // La columna `url` es NOT NULL en la BD, así que nunca se inserta null:
+        // se usa un placeholder y se reemplaza por la URL definitiva tras obtener el id.
+        photo.setUrl(publicBaseUrl() + "/api/fotos/pending/imagen");
 
-        Photo saved = photoRepository.save(photo);
+        Photo saved = photoRepository.saveAndFlush(photo);
         saved.setUrl(publicBaseUrl() + "/api/fotos/" + saved.getId() + "/imagen");
         saved = photoRepository.save(saved);
 
