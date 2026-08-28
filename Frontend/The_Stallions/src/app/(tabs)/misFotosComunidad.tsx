@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import api from '../../services/api';
+import api, { resolveResourceUrl } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Alert } from 'react-native';
 
@@ -213,7 +213,7 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
   if (mode === 'misFotos') {
     return (
       <View style={styles.gridItem}>
-        <Image source={{ uri: foto.url }} style={styles.gridImage} />
+        <Image source={{ uri: resolveResourceUrl(foto.url) }} style={styles.gridImage} />
         <View
           style={[
             styles.badge,
@@ -243,7 +243,7 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
       <View style={styles.card}>
         <View style={styles.header}>
           {foto.usuarioAvatar ? (
-            <Image source={{ uri: foto.usuarioAvatar }} style={styles.avatar} />
+            <Image source={{ uri: resolveResourceUrl(foto.usuarioAvatar) }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarFallback]}>
               <Text style={styles.avatarInitial}>
@@ -257,7 +257,7 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
           </View>
         </View>
 
-        <Image source={{ uri: foto.url }} style={styles.imagen} resizeMode="cover" />
+        <Image source={{ uri: resolveResourceUrl(foto.url) }} style={styles.imagen} resizeMode="cover" />
 
         {foto.descripcion ? (
           <View style={styles.descBox}>

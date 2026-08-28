@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { refreshCachedToken } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -31,6 +32,7 @@ export function AuthProvider({ children }) {
       const photo = await storage.get('userPhoto');
       if (token && email) setUser({ email, fullName, photo });
       setLoading(false);
+      await refreshCachedToken();
     })();
   }, []);
 
@@ -43,6 +45,7 @@ export function AuthProvider({ children }) {
     } else {
       await storage.remove('userPhoto');
     }
+    await refreshCachedToken();
     setUser({ email, fullName, photo: photo || null });
   };
 
@@ -52,6 +55,7 @@ export function AuthProvider({ children }) {
     await storage.remove('userFullName');
     await storage.remove('userPhoto');
     await storage.remove('profilePhoto');
+    await refreshCachedToken();
     setUser(null);
   };
 
