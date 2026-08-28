@@ -110,18 +110,28 @@ export const userService = {
   /** POST /api/fotos — Subir una nueva foto (multipart/form-data).
    *  Requiere token en header (inyectado por el interceptor API).
    *  El backend decodifica el token para obtener user_id.
+   *  Acepta cualquier tipo de imagen usando el mimeType/fileName reales del asset.
    */
   async uploadFoto(
     uri: string,
-    visibilidad: 'privada' | 'publica'
+    visibilidad: 'privada' | 'publica',
+    descripcion: string = '',
+    asset?: { fileName?: string | null; mimeType?: string | null }
   ): Promise<{ success: boolean; url?: string; usuarioId?: string }> {
-    const current = await loadLocalProfile();
-    const fileName = `photo_${Date.now()}.jpg`;
-    const mimeType = 'image/jpeg';
+    const fileName = asset?.fileName || `photo_${Date.now()}.jpg`;
+    const mimeType = asset?.mimeType || 'image/jpeg';
     try {
       const form = new FormData();
-      form.append('photo', { uri, name: fileName, type: mimeType } as any);
+      if (Platform.OS === 'web') {
+        const blob = await (await fetch(uri)).blob();
+        form.append('photo', blob as any, fileName);
+      } else {
+        form.append('photo', { uri, name: fileName, type: mimeType } as any);
+      }
       form.append('visibilidad', visibilidad);
+      if (descripcion && descripcion.trim()) {
+        form.append('descripcion', descripcion.trim());
+      }
       const { data } = await api.post<{ success: boolean; url?: string; usuarioId?: string }>('/fotos', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
