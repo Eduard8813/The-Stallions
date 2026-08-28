@@ -100,6 +100,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/user/photo/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/fotos/*/imagen").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/eventos/**").permitAll()
                 .requestMatchers("/api/eventos/**").authenticated()
                 .anyRequest().authenticated()

@@ -12,7 +12,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import api from '../../services/api';
+import api, { resolveResourceUrl } from '../../services/api';
 
 type Comentario = {
   id: number;
@@ -169,7 +169,7 @@ function Publicacion({
     <View style={styles.card}>
       <View style={styles.header}>
         {foto.usuarioAvatar ? (
-          <Image source={{ uri: foto.usuarioAvatar }} style={styles.avatar} />
+          <Image source={{ uri: resolveResourceUrl(foto.usuarioAvatar) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarFallback]}>
             <Text style={styles.avatarInitial}>{foto.usuarioNombre.charAt(0).toUpperCase()}</Text>
@@ -181,7 +181,7 @@ function Publicacion({
         </View>
       </View>
 
-      <Image source={{ uri: foto.url }} style={styles.imagen} resizeMode="cover" />
+      <Image source={{ uri: resolveResourceUrl(foto.url) }} style={styles.imagen} resizeMode="cover" />
 
       {foto.descripcion ? (
         <View style={styles.descBox}>

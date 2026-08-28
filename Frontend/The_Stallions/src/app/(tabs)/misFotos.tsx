@@ -12,7 +12,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import api from '../../services/api';
+import api, { resolveResourceUrl } from '../../services/api';
 
 type Foto = {
   id: number;
@@ -80,7 +80,7 @@ export default function MisFotosScreen() {
 
   const renderItem = ({ item }: { item: Foto }) => (
     <View style={styles.gridItem}>
-      <Image source={{ uri: item.url }} style={styles.gridImage} />
+      <Image source={{ uri: resolveResourceUrl(item.url) }} style={styles.gridImage} />
       <View
         style={[
           styles.badge,
