@@ -13,6 +13,7 @@ import com.aplicacion.movil.the_stallions.repository.CommentRepository;
 import com.aplicacion.movil.the_stallions.repository.NotificationRepository;
 import com.aplicacion.movil.the_stallions.repository.PhotoRepository;
 import com.aplicacion.movil.the_stallions.repository.UserRepository;
+import com.aplicacion.movil.the_stallions.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
@@ -46,6 +47,9 @@ public class FotoService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -248,6 +252,22 @@ public class FotoService {
             return null;
         }
         return userRepository.findByEmail(email).orElse(null);
+    }
+
+    /**
+     * Resuelve el usuario a partir de un token JWT enviado como query param
+     * (necesario para que <Image> de React Native pueda cargar fotos privadas propias,
+     * ya que no envía el header Authorization). Devuelve null si el token es inválido.
+     */
+    public User usuarioDesdeQueryToken(String token) {
+        if (token == null || token.isBlank()) return null;
+        try {
+            if (!jwtUtils.isTokenValid(token)) return null;
+            String email = jwtUtils.getEmailFromToken(token);
+            return email == null ? null : userRepository.findByEmail(email).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // ==================== AUXILIARES ====================
