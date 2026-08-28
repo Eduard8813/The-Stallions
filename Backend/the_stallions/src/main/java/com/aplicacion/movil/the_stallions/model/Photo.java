@@ -30,6 +30,9 @@ public class Photo {
     @Column(name = "content_type", length = 100)
     private String contentType;
 
+    @Column(name = "descripcion", length = 1000)
+    private String descripcion;
+
     @Column(name = "fecha_upload", nullable = false)
     private LocalDateTime fechaUpload;
 
@@ -87,6 +90,14 @@ public class Photo {
 
     public void setContentType(String contentType) {
         this.contentType = contentType;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public void setDescripcion(String descripcion) {
+        this.descripcion = descripcion;
     }
 
     public LocalDateTime getFechaUpload() {

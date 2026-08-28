@@ -1,6 +1,7 @@
 package com.aplicacion.movil.the_stallions.exception;
 
 import com.aplicacion.movil.the_stallions.dto.Response.ErrorResponse;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +21,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleUnauthorized(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(ex.getMessage()));
+    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(NotFoundException.class)
@@ -54,8 +55,25 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse("Ya existe un registro con esos datos"));
+        String message = "Ya existe un registro con esos datos";
+        Throwable cause = ex.getMostSpecificCause();
+        if (cause != null && cause.getMessage() != null) {
+            String raw = cause.getMessage().toLowerCase();
+            if (raw.contains("url") || raw.contains("length")) {
+                message = "La URL de la foto supera el máximo permitido";
+            } else if (raw.contains("null")) {
+                message = "Faltan datos obligatorios para guardar la foto";
+            } else if (raw.contains("insert") || raw.contains("update") || raw.contains("violat")
+                    || raw.contains("cannot insert")) {
+                message = "No se pudo guardar la foto. Verifica que el archivo sea válido e inténtalo de nuevo";
+            }
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(message));
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(SecurityException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

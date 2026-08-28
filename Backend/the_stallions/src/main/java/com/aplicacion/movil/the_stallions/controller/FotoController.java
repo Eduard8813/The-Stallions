@@ -32,15 +32,16 @@ public class FotoController {
     /**
      * Subir una nueva foto
      * POST /api/fotos
-     * Multipart/form-data: photo (archivo), visibilidad (privada | publica)
+     * Multipart/form-data: photo (archivo), visibilidad (privada | publica), descripcion (opcional)
      */
 
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PhotoResponse> subirFoto(@RequestParam("photo") MultipartFile photo,
-                                                   @RequestParam("visibilidad") String visibilidad) {
+                                                   @RequestParam("visibilidad") String visibilidad,
+                                                   @RequestParam(value = "descripcion", required = false) String descripcion) {
         User usuario = fotoService.usuarioActual();
-        return ResponseEntity.ok(fotoService.subirFoto(photo, visibilidad, usuario));
+        return ResponseEntity.ok(fotoService.subirFoto(photo, visibilidad, descripcion, usuario));
     }
 
     /** GET /api/fotos/mias — fotos privadas y públicas del usuario autenticado */
