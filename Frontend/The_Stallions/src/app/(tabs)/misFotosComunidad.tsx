@@ -25,6 +25,7 @@ type FotoItem = {
   usuarioNombre: string;
   usuarioAvatar: string | null;
   fecha: string;
+  descripcion?: string | null;
   likes: number;
   likedByMe: boolean;
   comentarios: number;
@@ -231,7 +232,7 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
             style={[styles.actionBtn, styles.deleteBtn]}
             onPress={() => {/* delete foto */}}
           >
-            <Text style={styles.actionText, { color: '#ff5c5c' }}>Borrar</Text>
+            <Text style={[styles.actionText, { color: '#ff5c5c' }]}>Borrar</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -258,8 +259,19 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
 
         <Image source={{ uri: foto.url }} style={styles.imagen} resizeMode="cover" />
 
+        {foto.descripcion ? (
+          <View style={styles.descBox}>
+            <Text style={styles.descTexto}>{foto.descripcion}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.acciones}>
-          <TouchableOpacity style={styles.accionBtn} onPress={() => darLike(foto)}>
+          <TouchableOpacity
+            style={styles.accionBtn}
+            onPress={() => {
+              // Like toggle se maneja en la pantalla principal; se deja vacío aquí.
+            }}
+          >
             <Text style={[styles.accionTexto, isLiked && styles.likeActivo]}>
               {isLiked ? '❤️' : '🤍'} Me gusta ({foto.likes})
             </Text>
@@ -350,6 +362,9 @@ const styles = StyleSheet.create({
   fecha: { color: '#888', fontSize: 12 },
 
   imagen: { width: '100%', aspectRatio: 1 },
+
+  descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1f1f1f' },
+  descTexto: { color: '#eee', fontSize: 14, lineHeight: 20 },
 
   acciones: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#222' },
   accionBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },

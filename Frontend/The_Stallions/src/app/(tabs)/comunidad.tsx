@@ -29,6 +29,7 @@ type Foto = {
   usuarioNombre: string;
   usuarioAvatar: string | null;
   fecha: string;
+  descripcion?: string | null;
   likes: number;
   likedByMe: boolean;
   comentarios: number;
@@ -181,6 +182,12 @@ function Publicacion({
       </View>
 
       <Image source={{ uri: foto.url }} style={styles.imagen} resizeMode="cover" />
+
+      {foto.descripcion ? (
+        <View style={styles.descBox}>
+          <Text style={styles.descTexto}>{foto.descripcion}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.acciones}>
         <TouchableOpacity style={styles.accionBtn} onPress={onLike}>
@@ -376,6 +383,9 @@ const styles = StyleSheet.create({
   fecha: { color: '#888', fontSize: 12 },
 
   imagen: { width: '100%', aspectRatio: 1 },
+
+  descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1f1f1f' },
+  descTexto: { color: '#eee', fontSize: 14, lineHeight: 20 },
 
   acciones: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#222' },
   accionBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
