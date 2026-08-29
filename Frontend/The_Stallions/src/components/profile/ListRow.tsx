@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ListRowProps {
   icon?: string;
@@ -27,6 +27,8 @@ export default function ListRow({
   last,
   style,
 }: ListRowProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const content = (
     <>
       {icon ? <Text style={styles.icon}>{icon}</Text> : null}
@@ -51,21 +53,22 @@ export default function ListRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    gap: 12,
-    backgroundColor: colors.surfaceAlt,
-  },
-  separator: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  disabled: { opacity: 0.5 },
-  icon: { fontSize: 18 },
-  textWrap: { flex: 1 },
-  title: { fontSize: 15, fontWeight: '600', color: colors.text },
-  titleDanger: { color: colors.danger },
-  subtitle: { fontSize: 12, color: colors.subtext, marginTop: 2 },
-  chevron: { fontSize: 20, color: colors.subtext, marginLeft: 4 },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      gap: 12,
+      backgroundColor: colors.surfaceAlt,
+    },
+    separator: { borderBottomWidth: 1, borderBottomColor: colors.border },
+    disabled: { opacity: 0.5 },
+    icon: { fontSize: 18 },
+    textWrap: { flex: 1 },
+    title: { fontSize: 15, fontWeight: '600', color: colors.text },
+    titleDanger: { color: colors.danger },
+    subtitle: { fontSize: 12, color: colors.subtext, marginTop: 2 },
+    chevron: { fontSize: 20, color: colors.subtext, marginLeft: 4 },
+  });

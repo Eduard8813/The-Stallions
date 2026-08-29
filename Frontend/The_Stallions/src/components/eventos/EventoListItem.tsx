@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import type { Evento } from '../../types/evento';
 
 interface Props {
@@ -10,6 +10,8 @@ interface Props {
 }
 
 export default function EventoListItem({ evento, onPress }: Props) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const fecha = new Date(`${evento.fecha}T12:00:00`).toLocaleDateString('es-AR', {
     weekday: 'short',
     day: 'numeric',
@@ -42,7 +44,7 @@ export default function EventoListItem({ evento, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAsync } from '../../hooks/useAsync';
 import { fechasDelEvento, obtenerEventos } from '../../services/eventosService';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import CalendarioEventos from '../../components/eventos/CalendarioEventos';
 import EventoListItem from '../../components/eventos/EventoListItem';
 
@@ -20,6 +20,8 @@ interface MesConEventos {
 }
 
 export default function EventosScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const hoy = new Date();
   const [mesVisible, setMesVisible] = useState({ anio: hoy.getFullYear(), mes: hoy.getMonth() });
@@ -116,7 +118,7 @@ export default function EventosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 16, paddingTop: 8 },
   titulo: { color: colors.text, fontSize: 26, fontWeight: '800' },

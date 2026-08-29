@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Modal, View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import qrcodeFactory from 'qrcode-generator';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import Button from './Button';
 
 interface TOTPSetupModalProps {
@@ -28,6 +28,8 @@ function groupSecret(secret: string): string {
 }
 
 export default function TOTPSetupModal({ visible, secret, otpAuthUrl, onClose }: TOTPSetupModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -53,49 +55,50 @@ export default function TOTPSetupModal({ visible, secret, otpAuthUrl, onClose }:
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 20,
-  },
-  content: { alignItems: 'center' },
-  title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 6, textAlign: 'center' },
-  subtitle: { fontSize: 13, color: colors.subtext, lineHeight: 19, textAlign: 'center', marginBottom: 16 },
-  qrWrap: {
-    backgroundColor: colors.inputBg,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    marginBottom: 16,
-  },
-  hint: { fontSize: 12, color: colors.subtext, textAlign: 'center', marginBottom: 8 },
-  secret: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    color: colors.text,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  note: { fontSize: 12, color: colors.subtext, lineHeight: 18, textAlign: 'center', marginBottom: 16 },
-  button: { width: '100%' },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 360,
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 20,
+    },
+    content: { alignItems: 'center' },
+    title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 6, textAlign: 'center' },
+    subtitle: { fontSize: 13, color: colors.subtext, lineHeight: 19, textAlign: 'center', marginBottom: 16 },
+    qrWrap: {
+      backgroundColor: colors.inputBg,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 12,
+      marginBottom: 16,
+    },
+    hint: { fontSize: 12, color: colors.subtext, textAlign: 'center', marginBottom: 8 },
+    secret: {
+      fontSize: 15,
+      fontWeight: '700',
+      letterSpacing: 1.5,
+      color: colors.text,
+      backgroundColor: colors.inputBg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      textAlign: 'center',
+      marginBottom: 12,
+    },
+    note: { fontSize: 12, color: colors.subtext, lineHeight: 18, textAlign: 'center', marginBottom: 16 },
+    button: { width: '100%' },
+  });

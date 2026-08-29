@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ConfirmModalProps {
   visible: boolean;
@@ -29,6 +29,8 @@ export default function ConfirmModal({
   onCancel,
   children,
 }: ConfirmModalProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onCancel}>
       <View style={styles.overlay}>
@@ -59,38 +61,39 @@ export default function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 28,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 380,
-    backgroundColor: colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 20,
-  },
-  title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 8 },
-  message: { fontSize: 13, color: colors.subtext, lineHeight: 19, marginBottom: 14 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 6 },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 44,
-  },
-  btnCancel: { backgroundColor: colors.inputBg, borderWidth: 1, borderColor: colors.border },
-  btnCancelText: { color: colors.subtext, fontSize: 14, fontWeight: '600' },
-  btnConfirm: { backgroundColor: colors.accent },
-  btnDanger: { backgroundColor: colors.danger },
-  btnDisabled: { opacity: 0.45 },
-  btnConfirmText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.65)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 28,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 380,
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 20,
+    },
+    title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 8 },
+    message: { fontSize: 13, color: colors.subtext, lineHeight: 19, marginBottom: 14 },
+    actions: { flexDirection: 'row', gap: 10, marginTop: 6 },
+    btn: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 44,
+    },
+    btnCancel: { backgroundColor: colors.inputBg, borderWidth: 1, borderColor: colors.border },
+    btnCancelText: { color: colors.subtext, fontSize: 14, fontWeight: '600' },
+    btnConfirm: { backgroundColor: colors.accent },
+    btnDanger: { backgroundColor: colors.danger },
+    btnDisabled: { opacity: 0.45 },
+    btnConfirmText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  });

@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import api, { resolveResourceUrl } from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
+import { useLang } from '../../context/LangContext';
 
 type Comentario = {
   id: number;
@@ -39,6 +41,9 @@ const PAGE_SIZE = 10;
 
 export default function ComunidadScreen() {
   const router = useRouter();
+  const { colors, mode } = useTheme();
+  const { t } = useLang();
+  const styles = createStyles(colors);
   const [fotos, setFotos] = useState<Foto[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -48,7 +53,6 @@ export default function ComunidadScreen() {
   const [miId, setMiId] = useState<number | null>(null);
 
   useEffect(() => {
-    // ID del usuario autenticado para resaltar sus propios comentarios
     api.get('/user/profile')
       .then(({ data }) => setMiId(data.id != null ? Number(data.id) : null))
       .catch(() => {});
@@ -66,13 +70,13 @@ export default function ComunidadScreen() {
         setPage(pagina);
         setHayMas(data.length === PAGE_SIZE);
       } catch (e: any) {
-        Alert.alert('Error', e?.response?.data?.message || 'No se pudo cargar la comunidad');
+        Alert.alert('Error', e?.response?.data?.message || t.communityErrorLoad);
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    []
+    [t]
   );
 
   useFocusEffect(
@@ -82,7 +86,6 @@ export default function ComunidadScreen() {
   );
 
   const darLike = async (foto: Foto) => {
-    // actualización optimista
     setFotos((prev) =>
       prev.map((f) =>
         f.id === foto.id
@@ -93,7 +96,6 @@ export default function ComunidadScreen() {
     try {
       await api.post(`/fotos/${foto.id}/like`);
     } catch (e: any) {
-      // revertir si falla
       setFotos((prev) =>
         prev.map((f) =>
           f.id === foto.id
@@ -101,15 +103,15 @@ export default function ComunidadScreen() {
             : f
         )
       );
-      Alert.alert('Error', e?.response?.data?.message || 'No se pudo registrar el like');
+      Alert.alert('Error', e?.response?.data?.message || t.communityErrorLike);
     }
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <StatusBar barStyle={mode === 'light' ? 'dark-content' : 'light-content'} backgroundColor={colors.surface} />
       <View style={styles.topBar}>
-        <Text style={styles.title}>Comunidad</Text>
+        <Text style={styles.title}>{t.tabCommunity}</Text>
         <TouchableOpacity
           style={styles.campana}
           onPress={() => router.push('/(tabs)/notificaciones')}
@@ -118,11 +120,11 @@ export default function ComunidadScreen() {
         </TouchableOpacity>
       </View>
       {loading ? (
-        <ActivityIndicator style={styles.center} size="large" color="#e40077" />
+        <ActivityIndicator style={styles.center} size="large" color={colors.cameraBtn} />
       ) : fotos.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>🌍</Text>
-          <Text style={styles.emptyText}>Aún no hay fotos en la comunidad</Text>
+          <Text style={styles.emptyText}>{t.communityEmpty}</Text>
         </View>
       ) : (
         <FlatList
@@ -132,7 +134,7 @@ export default function ComunidadScreen() {
             if (!loadingMore && hayMas) cargar(page + 1, false);
           }}
           onEndReachedThreshold={0.3}
-          ListFooterComponent={loadingMore ? <ActivityIndicator color="#e40077" /> : null}
+          ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.cameraBtn} /> : null}
           renderItem={({ item }) => (
             <Publicacion
               foto={item}
@@ -165,6 +167,9 @@ function Publicacion({
   onLike: () => void;
   onToggleComentarios: () => void;
 }) {
+  const { colors } = useTheme();
+  const { t } = useLang();
+  const styles = createStyles(colors);
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -192,11 +197,11 @@ function Publicacion({
       <View style={styles.acciones}>
         <TouchableOpacity style={styles.accionBtn} onPress={onLike}>
           <Text style={[styles.accionTexto, foto.likedByMe && styles.likeActivo]}>
-            {foto.likedByMe ? '❤️' : '🤍'} Me gusta ({foto.likes})
+            {foto.likedByMe ? '❤️' : '🤍'} {t.communityLike} ({foto.likes})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.accionBtn} onPress={onToggleComentarios}>
-          <Text style={styles.accionTexto}>💬 Comentar ({foto.comentarios})</Text>
+          <Text style={styles.accionTexto}>💬 {t.communityComment} ({foto.comentarios})</Text>
         </TouchableOpacity>
       </View>
 
@@ -217,6 +222,9 @@ function SeccionComentarios({
   miUsuarioId: number | null;
   onChange?: () => void;
 }) {
+  const { colors } = useTheme();
+  const { t } = useLang();
+  const styles = createStyles(colors);
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [cargando, setCargando] = useState(true);
   const [texto, setTexto] = useState('');
@@ -248,7 +256,7 @@ function SeccionComentarios({
       setComentarios((prev) => [...prev, data]);
       setTexto('');
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || 'No se pudo publicar el comentario');
+      Alert.alert('Error', e?.response?.data?.message || t.communityErrorPost);
     } finally {
       setEnviando(false);
     }
@@ -262,22 +270,22 @@ function SeccionComentarios({
       setEditandoId(null);
       setTextoEdit('');
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || 'No se pudo editar el comentario');
+      Alert.alert('Error', e?.response?.data?.message || t.communityErrorEdit);
     }
   };
 
   const eliminar = (id: number) => {
-    Alert.alert('Eliminar comentario', '¿Seguro que deseas eliminar este comentario?', [
-      { text: 'Cancelar', style: 'cancel' },
+    Alert.alert(t.communityDeleteTitle, t.communityDeleteMsg, [
+      { text: t.communityCancel, style: 'cancel' },
       {
-        text: 'Eliminar',
+        text: t.communityDelete,
         style: 'destructive',
         onPress: async () => {
           try {
             await api.delete(`/comentarios/${id}`);
             setComentarios((prev) => prev.filter((c) => c.id !== id));
           } catch (e: any) {
-            Alert.alert('Error', e?.response?.data?.message || 'No se pudo eliminar el comentario');
+            Alert.alert('Error', e?.response?.data?.message || t.communityErrorDelete);
           }
         },
       },
@@ -287,9 +295,9 @@ function SeccionComentarios({
   return (
     <View style={styles.comentariosBox}>
       {cargando ? (
-        <ActivityIndicator color="#e40077" style={{ paddingVertical: 12 }} />
+        <ActivityIndicator color={colors.cameraBtn} style={{ paddingVertical: 12 }} />
       ) : comentarios.length === 0 ? (
-        <Text style={styles.sinComentarios}>Sé el primero en comentar</Text>
+        <Text style={styles.sinComentarios}>{t.communityFirst}</Text>
       ) : (
         comentarios.map((c) => {
           const esMio = miUsuarioId != null && c.usuarioId === miUsuarioId;
@@ -300,7 +308,7 @@ function SeccionComentarios({
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.comentarioAutor}>
-                  {c.usuarioNombre} <Text style={styles.comentarioFecha}>· {c.fecha}{c.editado ? ' · editado' : ''}</Text>
+                  {c.usuarioNombre} <Text style={styles.comentarioFecha}>· {c.fecha}{c.editado ? ` · ${t.communityEdited}` : ''}</Text>
                 </Text>
                 {editandoId === c.id ? (
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -309,9 +317,10 @@ function SeccionComentarios({
                       value={textoEdit}
                       onChangeText={setTextoEdit}
                       autoFocus
+                      placeholderTextColor={colors.subtext}
                     />
                     <TouchableOpacity onPress={() => guardarEdicion(c.id)}>
-                      <Text style={styles.linkGuardar}>Guardar</Text>
+                      <Text style={styles.linkGuardar}>{t.communitySave}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => setEditandoId(null)}>
                       <Text style={styles.linkCancelar}>X</Text>
@@ -323,10 +332,10 @@ function SeccionComentarios({
                     {esMio && (
                       <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
                         <TouchableOpacity onPress={() => { setEditandoId(c.id); setTextoEdit(c.texto); }}>
-                          <Text style={styles.linkEditar}>Editar</Text>
+                          <Text style={styles.linkEditar}>{t.communityEdit}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => eliminar(c.id)}>
-                          <Text style={styles.linkEliminar}>Eliminar</Text>
+                          <Text style={styles.linkEliminar}>{t.communityDelete}</Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -341,15 +350,15 @@ function SeccionComentarios({
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="Escribe un comentario..."
-          placeholderTextColor="#666"
+          placeholder={t.communityWriteComment}
+          placeholderTextColor={colors.subtext}
           value={texto}
           onChangeText={setTexto}
           multiline
         />
         <TouchableOpacity style={styles.enviarBtn} onPress={enviar} disabled={enviando || !texto.trim()}>
           <Text style={[styles.enviarTexto, (!texto.trim() || enviando) && { opacity: 0.5 }]}>
-            {enviando ? '…' : 'Enviar'}
+            {enviando ? '…' : t.communitySend}
           </Text>
         </TouchableOpacity>
       </View>
@@ -357,62 +366,65 @@ function SeccionComentarios({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0b0b0b' },
-  topBar: {
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#222',
-    backgroundColor: '#000',
-  },
-  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  campana: { position: 'absolute', right: 14 },
-  center: { flex: 1 },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
-  emptyText: { color: '#999', fontSize: 15 },
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    topBar: {
+      height: 56,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    title: { color: colors.text, fontSize: 18, fontWeight: '700' },
+    campana: { position: 'absolute', right: 14 },
+    center: { flex: 1 },
+    empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+    emptyIcon: { fontSize: 48, marginBottom: 12 },
+    emptyText: { color: colors.subtext, fontSize: 15 },
 
-  card: { backgroundColor: '#111', marginBottom: 10 },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarFallback: { backgroundColor: '#e40077', justifyContent: 'center', alignItems: 'center' },
-  avatarInitial: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  nombre: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  fecha: { color: '#888', fontSize: 12 },
+    card: { backgroundColor: colors.surface, marginBottom: 10 },
+    header: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
+    avatar: { width: 40, height: 40, borderRadius: 20 },
+    avatarFallback: { backgroundColor: colors.cameraBtn, justifyContent: 'center', alignItems: 'center' },
+    avatarInitial: { color: colors.text, fontSize: 16, fontWeight: '700' },
+    nombre: { color: colors.text, fontSize: 14, fontWeight: '700' },
+    fecha: { color: colors.subtext, fontSize: 12 },
 
-  imagen: { width: '100%', aspectRatio: 1 },
+    imagen: { width: '100%', aspectRatio: 1 },
 
-  descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1f1f1f' },
-  descTexto: { color: '#eee', fontSize: 14, lineHeight: 20 },
+    descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.border },
+    descTexto: { color: colors.text, fontSize: 14, lineHeight: 20 },
 
-  acciones: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#222' },
-  accionBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  accionTexto: { color: '#ccc', fontSize: 13, fontWeight: '600' },
-  likeActivo: { color: '#ff4d6d' },
+    acciones: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border },
+    accionBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+    accionTexto: { color: colors.subtext, fontSize: 13, fontWeight: '600' },
+    likeActivo: { color: colors.cameraBtn },
 
-  comentariosBox: { paddingHorizontal: 12, paddingBottom: 12, backgroundColor: '#181818' },
-  sinComentarios: { color: '#777', fontSize: 13, paddingVertical: 10 },
-  comentario: { flexDirection: 'row', gap: 8, paddingVertical: 6 },
-  avatarSmall: { width: 28, height: 28, borderRadius: 14 },
-  comentarioAutor: { color: '#ddd', fontSize: 12, fontWeight: '700' },
-  comentarioFecha: { color: '#777', fontSize: 11, fontWeight: '400' },
-  comentarioTexto: { color: '#eee', fontSize: 13, marginTop: 2 },
-  linkEditar: { color: '#4da3ff', fontSize: 12 },
-  linkEliminar: { color: '#ff5c5c', fontSize: 12 },
-  linkGuardar: { color: '#37d67a', fontSize: 12, fontWeight: '700' },
-  linkCancelar: { color: '#999', fontSize: 12 },
+    comentariosBox: { paddingHorizontal: 12, paddingBottom: 12, backgroundColor: colors.inputBg },
+    sinComentarios: { color: colors.subtext, fontSize: 13, paddingVertical: 10 },
+    comentario: { flexDirection: 'row', gap: 8, paddingVertical: 6 },
+    avatarSmall: { width: 28, height: 28, borderRadius: 14 },
+    comentarioAutor: { color: colors.text, fontSize: 12, fontWeight: '700' },
+    comentarioFecha: { color: colors.subtext, fontSize: 11, fontWeight: '400' },
+    comentarioTexto: { color: colors.text, fontSize: 13, marginTop: 2 },
+    linkEditar: { color: colors.accent, fontSize: 12 },
+    linkEliminar: { color: colors.danger, fontSize: 12 },
+    linkGuardar: { color: colors.success, fontSize: 12, fontWeight: '700' },
+    linkCancelar: { color: colors.subtext, fontSize: 12 },
 
-  inputRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  input: {
-    backgroundColor: '#222',
-    color: '#fff',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 13,
-  },
-  enviarBtn: { justifyContent: 'center', paddingHorizontal: 8 },
-  enviarTexto: { color: '#e40077', fontWeight: '700', fontSize: 13 },
-});
+    inputRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+    input: {
+      backgroundColor: colors.inputBg,
+      color: colors.text,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      fontSize: 13,
+    },
+    enviarBtn: { justifyContent: 'center', paddingHorizontal: 8 },
+    enviarTexto: { color: colors.cameraBtn, fontWeight: '700', fontSize: 13 },
+  });

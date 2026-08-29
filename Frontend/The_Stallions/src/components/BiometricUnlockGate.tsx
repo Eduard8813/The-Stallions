@@ -4,13 +4,15 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { localSettings } from '../services/localSettings';
 import * as biometricsService from '../services/biometrics';
-import { colors } from '../constants/ui';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * Locks the app with the biometric prompt while a signed-in user exists and
  * `biometricsEnabled` is on. Children render only after a successful unlock.
  */
 export default function BiometricUnlockGate({ children }: { children: React.ReactNode }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [status, setStatus] = useState<'checking' | 'unlocked' | 'locked' | 'idle'>('checking');
@@ -101,7 +103,7 @@ export default function BiometricUnlockGate({ children }: { children: React.Reac
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,

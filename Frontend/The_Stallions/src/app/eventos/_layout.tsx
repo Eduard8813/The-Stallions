@@ -1,8 +1,9 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function EventosLayout() {
+  const { colors } = useTheme();
   return (
     <Stack
       screenOptions={{
