@@ -27,7 +27,13 @@ export default function CameraScreen() {
   const [error, setError] = useState('');
   const [visibilidad, setVisibilidad] = useState<'privada' | 'publica'>('publica');
   const [descripcion, setDescripcion] = useState('');
-  const [asset, setAsset] = useState<AssetInfo | null>(null);
+  const [assets, setAssets] = useState<AssetInfo[]>([]);
+
+  const toAssetInfo = (a: any): AssetInfo => ({
+    uri: a.uri,
+    fileName: a.fileName,
+    mimeType: a.mimeType,
+  });
 
   const handleCapture = async () => {
     setError('');
@@ -44,42 +50,66 @@ export default function CameraScreen() {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
+      quality: 1.0,
     });
 
     if (result.canceled || !result.assets?.length) return;
 
-    const a = result.assets[0];
-    setAsset({
-      uri: a.uri,
-      fileName: a.fileName,
-      mimeType: a.mimeType,
+    setAssets((prev) => [...prev, ...result.assets!.map(toAssetInfo)]);
+  };
+
+  const elegirGaleria = async () => {
+    setError('');
+
+    const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (libStatus !== 'granted') {
+      setError('Se necesita acceso a la galería para subir fotos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      allowsMultipleSelection: true,
+      selectionLimit: 0,
+      quality: 1.0,
     });
-    setDescripcion('');
+
+    if (result.canceled || !result.assets?.length) return;
+
+    setAssets((prev) => [...prev, ...result.assets!.map(toAssetInfo)]);
   };
 
   const tomarOtra = () => {
-    setAsset(null);
-    setDescripcion('');
     setError('');
     handleCapture();
   };
 
+  const eliminarFoto = (index: number) => {
+    setAssets((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const subirFoto = async () => {
-    if (!asset) return;
+    if (!assets.length) return;
     setLoading(true);
     setError('');
 
     try {
-      await userService.uploadFoto(asset.uri, visibilidad, descripcion, asset);
+      let ultimoExito = false;
+      for (const asset of assets) {
+        try {
+          await userService.uploadFoto(asset.uri, visibilidad, descripcion, asset);
+          ultimoExito = true;
+        } catch (e: any) {
+          setError(e?.message || 'Error inesperado al subir una foto');
+        }
+      }
+      if (!ultimoExito) return;
       events.emit('fotoSubida', { fecha: new Date().toISOString() });
-      setAsset(null);
+      setAssets([]);
       setDescripcion('');
       setVisibilidad('publica');
       router.replace('/(tabs)/misFotos');
-    } catch (e: any) {
-      setError(e?.message || 'Error inesperado al subir la foto');
     } finally {
       setLoading(false);
     }
@@ -100,21 +130,36 @@ export default function CameraScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
-      {!asset ? (
+      {assets.length === 0 ? (
         <View style={styles.center}>
           <TouchableOpacity onPress={handleCapture} style={styles.captureButton}>
             <Text style={styles.captureText}>📷</Text>
           </TouchableOpacity>
           <Text style={styles.hint}>Toca para tomar una foto</Text>
+          <TouchableOpacity onPress={elegirGaleria} style={styles.galeriaBtn}>
+            <Text style={styles.galeriaText}>Subir foto de galería</Text>
+          </TouchableOpacity>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.publishContainer}>
-          <Image source={{ uri: asset.uri }} style={styles.preview} resizeMode="cover" />
+          <Text style={styles.contadorLabel}>Fotos seleccionadas ({assets.length})</Text>
+          <View style={styles.thumbsRow}>
+            {assets.map((item, index) => (
+              <View key={index} style={styles.thumbWrap}>
+                <Image source={{ uri: item.uri }} style={styles.thumb} resizeMode="cover" />
+                <TouchableOpacity style={styles.thumbX} onPress={() => eliminarFoto(index)}>
+                  <Text style={styles.thumbXText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          <Image source={{ uri: assets[0].uri }} style={styles.preview} resizeMode="cover" />
 
           <TextInput
             style={styles.descInput}
-            placeholder="Escribe una descripción para tu foto..."
+            placeholder="Escribe una descripción para tus fotos..."
             placeholderTextColor="#777"
             value={descripcion}
             onChangeText={setDescripcion}
@@ -148,8 +193,13 @@ export default function CameraScreen() {
             <TouchableOpacity style={styles.publicarBtn} onPress={subirFoto}>
               <Text style={styles.publicarText}>Subir foto</Text>
             </TouchableOpacity>
+          </View>
+          <View style={styles.masButtons}>
             <TouchableOpacity style={styles.otraBtn} onPress={tomarOtra}>
-              <Text style={styles.otraText}>Tomar otra 📷</Text>
+              <Text style={styles.otraText}>📷 Tomar otra</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.otraBtn} onPress={elegirGaleria}>
+              <Text style={styles.otraText}>De galería</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -174,9 +224,35 @@ const styles = StyleSheet.create({
   },
   captureText: { fontSize: 34 },
   hint: { color: '#777', marginTop: 14, fontSize: 14 },
+  galeriaBtn: {
+    marginTop: 20,
+    backgroundColor: '#2a2a2a',
+    borderWidth: 1,
+    borderColor: '#444',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  galeriaText: { color: '#e40077', fontWeight: '600', fontSize: 15 },
   errorText: { color: '#ff5c5c', marginTop: 12, fontSize: 14, textAlign: 'center' },
 
   publishContainer: { padding: 16 },
+  contadorLabel: { color: '#aaa', fontSize: 13, fontWeight: '600', marginBottom: 10 },
+  thumbsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  thumbWrap: { position: 'relative' },
+  thumb: { width: 84, height: 84, borderRadius: 10, backgroundColor: '#000' },
+  thumbX: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#e40077',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbXText: { color: '#fff', fontSize: 12, fontWeight: '700', lineHeight: 14 },
   preview: {
     width: '100%',
     aspectRatio: 4 / 3,
@@ -210,15 +286,15 @@ const styles = StyleSheet.create({
   visText: { color: '#aaa', fontWeight: '600', fontSize: 14 },
   visTextActiva: { color: '#e40077' },
 
-  publishButtons: { flexDirection: 'row', gap: 12, marginTop: 4 },
+  publishButtons: { marginTop: 4 },
   publicarBtn: {
-    flex: 1,
     backgroundColor: '#e40077',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
   },
   publicarText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  masButtons: { flexDirection: 'row', gap: 12, marginTop: 12 },
   otraBtn: {
     flex: 1,
     backgroundColor: '#1a1a1a',
