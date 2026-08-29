@@ -3,10 +3,44 @@ import { Platform, View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
+
+const CITY_IMAGE_MODULES: Record<string, any> = {
+  Chontales:  require('../../assets/images/ciudades/JUIGALPA.png'),
+  Esteli:     require('../../assets/images/ciudades/ESTELI.png'),
+  Granada:    require('../../assets/images/ciudades/GRANADA.png'),
+  Leon:       require('../../assets/images/ciudades/LEON.png'),
+  Managua:    require('../../assets/images/ciudades/MANAGUA.png'),
+  Masaya:     require('../../assets/images/ciudades/MASAYA.png'),
+  Matagalpa:  require('../../assets/images/ciudades/MATAGALPA.png'),
+  RACCS:      require('../../assets/images/ciudades/BLUEFIELDS.png'),
+};
+
+async function loadCityImagesBase64(): Promise<Record<string, string>> {
+  const result: Record<string, string> = {};
+  await Promise.all(
+    Object.entries(CITY_IMAGE_MODULES).map(async ([dep, mod]) => {
+      try {
+        const [asset] = await Asset.loadAsync(mod);
+        const uri = asset.localUri ?? asset.uri;
+        if (uri.startsWith('data:')) {
+          result[dep] = uri;
+        } else {
+          const b64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+          result[dep] = `data:image/png;base64,${b64}`;
+        }
+      } catch {
+        result[dep] = '';
+      }
+    })
+  );
+  return result;
+}
 
 const MAP_CENTER = '12.87,-85.21';
 
-const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es') => `<!DOCTYPE html>
+const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', cityImages: Record<string, string> = {}) => `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -24,6 +58,11 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es') 
       margin-top: 2px; font-weight: 800; font-size: 10px; color: #fff;
       white-space: nowrap; text-shadow: 0 1px 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5);
       text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .pin-img {
+      width: 72px; height: 40px; object-fit: cover; border-radius: 6px;
+      margin-top: 3px; border: 1.5px solid rgba(255,255,255,0.7);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.7);
     }
     .nicaragua-title {
       position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000;
@@ -530,6 +569,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es') 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     var API_BASE = '${apiBase}';
+    var CITY_IMAGES = ${JSON.stringify(cityImages)};
 
     var ES = ${lang === 'es'};
     function L(es, en) { return ES ? es : en; }
@@ -1801,8 +1841,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es') 
               var marker = L.marker(c, {
                 icon: L.divIcon({
                   className: '',
-                  html: '<div class="pin-marker"><div class="pin-name" style="color:' + dep.color + ';">' + dep.name + '</div>' + makePinSvg(dep.color) + '</div>',
-                  iconSize: [28, 40], iconAnchor: [14, 40]
+                  html: '<div class="pin-marker">' + (CITY_IMAGES[dep.name] ? '<img class="pin-img" src="' + CITY_IMAGES[dep.name] + '" alt="' + dep.name + '" />' : '<div class="pin-name" style="color:' + dep.color + ';">' + dep.name + '</div>') + makePinSvg(dep.color) + '</div>',
+                  iconSize: [72, 68], iconAnchor: [36, 68]
                 })
               }).addTo(map);
 
@@ -1844,11 +1884,17 @@ function WebMap() {
   const { signOut } = useAuth();
   const { lang } = useLang();
   const router = useRouter();
+  const [cityImages, setCityImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // En web las imágenes se sirven como URL estática, no hace falta base64
+    setCityImages({});
+  }, []);
 
   useEffect(() => {
     if (!ref.current) return;
     const iframe = document.createElement('iframe');
-    iframe.srcdoc = leafletHtml(MAP_CENTER, getMapApiBase(), lang);
+    iframe.srcdoc = leafletHtml(MAP_CENTER, getMapApiBase(), lang, cityImages);
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.border = 'none';
@@ -1866,19 +1912,26 @@ function WebMap() {
       window.removeEventListener('message', handler);
       ref.current?.removeChild(iframe);
     };
-  }, [lang]);
+  }, [lang, cityImages]);
 
   return <div ref={ref} style={{ width: '100%', height: '100%', margin: 0, padding: 0 }} />;
 }
 
 function NativeMap() {
-  const { WebView } = require('react-native-webview');
   const { t, lang } = useLang();
   const webViewRef = useRef<any>(null);
   const { signOut } = useAuth();
   const router = useRouter();
   const locationRef = useRef<{ lat: number; lng: number } | null>(null);
   const loadedRef = useRef(false);
+  const [cityImages, setCityImages] = useState<Record<string, string>>({});
+  const [WebView] = useState<any>(() => {
+    try {
+      return require('react-native-webview').WebView;
+    } catch {
+      return null;
+    }
+  });
   const [Location] = useState<any>(() => {
     try {
       return require('expo-location');
@@ -1893,6 +1946,10 @@ function NativeMap() {
       webViewRef.current?.postMessage(JSON.stringify({ type: 'location', lat: loc.lat, lng: loc.lng }));
     }
   };
+
+  useEffect(() => {
+    loadCityImagesBase64().then(setCityImages);
+  }, []);
 
   useEffect(() => {
     if (!Location) return;
@@ -1923,7 +1980,7 @@ function NativeMap() {
     };
   }, [Location]);
 
-  if (!Location) {
+  if (!WebView || !Location) {
     return (
       <View style={styles.locationFallback}>
         <Text style={styles.locationFallbackTitle}>{t.locationUnavailableTitle}</Text>
@@ -1938,7 +1995,7 @@ function NativeMap() {
       key={lang}
       style={{ flex: 1 }}
       originWhitelist={['*']}
-      source={{ html: leafletHtml(MAP_CENTER, getMapApiBase(), lang) }}
+      source={{ html: leafletHtml(MAP_CENTER, getMapApiBase(), lang, cityImages) }}
       javaScriptEnabled
       scrollEnabled={false}
       onLoadEnd={() => {
