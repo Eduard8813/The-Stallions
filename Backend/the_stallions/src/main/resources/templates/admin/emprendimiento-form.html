@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Emprendimiento | Admin - The Stallions</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #0F1115; color: #F2F4F8; padding: 32px 16px; display: flex; justify-content: center; }
+        .card { background: #1A1D24; border: 1px solid #2A2F3B; border-radius: 12px; padding: 28px; width: 100%; max-width: 520px; }
+        h1 { font-size: 20px; margin-bottom: 20px; }
+        label { display: block; font-size: 13px; color: #98A1B3; margin: 14px 0 6px; }
+        input, select, textarea { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid #2A2F3B; background: #14171E; color: #F2F4F8; font-size: 14px; }
+        textarea { min-height: 90px; resize: vertical; }
+        input[type="file"] { padding: 8px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #6366F1; }
+        .error { color: #EF4444; font-size: 12px; margin-top: 5px; }
+        .row { display: flex; gap: 12px; margin-top: 24px; }
+        .rowfields { display: flex; gap: 12px; }
+        .rowfields > div { flex: 1; }
+        button, .btn { padding: 10px 18px; border-radius: 8px; border: none; background: #6366F1; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; text-align: center; }
+        button:hover, .btn:hover { background: #4F52E0; }
+        .btn.sec { background: #232733; color: #98A1B3; flex: 0 0 auto; }
+        .preview { width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #2A2F3B; margin-top: 8px; }
+        .ayuda { color: #4A5264; font-size: 12px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1 th:text="${idEmprendimiento != null} ? 'Editar emprendimiento' : 'Nuevo emprendimiento'">Nuevo emprendimiento</h1>
+
+    <form th:action="${idEmprendimiento != null} ? @{'/admin/emprendimientos/' + ${idEmprendimiento}} : @{/admin/emprendimientos}"
+          th:object="${emprendimiento}" method="post" enctype="multipart/form-data">
+        <label for="nombre">Nombre del negocio</label>
+        <input type="text" id="nombre" th:field="*{nombre}" maxlength="150"/>
+        <div class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
+
+        <label for="tipo">Tipo de emprendimiento</label>
+        <input type="text" id="tipo" th:field="*{tipo}" maxlength="60" placeholder="Ej: Artesanía, Gastronomía, Comercio..."/>
+        <div class="error" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}"></div>
+
+        <label for="descripcion">Descripción corta (opcional)</label>
+        <textarea id="descripcion" th:field="*{descripcion}" maxlength="500"></textarea>
+        <div class="error" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}"></div>
+
+        <div class="rowfields">
+            <div>
+                <label for="lat">Latitud</label>
+                <input type="number" id="lat" th:field="*{lat}" step="any" placeholder="12.1234"/>
+                <div class="error" th:if="${#fields.hasErrors('lat')}" th:errors="*{lat}"></div>
+            </div>
+            <div>
+                <label for="lng">Longitud</label>
+                <input type="number" id="lng" th:field="*{lng}" step="any" placeholder="-86.1234"/>
+                <div class="error" th:if="${#fields.hasErrors('lng')}" th:errors="*{lng}"></div>
+            </div>
+        </div>
+        <p class="ayuda">Latitud y longitud del punto donde se ubicará en el mapa de Nicaragua.</p>
+
+        <label for="contactoTelefono">Teléfono de contacto</label>
+        <input type="text" id="contactoTelefono" th:field="*{contactoTelefono}" maxlength="40"/>
+        <div class="error" th:if="${#fields.hasErrors('contactoTelefono')}" th:errors="*{contactoTelefono}"></div>
+
+        <label for="contactoEmail">Email de contacto</label>
+        <input type="email" id="contactoEmail" th:field="*{contactoEmail}" maxlength="120"/>
+        <div class="error" th:if="${#fields.hasErrors('contactoEmail')}" th:errors="*{contactoEmail}"></div>
+
+        <label for="contactoRedes">Redes sociales / web</label>
+        <input type="text" id="contactoRedes" th:field="*{contactoRedes}" maxlength="300" placeholder="Ej: @nombrenic, instagram.com/xxx"/>
+        <div class="error" th:if="${#fields.hasErrors('contactoRedes')}" th:errors="*{contactoRedes}"></div>
+
+        <label for="foto">Foto (opcional)</label>
+        <input type="file" id="foto" name="foto" accept="image/*"/>
+        <p class="ayuda">JPG o PNG, hasta 10 MB. Si ya tiene foto y subís otra, se reemplaza.</p>
+        <img th:if="${fotoActual != null}" class="preview" th:src="${fotoActual}" alt="Foto actual"/>
+
+        <div class="row">
+            <button type="submit">Guardar</button>
+            <a class="btn sec" th:href="@{/admin/emprendimientos}">Cancelar</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>
