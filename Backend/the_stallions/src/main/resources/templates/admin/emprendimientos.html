@@ -2,11 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="es">
 <head>
     <meta charset="UTF-8"/>
-    <title>Eventos | Admin - The Stallions</title>
+    <title>Emprendimientos | Admin - The Stallions</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: #0F1115; color: #F2F4F8; padding: 32px 16px; }
-        .container { max-width: 900px; margin: 0 auto; }
+        .container { max-width: 960px; margin: 0 auto; }
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         h1 { font-size: 24px; }
         .btn { display: inline-block; padding: 9px 16px; border-radius: 8px; border: none; background: #6366F1; color: #fff; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
@@ -17,16 +17,15 @@
         table { width: 100%; border-collapse: collapse; background: #1A1D24; border-radius: 12px; overflow: hidden; }
         th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #98A1B3; background: #232733; padding: 12px 16px; }
         td { padding: 13px 16px; border-top: 1px solid #2A2F3B; font-size: 14px; vertical-align: top; }
-        td.desc { color: #98A1B3; max-width: 320px; }
-        .cat { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-        .FERIADO { background: rgba(239,68,68,0.12); color: #EF4444; }
-        .CONMEMORACION { background: rgba(245,158,11,0.14); color: #F59E0B; }
-        .CELEBRACION { background: rgba(34,197,94,0.14); color: #22C55E; }
+        td.desc { color: #98A1B3; max-width: 300px; }
+        td.coords, td.cont { color: #98A1B3; font-size: 12px; }
+        .tipo { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: rgba(99,102,241,0.14); color: #A5B4FC; }
         .actions { display: flex; gap: 8px; }
         form.inline { display: inline; }
         .empty { text-align: center; color: #98A1B3; padding: 40px; background: #1A1D24; border-radius: 12px; }
         nav.top { display: flex; gap: 16px; margin-bottom: 20px; font-size: 14px; }
         nav.top a { color: #98A1B3; text-decoration: none; }
+        nav.top a.active { color: #F2F4F8; font-weight: 700; }
         td img.foto { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; border: 1px solid #2A2F3B; display: block; }
         .sinFoto { color: #4A5264; font-size: 12px; }
     </style>
@@ -35,49 +34,54 @@
 <div class="container">
     <nav class="top">
         <a href="/admin/eventos">Eventos</a>
-        <a href="/admin/emprendimientos">Emprendimientos</a>
+        <a class="active" href="/admin/emprendimientos">Emprendimientos</a>
         <form th:action="@{/admin/logout}" method="post" style="margin-left:auto">
             <button type="submit" class="btn sec">Cerrar sesión</button>
         </form>
     </nav>
 
     <header>
-        <h1>Eventos</h1>
-        <a class="btn" th:href="@{/admin/eventos/nuevo}">+ Nuevo evento</a>
+        <h1>Emprendimientos</h1>
+        <a class="btn" th:href="@{/admin/emprendimientos/nuevo}">+ Nuevo emprendimiento</a>
     </header>
 
-    <div class="alert" th:if="${param.creado}">Evento creado correctamente.</div>
-    <div class="alert" th:if="${param.actualizado}">Evento actualizado correctamente.</div>
-    <div class="alert" th:if="${param.eliminado}">Evento eliminado correctamente.</div>
+    <div class="alert" th:if="${param.creado}">Emprendimiento creado correctamente.</div>
+    <div class="alert" th:if="${param.actualizado}">Emprendimiento actualizado correctamente.</div>
+    <div class="alert" th:if="${param.eliminado}">Emprendimiento eliminado correctamente.</div>
 
-    <table th:if="${not #lists.isEmpty(eventos)}">
+    <table th:if="${not #lists.isEmpty(emprendimientos)}">
         <thead>
         <tr>
             <th>Foto</th>
-            <th>Título</th>
-            <th>Fecha</th>
-            <th>Categoría</th>
-            <th>Descripción</th>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Ubicación</th>
+            <th>Contacto</th>
             <th></th>
         </tr>
         </thead>
         <tbody>
-        <tr th:each="e : ${eventos}">
+        <tr th:each="e : ${emprendimientos}">
             <td>
-                <img class="foto" th:if="${e.fotoUrl != null}" th:src="${e.fotoUrl}" alt="Foto del evento"/>
+                <img class="foto" th:if="${e.fotoUrl != null}" th:src="${e.fotoUrl}" alt="Foto"/>
                 <span class="sinFoto" th:if="${e.fotoUrl == null}">—</span>
             </td>
-            <td th:text="${e.titulo}">Título</td>
-            <td th:text="${e.fechaFin != null} ?
-                    ${#temporals.format(e.fecha, 'dd/MM/yyyy') + ' – ' + #temporals.format(e.fechaFin, 'dd/MM/yyyy')} :
-                    ${#temporals.format(e.fecha, 'dd/MM/yyyy')}">01/01/2026</td>
-            <td><span class="cat" th:classappend="${e.categoria.name()}" th:text="${e.categoria}">FERIADO</span></td>
-            <td class="desc" th:text="${e.descripcion}">Descripción</td>
+            <td>
+                <div th:text="${e.nombre}">Nombre</div>
+                <div class="desc" th:text="${e.descripcion}">Descripción</div>
+            </td>
+            <td><span class="tipo" th:text="${e.tipo}">Tipo</span></td>
+            <td class="coords" th:text="${#numbers.formatDecimal(e.lat, 1, 4)} + ', ' + ${#numbers.formatDecimal(e.lng, 1, 4)}">12.1234, -86.1234</td>
+            <td class="cont">
+                <div th:if="${e.contactoTelefono != null}" th:text="${e.contactoTelefono}">Tel</div>
+                <div th:if="${e.contactoEmail != null}" th:text="${e.contactoEmail}">Email</div>
+                <span th:if="${e.contactoTelefono == null and e.contactoEmail == null}">—</span>
+            </td>
             <td>
                 <div class="actions">
-                    <a class="btn sec" th:href="@{'/admin/eventos/' + ${e.id} + '/editar'}">Editar</a>
-                    <form class="inline" th:action="@{'/admin/eventos/' + ${e.id} + '/eliminar'}" method="post"
-                          onsubmit="return confirm('¿Eliminar este evento?');">
+                    <a class="btn sec" th:href="@{'/admin/emprendimientos/' + ${e.id} + '/editar'}">Editar</a>
+                    <form class="inline" th:action="@{'/admin/emprendimientos/' + ${e.id} + '/eliminar'}" method="post"
+                          onsubmit="return confirm('¿Eliminar este emprendimiento?');">
                         <button type="submit" class="btn danger">Eliminar</button>
                     </form>
                 </div>
@@ -86,8 +90,8 @@
         </tbody>
     </table>
 
-    <div class="empty" th:if="${#lists.isEmpty(eventos)}">
-        Todavía no hay eventos cargados.
+    <div class="empty" th:if="${#lists.isEmpty(emprendimientos)}">
+        Todavía no hay emprendimientos cargados.
     </div>
 </div>
 </body>
