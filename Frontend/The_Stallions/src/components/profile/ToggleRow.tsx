@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch, ActivityIndicator } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ToggleRowProps {
   title: string;
@@ -21,6 +21,8 @@ export default function ToggleRow({
   pending,
   last,
 }: ToggleRowProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={[styles.row, !last && styles.separator]}>
       <View style={styles.textWrap}>
@@ -42,17 +44,18 @@ export default function ToggleRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    gap: 12,
-    backgroundColor: colors.surfaceAlt,
-  },
-  separator: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  textWrap: { flex: 1, paddingRight: 8 },
-  title: { fontSize: 15, fontWeight: '600', color: colors.text },
-  description: { fontSize: 12, color: colors.subtext, marginTop: 2, lineHeight: 16 },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      gap: 12,
+      backgroundColor: colors.surfaceAlt,
+    },
+    separator: { borderBottomWidth: 1, borderBottomColor: colors.border },
+    textWrap: { flex: 1, paddingRight: 8 },
+    title: { fontSize: 15, fontWeight: '600', color: colors.text },
+    description: { fontSize: 12, color: colors.subtext, marginTop: 2, lineHeight: 16 },
+  });

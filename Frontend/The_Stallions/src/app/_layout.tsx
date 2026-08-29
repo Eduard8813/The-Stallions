@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Slot, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { LangProvider } from '../context/LangContext';
+import { ThemeProvider } from '../context/ThemeContext';
 import { EVENTS, events } from '../services/events';
 import BiometricUnlockGate from '../components/BiometricUnlockGate';
 
@@ -32,12 +33,14 @@ function SessionBridge() {
 export default function RootLayout() {
   return (
     <LangProvider>
-      <AuthProvider>
-        <SessionBridge />
-        <BiometricUnlockGate>
-          <Slot />
-        </BiometricUnlockGate>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <SessionBridge />
+          <BiometricUnlockGate>
+            <Slot />
+          </BiometricUnlockGate>
+        </AuthProvider>
+      </ThemeProvider>
     </LangProvider>
   );
 }

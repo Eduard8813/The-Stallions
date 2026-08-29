@@ -18,7 +18,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon-foreground.png",
         "monochromeImage": "./assets/images/app-icon-monochrome.png",
-        "backgroundColor": "#0B1F3A"
+        "backgroundColor": "#69B5E6"
       }
     },
     "web": {
@@ -30,7 +30,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0B1F3A",
+          "backgroundColor": "#69B5E6",
           "image": "./assets/images/app-icon.png",
           "imageWidth": 220
         }

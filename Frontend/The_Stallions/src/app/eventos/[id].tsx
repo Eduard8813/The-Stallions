@@ -14,9 +14,11 @@ import {
   subirFotoEvento,
 } from '../../services/eventosService';
 import { notificationsPermissions, openNotificationSettings } from '../../services/notificationsPermissions';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function EventoDetalleScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: evento, loading, error, setData } = useAsync(() => obtenerEventoPorId(id!), [id]);
@@ -171,7 +173,7 @@ export default function EventoDetalleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   vacioTexto: { color: colors.subtext, fontSize: 14 },

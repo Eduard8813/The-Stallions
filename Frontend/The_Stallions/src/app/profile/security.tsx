@@ -5,7 +5,7 @@ import * as biometricsService from '../../services/biometrics';
 import { userService } from '../../services/userService';
 import { localSettings } from '../../services/localSettings';
 import { EVENTS, events } from '../../services/events';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import type { UserSession } from '../../services/userTypes';
 import CenterLoading from '../../components/profile/CenterLoading';
 import ErrorState from '../../components/profile/ErrorState';
@@ -29,6 +29,8 @@ function platformIcon(session: UserSession): string {
 }
 
 function SecurityContent({ initial }: { initial: SecurityData }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [twoFactor, setTwoFactor] = useState(initial.twoFactorEnabled);
   const [twoFactorPending, setTwoFactorPending] = useState(false);
   const [setupData, setSetupData] = useState<{ secret: string; otpAuthUrl: string | null } | null>(null);
@@ -220,7 +222,7 @@ export default function SecurityScreen() {
   return <SecurityContent initial={data} />;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   padding: { padding: 14 },
   errorText: { color: colors.danger, fontSize: 13, marginBottom: 14 },
   successText: { color: colors.success, fontSize: 13, marginBottom: 12 },

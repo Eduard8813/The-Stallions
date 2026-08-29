@@ -17,12 +17,13 @@ import {
 } from '../../services/notificationsPermissions';
 import { localSettings } from '../../services/localSettings';
 import { useAuth } from '../../context/AuthContext';
-import { colors } from '../../constants/ui';
+import { useLang } from '../../context/LangContext';
+import { useTheme } from '../../context/ThemeContext';
 import Avatar from '../../components/profile/Avatar';
 import Section from '../../components/profile/Section';
 import ListRow from '../../components/profile/ListRow';
 import ToggleRow from '../../components/profile/ToggleRow';
-import CenteredBox from '../../components/profile/CenteredBox';
+import SelectDropdown from '../../components/profile/SelectDropdown';import CenteredBox from '../../components/profile/CenteredBox';
 import CenterLoading from '../../components/profile/CenterLoading';
 import ErrorState from '../../components/profile/ErrorState';
 import Button from '../../components/profile/Button';
@@ -33,6 +34,9 @@ type DeviceNotificationStatus = NotificationPermissionStatus | 'checking';
 export default function PerfilScreen() {
   const router = useRouter();
   const { updateUser } = useAuth();
+  const { t, lang, setLang } = useLang();
+  const { colors, mode, setMode } = useTheme();
+  const styles = createStyles(colors);
   const { data: profile, loading, error, refetch, setData } = useAsync(() => userService.getProfile());
   const [signingOut, setSigningOut] = useState(false);
   const [photoUpdating, setPhotoUpdating] = useState(false);
@@ -177,9 +181,9 @@ export default function PerfilScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+      <StatusBar barStyle={mode === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={colors.bg} />
       <CenteredBox>
-        <Text style={styles.headerTitle}>Mi Perfil</Text>
+        <Text style={styles.headerTitle}>{t.profileTitle}</Text>
 
         <View style={styles.profileCard}>
           <Avatar
@@ -199,41 +203,62 @@ export default function PerfilScreen() {
           ) : null}
         </View>
 
-        <Section title="Cuenta">
+        <Section title={t.sectionAccount}>
           <ListRow
             icon="📸"
-            title="Mis fotos"
-            subtitle="Fotos subidas, visibilidad y borrado"
+            title={t.myPhotos}
+            subtitle={t.myPhotosSub}
             chevron
             onPress={() => router.push('/(tabs)/misFotos')}
           />
           <ListRow
             icon="✏️"
-            title="Editar perfil"
-            subtitle="Datos personales y foto"
+            title={t.editProfile}
+            subtitle={t.editProfileSub}
             chevron
             onPress={() => router.push('/profile/edit')}
           />
           <ListRow
             icon="🔔"
-            title="Notificaciones"
-            subtitle="Likes y comentarios en tus fotos"
+            title={t.notifications}
+            subtitle={t.notificationsSub}
             chevron
             onPress={() => router.push('/(tabs)/notificaciones')}
           />
           <ListRow
             icon="🔒"
-            title="Seguridad y acceso"
-            subtitle="Contraseña, sesiones y 2FA"
+            title={t.security}
+            subtitle={t.securitySub}
             chevron
             last
             onPress={() => router.push('/profile/security')}
           />
         </Section>
 
-        <Section title="Preferencias">
+        <Section title={t.themeSection}>
+          <View style={styles.idiomaRow}>
+            <Text style={styles.idiomaLabel}>{t.languageLabel}</Text>
+            <SelectDropdown
+              options={[
+                { label: t.languageSpanish, value: 'es' },
+                { label: t.languageEnglish, value: 'en' },
+              ]}
+              value={lang}
+              onChange={(v) => setLang(v)}
+            />
+          </View>
           <ToggleRow
-            title="Notificaciones"
+            title={t.themeLabel}
+            description={mode === 'dark' ? t.themeDark : t.themeLight}
+            value={mode === 'dark'}
+            onValueChange={(v) => setMode(v ? 'dark' : 'light')}
+            last
+          />
+        </Section>
+
+        <Section title={t.sectionPreferences}>
+          <ToggleRow
+            title={t.notifications}
             description={
               deviceStatus === 'denied'
                 ? 'Permiso denegado en el sistema. Tocá para ir a Ajustes'
@@ -250,26 +275,26 @@ export default function PerfilScreen() {
           {notificationsError ? <Text style={styles.notificationsError}>{notificationsError}</Text> : null}
           <ListRow
             icon="🕶️"
-            title="Privacidad"
-            subtitle="Visibilidad, bloqueos y datos"
+            title={t.privacy}
+            subtitle={t.privacySub}
             chevron
             last
             onPress={() => router.push('/profile/privacy')}
           />
         </Section>
 
-        <Section title="Soporte">
+        <Section title={t.sectionSupport}>
           <ListRow
             icon="🛟"
-            title="Ayuda y Soporte"
-            subtitle="Centro de ayuda, términos y cuenta"
+            title={t.helpSupport}
+            subtitle={t.helpSupportSub}
             chevron
             last
             onPress={() => router.push('/profile/help')}
           />
         </Section>
 
-        <Button title="Cerrar sesión" variant="outline" loading={signingOut} onPress={handleSignOut} />
+        <Button title={t.signOut} variant="outline" loading={signingOut} onPress={handleSignOut} />
         <Text style={styles.version}>Wani Connect · v1.0.0</Text>
       </CenteredBox>
 
@@ -302,15 +327,25 @@ export default function PerfilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 8 },
-  profileCard: { alignItems: 'center', marginVertical: 14 },
-  name: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 12 },
-  username: { fontSize: 14, color: colors.accent, marginTop: 2, fontWeight: '600' },
-  email: { fontSize: 13, color: colors.subtext, marginTop: 4 },
-  photoHint: { color: colors.accent, fontSize: 12, marginTop: 10, fontWeight: '600' },
-  photoError: { color: colors.danger, fontSize: 12, marginTop: 10, textAlign: 'center' },
-  notificationsError: { color: colors.danger, fontSize: 12, paddingHorizontal: 14, paddingVertical: 6 },
-  version: { textAlign: 'center', color: colors.subtext, fontSize: 12, marginTop: 18 },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.bg },
+    headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 16 },
+    profileCard: { alignItems: 'center', marginVertical: 14 },
+    name: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 12 },
+    username: { fontSize: 14, color: colors.accent, marginTop: 2, fontWeight: '600' },
+    email: { fontSize: 13, color: colors.subtext, marginTop: 4 },
+    photoHint: { color: colors.accent, fontSize: 12, marginTop: 10, fontWeight: '600' },
+    photoError: { color: colors.danger, fontSize: 12, marginTop: 10, textAlign: 'center' },
+    notificationsError: { color: colors.danger, fontSize: 12, paddingHorizontal: 14, paddingVertical: 6 },
+    idiomaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 14,
+      paddingTop: 12,
+      paddingBottom: 14,
+    },
+    idiomaLabel: { fontSize: 13, fontWeight: '600', color: colors.text },
+    version: { textAlign: 'center', color: colors.subtext, fontSize: 12, marginTop: 18 },
+  });
