@@ -5,7 +5,7 @@ import { useAsync } from '../../hooks/useAsync';
 import { userService } from '../../services/userService';
 import { useAuth } from '../../context/AuthContext';
 import { validateEmail } from '../../utils/validators';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import type { Gender, UpdateProfileInput, UserProfile } from '../../services/userTypes';
 import CenterLoading from '../../components/profile/CenterLoading';
 import ErrorState from '../../components/profile/ErrorState';
@@ -26,6 +26,8 @@ const GENDER_OPTIONS: { label: string; value: Gender }[] = [
 type FieldErrors = Partial<Record<keyof UpdateProfileInput, string>>;
 
 function EditProfileForm({ initialProfile }: { initialProfile: UserProfile }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { updateUser } = useAuth();
   const [form, setForm] = useState<UpdateProfileInput>({
     firstName: initialProfile.firstName,
@@ -177,7 +179,7 @@ export default function EditProfileScreen() {
   return <EditProfileForm initialProfile={data} />;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   avatarWrap: { alignItems: 'center', marginBottom: 22 },
   avatarHint: { color: colors.subtext, fontSize: 12, marginTop: 10 },

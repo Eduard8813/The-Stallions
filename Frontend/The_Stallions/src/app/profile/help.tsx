@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 import { userService } from '../../services/userService';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import Section from '../../components/profile/Section';
 import ListRow from '../../components/profile/ListRow';
 import Button from '../../components/profile/Button';
@@ -16,6 +16,8 @@ const SUPPORT_ITEMS = [
 ];
 
 export default function HelpScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [notice, setNotice] = useState('');
   const [signingOut, setSigningOut] = useState(false);
   const [deleteVisible, setDeleteVisible] = useState(false);
@@ -68,7 +70,7 @@ export default function HelpScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   padding: { padding: 14 },
   spacer: { height: 10 },
   notice: {

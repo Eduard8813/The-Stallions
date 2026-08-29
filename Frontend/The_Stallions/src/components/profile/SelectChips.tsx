@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Option<T extends string> {
   label: string;
@@ -20,6 +20,8 @@ export default function SelectChips<T extends string>({
   onChange,
   disabled,
 }: SelectChipsProps<T>) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   return (
     <View style={styles.wrap}>
       {options.map((option) => {
@@ -40,18 +42,19 @@ export default function SelectChips<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.inputBg,
-  },
-  chipSelected: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
-  disabled: { opacity: 0.5 },
-  chipText: { fontSize: 13, fontWeight: '600', color: colors.subtext },
-  chipTextSelected: { color: colors.text },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.inputBg,
+    },
+    chipSelected: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+    disabled: { opacity: 0.5 },
+    chipText: { fontSize: 13, fontWeight: '600', color: colors.subtext },
+    chipTextSelected: { color: colors.text },
+  });

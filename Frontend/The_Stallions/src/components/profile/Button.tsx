@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ButtonProps {
   title: string;
@@ -19,6 +19,8 @@ export default function Button({
   disabled,
   style,
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const isOutline = variant === 'outline';
   const isDanger = variant === 'danger';
   const isDisabled = disabled || loading;
@@ -45,19 +47,20 @@ export default function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    backgroundColor: colors.accent,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 46,
-  },
-  outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.accent },
-  danger: { backgroundColor: colors.danger },
-  disabled: { opacity: 0.5 },
-  text: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.3 },
-  textOutline: { color: colors.accent },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    button: {
+      backgroundColor: colors.accent,
+      paddingVertical: 13,
+      paddingHorizontal: 18,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 46,
+    },
+    outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.accent },
+    danger: { backgroundColor: colors.danger },
+    disabled: { opacity: 0.5 },
+    text: { color: '#fff', fontSize: 15, fontWeight: '700', letterSpacing: 0.3 },
+    textOutline: { color: colors.accent },
+  });

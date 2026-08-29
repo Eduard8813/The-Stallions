@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface AvatarProps {
   uri?: string | null;
@@ -21,6 +21,8 @@ function getInitials(name?: string): string {
 }
 
 export default function Avatar({ uri, name, size = 96, onEditPress }: AvatarProps) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const initials = getInitials(name);
   return (
     <View style={{ width: size, height: size }}>
@@ -40,28 +42,29 @@ export default function Avatar({ uri, name, size = 96, onEditPress }: AvatarProp
   );
 }
 
-const styles = StyleSheet.create({
-  image: { backgroundColor: colors.surfaceAlt },
-  fallback: {
-    backgroundColor: colors.accentSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.accent,
-  },
-  initials: { fontWeight: '800', color: colors.accent },
-  editBadge: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.bg,
-  },
-  editIcon: { fontSize: 14 },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    image: { backgroundColor: colors.surfaceAlt },
+    fallback: {
+      backgroundColor: colors.accentSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    initials: { fontWeight: '800', color: colors.accent },
+    editBadge: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.bg,
+    },
+    editIcon: { fontSize: 14 },
+  });

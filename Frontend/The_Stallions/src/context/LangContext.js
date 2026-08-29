@@ -1,7 +1,11 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useEffect, useState, useContext } from 'react';
+import { storage } from '../services/storage';
+
+const LANG_KEY = 'appLanguage';
 
 const translations = {
   es: {
+    appName: 'Wani Connect',
     welcome: '¡Bienvenido!',
     signOut: 'Cerrar sesión',
     login: 'Iniciar sesión',
@@ -50,8 +54,56 @@ const translations = {
     locationUnavailableTitle: 'Mapa no disponible',
     locationUnavailableMessage:
       'La versión instalada de la app no incluye el módulo de ubicación. Instala el dev build actualizado e inténtalo de nuevo.',
+    tabExplore: 'Explorar',
+    tabEvents: 'Eventos',
+    tabCommunity: 'Comunidad',
+    tabProfile: 'Perfil',
+    // Profile
+    profileTitle: 'Mi Perfil',
+    sectionAccount: 'Cuenta',
+    sectionPreferences: 'Preferencias',
+    sectionSupport: 'Soporte',
+    themeSection: 'Apariencia',
+    languageLabel: 'Idioma / Language',
+    languageSpanish: 'Español',
+    languageEnglish: 'English',
+    themeLabel: 'Tema',
+    themeDark: 'Oscuro',
+    themeLight: 'Claro',
+    myPhotos: 'Mis fotos',
+    myPhotosSub: 'Fotos subidas, visibilidad y borrado',
+    editProfile: 'Editar perfil',
+    editProfileSub: 'Datos personales y foto',
+    notifications: 'Notificaciones',
+    notificationsSub: 'Likes y comentarios en tus fotos',
+    security: 'Seguridad y acceso',
+    securitySub: 'Contraseña, sesiones y 2FA',
+    privacy: 'Privacidad',
+    privacySub: 'Visibilidad, bloqueos y datos',
+    helpSupport: 'Ayuda y Soporte',
+    helpSupportSub: 'Centro de ayuda, términos y cuenta',
+    // Community
+    communityEmpty: 'Aún no hay fotos en la comunidad',
+    communityLike: 'Me gusta',
+    communityComment: 'Comentar',
+    communityWriteComment: 'Escribe un comentario...',
+    communitySend: 'Enviar',
+    communitySave: 'Guardar',
+    communityEdit: 'Editar',
+    communityDelete: 'Eliminar',
+    communityEdited: 'editado',
+    communityFirst: 'Sé el primero en comentar',
+    communityDeleteTitle: 'Eliminar comentario',
+    communityDeleteMsg: '¿Seguro que deseas eliminar este comentario?',
+    communityCancel: 'Cancelar',
+    communityErrorLoad: 'No se pudo cargar la comunidad',
+    communityErrorLike: 'No se pudo registrar el like',
+    communityErrorPost: 'No se pudo publicar el comentario',
+    communityErrorEdit: 'No se pudo editar el comentario',
+    communityErrorDelete: 'No se pudo eliminar el comentario',
   },
   en: {
+    appName: 'Wani Connect',
     welcome: 'Welcome!',
     signOut: 'Sign out',
     login: 'Welcome back 👋',
@@ -100,17 +152,85 @@ const translations = {
     locationUnavailableTitle: 'Map unavailable',
     locationUnavailableMessage:
       'The installed app version does not include the location module. Install the updated dev build and try again.',
+    tabExplore: 'Explore',
+    tabEvents: 'Events',
+    tabCommunity: 'Community',
+    tabProfile: 'Profile',
+    // Profile
+    profileTitle: 'My Profile',
+    sectionAccount: 'Account',
+    sectionPreferences: 'Preferences',
+    sectionSupport: 'Support',
+    themeSection: 'Appearance',
+    languageLabel: 'Idioma / Language',
+    languageSpanish: 'Español',
+    languageEnglish: 'English',
+    themeLabel: 'Theme',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    myPhotos: 'My photos',
+    myPhotosSub: 'Uploaded photos, visibility and deletion',
+    editProfile: 'Edit profile',
+    editProfileSub: 'Personal data and photo',
+    notifications: 'Notifications',
+    notificationsSub: 'Likes and comments on your photos',
+    security: 'Security & access',
+    securitySub: 'Password, sessions and 2FA',
+    privacy: 'Privacy',
+    privacySub: 'Visibility, blocks and data',
+    helpSupport: 'Help & Support',
+    helpSupportSub: 'Help center, terms and account',
+    // Community
+    communityEmpty: 'No photos in the community yet',
+    communityLike: 'Like',
+    communityComment: 'Comment',
+    communityWriteComment: 'Write a comment...',
+    communitySend: 'Send',
+    communitySave: 'Save',
+    communityEdit: 'Edit',
+    communityDelete: 'Delete',
+    communityEdited: 'edited',
+    communityFirst: 'Be the first to comment',
+    communityDeleteTitle: 'Delete comment',
+    communityDeleteMsg: 'Are you sure you want to delete this comment?',
+    communityCancel: 'Cancel',
+    communityErrorLoad: 'Could not load the community',
+    communityErrorLike: 'Could not register the like',
+    communityErrorPost: 'Could not post the comment',
+    communityErrorEdit: 'Could not edit the comment',
+    communityErrorDelete: 'Could not delete the comment',
   },
 };
 
 const LangContext = createContext();
 
 export function LangProvider({ children }) {
-  const [lang, setLang] = useState('es');
+  const [lang, setLangState] = useState('es');
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await storage.get('appLanguage');
+        if (stored === 'es' || stored === 'en') setLangState(stored);
+      } catch {}
+      setLoaded(true);
+    })();
+  }, []);
+
   const t = translations[lang];
-  const toggleLang = () => setLang(l => (l === 'es' ? 'en' : 'es'));
+
+  const setLang = async (l) => {
+    setLangState(l);
+    try {
+      await storage.set(LANG_KEY, l);
+    } catch {}
+  };
+
+  const toggleLang = async () => setLang(lang === 'es' ? 'en' : 'es');
+
   return (
-    <LangContext.Provider value={{ t, lang, toggleLang }}>
+    <LangContext.Provider value={{ t, lang, setLang, toggleLang, loaded }}>
       {children}
     </LangContext.Provider>
   );

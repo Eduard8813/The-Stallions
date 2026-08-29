@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import type { Evento } from '../../types/evento';
 import { fechasDelEvento } from '../../services/eventosService';
 
@@ -19,6 +19,8 @@ interface Props {
 }
 
 export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: Props) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   // Días (del mes visible) que están cubiertos por el rango de algún evento.
   const diasConEvento = new Set<number>();
   for (const e of eventos) {
@@ -80,7 +82,7 @@ export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: P
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   card: {
     marginHorizontal: 16,
     marginTop: 8,

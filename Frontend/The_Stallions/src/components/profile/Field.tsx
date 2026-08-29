@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 
 interface FieldProps {
   label: string;
@@ -32,6 +32,8 @@ export default function Field({
   maxLength,
 }: FieldProps) {
   const [focused, setFocused] = useState(false);
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const showError = !!error;
 
   return (
@@ -63,23 +65,24 @@ export default function Field({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: { marginBottom: 14 },
-  label: { fontSize: 12, fontWeight: '600', color: colors.subtext, marginBottom: 6 },
-  labelFocused: { color: colors.accent },
-  input: {
-    backgroundColor: colors.inputBg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    fontSize: 15,
-    color: colors.text,
-  },
-  inputMultiline: { minHeight: 96, textAlignVertical: 'top' },
-  inputFocused: { borderColor: colors.accent },
-  inputError: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 12, marginTop: 5 },
-  helper: { color: colors.subtext, fontSize: 11, marginTop: 5 },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    wrapper: { marginBottom: 14 },
+    label: { fontSize: 12, fontWeight: '600', color: colors.subtext, marginBottom: 6 },
+    labelFocused: { color: colors.accent },
+    input: {
+      backgroundColor: colors.inputBg,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      fontSize: 15,
+      color: colors.text,
+    },
+    inputMultiline: { minHeight: 96, textAlignVertical: 'top' },
+    inputFocused: { borderColor: colors.accent },
+    inputError: { borderColor: colors.danger },
+    error: { color: colors.danger, fontSize: 12, marginTop: 5 },
+    helper: { color: colors.subtext, fontSize: 11, marginTop: 5 },
+  });

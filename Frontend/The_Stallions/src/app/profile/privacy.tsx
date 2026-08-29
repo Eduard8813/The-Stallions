@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAsync } from '../../hooks/useAsync';
 import { privacyService } from '../../services/privacyService';
 import { localSettings } from '../../services/localSettings';
-import { colors } from '../../constants/ui';
+import { useTheme } from '../../context/ThemeContext';
 import type { BlockedUser, PrivacySettings, ProfileVisibility } from '../../services/userTypes';
 import CenterLoading from '../../components/profile/CenterLoading';
 import ErrorState from '../../components/profile/ErrorState';
@@ -33,6 +33,8 @@ interface PrivacyData {
 }
 
 function PrivacyContent({ initial }: { initial: PrivacyData }) {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [settings, setSettings] = useState(initial.settings);
   const [blocked, setBlocked] = useState(initial.blocked);
   const [permissions, setPermissions] = useState({ location: false, notifications: false, gallery: false });
@@ -171,7 +173,7 @@ export default function PrivacyScreen() {
   return <PrivacyContent initial={data} />;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   padding: { padding: 14 },
   help: { color: colors.subtext, fontSize: 12, marginTop: 10, lineHeight: 17 },
   banner: { color: colors.danger, fontSize: 13, marginBottom: 14 },
