@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import api, { resolveResourceUrl } from '../../services/api';
@@ -17,6 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Alert } from 'react-native';
 
 const PAGE_SIZE = 10;
+const SCREEN_W = Dimensions.get('window').width;
 
 type FotoItem = {
   id: number;
@@ -29,6 +31,7 @@ type FotoItem = {
   likes: number;
   likedByMe: boolean;
   comentarios: number;
+  fotos?: FotoItem[];
 };
 
 type Comentario = {
@@ -81,7 +84,7 @@ export default function MisFotosComunidadScreen() {
       if (reemplazar) setLoadingComunidad(true);
       else setLoadingMore(true);
       try {
-        const { data } = await api.get<FotoItem[]>('/fotos/comunidad', {
+        const { data } = await api.get<FotoItem[]>('/fotos/comunidad/posts', {
           params: { page: pagina, pageSize: PAGE_SIZE },
         });
         setComunidad((prev) => (reemplazar ? data : [...prev, ...data]));
@@ -238,7 +241,8 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
       </View>
     );
   } else {
-    // Modo comunidad - renderizar Publicacion component style
+    const fotos = foto.fotos && foto.fotos.length > 0 ? foto.fotos : [foto];
+    const multi = fotos.length > 1;
     return (
       <View style={styles.card}>
         <View style={styles.header}>
@@ -255,9 +259,28 @@ function renderFotoItem(foto: FotoItem, mode: 'misFotos' | 'comunidad') {
             <Text style={styles.nombre}>{foto.usuarioNombre}</Text>
             <Text style={styles.fecha}>{foto.fecha}</Text>
           </View>
+          {multi ? <Text style={styles.multCount}>{fotos.length} 📸</Text> : null}
         </View>
 
-        <Image source={{ uri: resolveResourceUrl(foto.url) }} style={styles.imagen} resizeMode="cover" />
+        {multi ? (
+          <View>
+            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+              {fotos.map((f) => (
+                <Image
+                  key={String(f.id)}
+                  source={{ uri: resolveResourceUrl(f.url) }}
+                  style={[styles.imagen, { width: SCREEN_W }]}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+            <View style={styles.masIndicador}>
+              <Text style={styles.masIndicadorText}>+{fotos.length}</Text>
+            </View>
+          </View>
+        ) : (
+          <Image source={{ uri: resolveResourceUrl(foto.url) }} style={styles.imagen} resizeMode="cover" />
+        )}
 
         {foto.descripcion ? (
           <View style={styles.descBox}>
@@ -360,8 +383,20 @@ const styles = StyleSheet.create({
   avatarInitial: { color: '#fff', fontSize: 16, fontWeight: '700' },
   nombre: { color: '#fff', fontSize: 14, fontWeight: '700' },
   fecha: { color: '#888', fontSize: 12 },
+  multCount: { color: '#e40077', fontSize: 13, fontWeight: '700' },
 
   imagen: { width: '100%', aspectRatio: 1 },
+
+  masIndicador: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  masIndicadorText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
   descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1f1f1f' },
   descTexto: { color: '#eee', fontSize: 14, lineHeight: 20 },

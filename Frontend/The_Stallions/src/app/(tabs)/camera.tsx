@@ -95,10 +95,13 @@ export default function CameraScreen() {
     setError('');
 
     try {
+      // Si hay más de una foto, se agrupan bajo un mismo grupoId para que en la
+      // comunidad aparezcan juntas en un solo post (carrusel), en el mismo lugar.
+      const grupoId = assets.length > 1 ? Date.now() : undefined;
       let ultimoExito = false;
       for (const asset of assets) {
         try {
-          await userService.uploadFoto(asset.uri, visibilidad, descripcion, asset);
+          await userService.uploadFoto(asset.uri, visibilidad, descripcion, asset, grupoId);
           ultimoExito = true;
         } catch (e: any) {
           setError(e?.message || 'Error inesperado al subir una foto');

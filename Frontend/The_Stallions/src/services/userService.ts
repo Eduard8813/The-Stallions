@@ -116,7 +116,8 @@ export const userService = {
     uri: string,
     visibilidad: 'privada' | 'publica',
     descripcion: string = '',
-    asset?: { fileName?: string | null; mimeType?: string | null }
+    asset?: { fileName?: string | null; mimeType?: string | null },
+    grupoId?: number
   ): Promise<{ success: boolean; url?: string; usuarioId?: string }> {
     const fileName = asset?.fileName || `photo_${Date.now()}.jpg`;
     const mimeType = asset?.mimeType || 'image/jpeg';
@@ -131,6 +132,9 @@ export const userService = {
       form.append('visibilidad', visibilidad);
       if (descripcion && descripcion.trim()) {
         form.append('descripcion', descripcion.trim());
+      }
+      if (grupoId != null) {
+        form.append('grupoId', String(grupoId));
       }
       const { data } = await api.post<{ success: boolean; url?: string; usuarioId?: string }>('/fotos', form, {
         headers: { 'Content-Type': 'multipart/form-data' },

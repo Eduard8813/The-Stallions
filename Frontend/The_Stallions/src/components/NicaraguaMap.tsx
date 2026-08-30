@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const CITY_IMAGE_MODULES: Record<string, any> = {
   Chontales:  require('../../assets/images/ciudades/JUIGALPA.png'),
@@ -82,9 +82,15 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-leaflet-popup .leaflet-popup-tip { background: #162032 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important; }
     .nc-popup {
       background: linear-gradient(135deg, #0f1923, #162032);
-      border-radius: 16px; padding: 14px; width: 240px;
+      border-radius: 16px; padding: 14px; width: 250px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.5);
       border: 1px solid rgba(233,69,96,0.2); color: #fff;
+    }
+    .nc-popup-img {
+      width: 100%; height: auto; max-height: 190px; object-fit: cover; display: block;
+      border-radius: 12px; margin: 0 auto 12px;
+      border: 2px solid rgba(233,69,96,0.4); box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      background: rgba(255,255,255,0.05);
     }
     .nc-popup-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .nc-popup-logo {
@@ -98,11 +104,13 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-popup-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
     .nc-popup-coords { font-size: 10px; color: rgba(255,255,255,0.4); margin-bottom: 10px; }
     .nc-popup-desc { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.45; margin-bottom: 12px; }
-    .nc-popup-actions { display: flex; gap: 8px; }
+    .nc-popup-actions { display: flex; flex-wrap: wrap; gap: 6px; }
     .nc-btn {
-      flex: 1; padding: 10px 12px; border-radius: 12px; border: none;
-      font-weight: 700; font-size: 12px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
+      flex: 1 1 auto; min-width: 0; box-sizing: border-box;
+      padding: 9px 8px; border-radius: 12px; border: none;
+      font-weight: 700; font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;
+      white-space: nowrap; overflow: hidden;
     }
     .nc-btn-route {
       background: linear-gradient(135deg, #e94560, #c23152); color: #fff;
@@ -158,12 +166,17 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-layer-box {
       position: absolute; bottom: 16px; left: 16px; z-index: 1001;
       background: linear-gradient(135deg, #0f1923, #162032);
-      border-radius: 14px; border: 1px solid rgba(233,69,96,0.25);
+      border-radius: 12px; border: 1px solid rgba(233,69,96,0.25);
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-      padding: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all 0.25s;
+      padding: 6px 12px 6px 6px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.25s; max-width: 190px;
     }
     .nc-layer-box:active { transform: scale(0.94); }
+    .nc-toggle-label {
+      font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.9);
+      letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .nc-view-title {
       position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1100;
       font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px;
@@ -185,13 +198,27 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       padding: 78px 14px 20px; overflow-y: auto;
     }
     .nc-biz-view.show { display: block; }
-    .nc-biz-view-head { text-align: center; margin-bottom: 14px; }
+    .nc-biz-view-head { text-align: center; margin-bottom: 14px; max-width: 1080px; margin-left: auto; margin-right: auto; padding: 8px 16px 4px; }
     .nc-biz-view-title {
       font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1px;
       text-transform: uppercase; background: linear-gradient(135deg, #e94560, #0f3460);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
     .nc-biz-view-sub { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+    .nc-cat-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+      justify-content: center;
+    }
+    .nc-cat-btn {
+      background: rgba(255,255,255,0.08); color: #fff;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 999px;
+      padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .nc-cat-btn.active {
+      background: linear-gradient(135deg, #e94560, #0f3460);
+      border-color: #e94560; color: #fff;
+    }
     .nc-biz-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 12px; max-width: 1080px; margin: 0 auto; padding-bottom: 20px;
@@ -498,10 +525,17 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
   </div>
   <button class="nc-layer-box" id="layer-toggle" onclick="toggleLayer()">
     <span class="nc-toggle-thumb" id="layer-thumb">🛰</span>
+    <span class="nc-toggle-label" id="layer-label">${lang === 'es' ? 'Vista estándar' : 'Standard view'}</span>
   </button>
   <div class="nc-biz-view" id="biz-view">
     <div class="nc-biz-view-head">
       <div class="nc-biz-view-sub" id="biz-view-sub">${lang === 'es' ? 'Descubre los negocios y emprendimientos locales.' : 'Discover local businesses and ventures.'}</div>
+      <div class="nc-cat-bar" id="biz-cat-bar">
+        <button class="nc-cat-btn active" data-cat="General">${lang === 'es' ? 'General' : 'General'}</button>
+        <button class="nc-cat-btn" data-cat="Gastronomia">Gastronom\u00eda</button>
+        <button class="nc-cat-btn" data-cat="Agroindustria">Agroindustria</button>
+        <button class="nc-cat-btn" data-cat="Artesania">Artesan\u00eda</button>
+      </div>
     </div>
     <div class="nc-biz-grid" id="biz-grid"></div>
   </div>
@@ -572,7 +606,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     var CITY_IMAGES = ${JSON.stringify(cityImages)};
 
     var ES = ${lang === 'es'};
-    function L(es, en) { return ES ? es : en; }
+    function tr(es, en) { return ES ? es : en; }
 
     var COLOR = '#6c7a89';
     var departamentos = [
@@ -693,7 +727,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
           }),
           zIndexOffset: 500
         }).addTo(map);
-        userLocMarker.bindTooltip(L('Tu ubicacion', 'Your location'), {
+        userLocMarker.bindTooltip(tr('Tu ubicacion', 'Your location'), {
           permanent: false, direction: 'top',
           className: 'nc-user-tooltip'
         });
@@ -703,12 +737,12 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
             userDepName = found.name;
             var html = '<div class="nc-loc-box">' +
               '<div class="nc-loc-icon">&#128205;</div>' +
-              '<div class="nc-loc-title">' + L('Tu ubicacion actual', 'Your current location') + '</div>' +
+              '<div class="nc-loc-title">' + tr('Tu ubicacion actual', 'Your current location') + '</div>' +
               '<div class="nc-loc-dept">' + found.name + '</div>' +
-              '<p class="nc-loc-msg">' + L('Estas dentro del departamento de', 'You are inside the department of') + ' <strong>' + found.name + '</strong>.' +
-              (found.highlighted ? ' ' + L('Descubre los atractivos turisticos de esta region con una ruta personalizada.', 'Discover the tourist attractions of this region with a custom route.') : ' ' + L('Explora las rutas turisticas disponibles para ti.', 'Explore the tourist routes available for you.')) + '</p>' +
-              (found.highlighted ? '<button class="nc-loc-btn" id="loc-tour-btn">' + L('Explorar Ruta Turistica', 'Explore Tourist Route') + '</button>' : '') +
-              '<button class="nc-loc-btn nc-loc-btn-gray" id="loc-close-btn">' + L('Cerrar', 'Close') + '</button>' +
+              '<p class="nc-loc-msg">' + tr('Estas dentro del departamento de', 'You are inside the department of') + ' <strong>' + found.name + '</strong>.' +
+              (found.highlighted ? ' ' + tr('Descubre los atractivos turisticos de esta region con una ruta personalizada.', 'Discover the tourist attractions of this region with a custom route.') : ' ' + tr('Explora las rutas turisticas disponibles para ti.', 'Explore the tourist routes available for you.')) + '</p>' +
+              (found.highlighted ? '<button class="nc-loc-btn" id="loc-tour-btn">' + tr('Explorar Ruta Turistica', 'Explore Tourist Route') + '</button>' : '') +
+              '<button class="nc-loc-btn nc-loc-btn-gray" id="loc-close-btn">' + tr('Cerrar', 'Close') + '</button>' +
             '</div>';
             L.popup({ closeButton: false, className: 'nc-loc-popup', offset: [0, -18], maxWidth: 270 })
               .setLatLng([userLat, userLng])
@@ -842,7 +876,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       modeLocked = false;
       followMode = false;
       var nb = document.getElementById('pop-nav');
-      if (nb) { nb.textContent = L('Iniciar Ruta', 'Start Route'); nb.className = 'nc-btn nc-btn-nav show'; }
+      if (nb) { nb.textContent = tr('Iniciar Ruta', 'Start Route'); nb.className = 'nc-btn nc-btn-nav show'; }
     }
 
     function focusDepartment(depName) {
@@ -897,6 +931,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       refreshPolys();
       var thumb = document.getElementById('layer-thumb');
       if (thumb) thumb.textContent = '🗺';
+      var lbl = document.getElementById('layer-label');
+      if (lbl) lbl.textContent = tr('Elevaci\u00f3n y terreno', 'Elevation & terrain');
     }
 
     function switchToGeographic() {
@@ -909,6 +945,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       refreshPolys();
       var thumb = document.getElementById('layer-thumb');
       if (thumb) thumb.textContent = '🛰';
+      var lbl = document.getElementById('layer-label');
+      if (lbl) lbl.textContent = tr('Vista est\u00e1ndar', 'Standard view');
     }
 
     function refreshPolys() {
@@ -925,17 +963,23 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     var seedEmprendimientos = [
       { name: 'Taller de Ceramica Monimbo', tipo: 'Artesania', desc: 'Ceramica tradicional hecha a mano en el barrio historico de Masaya.', lat: 11.9715, lng: -86.0960 },
       { name: 'Cafe Las Nubes', tipo: 'Gastronomia', desc: 'Cafe de especialidad a 1400 msnm en las montanas de Matagalpa.', lat: 12.9780, lng: -85.9020 },
-      { name: 'Mercado de Artesanias', tipo: 'Comercio', desc: 'Puestos de artesanias indigenas y textiles en Granada.', lat: 11.9315, lng: -85.9530 },
+      { name: 'Mercado de Artesanias', tipo: 'Artesania', desc: 'Puestos de artesanias indigenas y textiles en Granada.', lat: 11.9315, lng: -85.9530 },
       { name: 'Ruta del Chocolate', tipo: 'Gastronomia', desc: 'Museo y tienda de chocolate artesanal nicaraguense.', lat: 11.9330, lng: -85.9570 },
-      { name: 'Vinos de Esteli', tipo: 'Gastronomia', desc: 'Bodega familiar con vino artesanal de la region norte.', lat: 13.0950, lng: -86.3520 },
+      { name: 'Vinos de Esteli', tipo: 'Agroindustria', desc: 'Bodega familiar con vino artesanal de la region norte.', lat: 13.0950, lng: -86.3520 },
       { name: 'Textil Nagarote', tipo: 'Artesania', desc: 'Tejidos y bordados tradicionales de Nagarote.', lat: 12.2600, lng: -86.5900 },
       { name: 'Mariscos Bluefields', tipo: 'Gastronomia', desc: 'Restaurante de comida caribena frente al mar.', lat: 12.0135, lng: -83.7640 },
-      { name: 'Joya Juigalpa', tipo: 'Joyeria', desc: 'Joyer\u00eda artesanal con disenos locales.', lat: 12.1061, lng: -85.3640 },
+      { name: 'Joya Juigalpa', tipo: 'Artesania', desc: 'Joyer\u00eda artesanal con disenos locales.', lat: 12.1061, lng: -85.3640 },
       { name: 'Latte Leon', tipo: 'Gastronomia', desc: 'Cafeteria de especialidad en el centro de Leon.', lat: 12.4355, lng: -86.8785 },
-      { name: 'Galeria Managua', tipo: 'Arte', desc: 'Galeria de arte contemporaneo local.', lat: 12.1405, lng: -86.2520 }
+      { name: 'Galeria Managua', tipo: 'Artesania', desc: 'Galeria de arte contemporaneo local.', lat: 12.1405, lng: -86.2520 }
     ];
     var emprendimientos = [];
     var emprendimientosLoaded = false;
+    var bizCat = 'General';
+    var CATEGORIES = [
+      { id: 'Gastronomia', label: 'Gastronom\u00eda' },
+      { id: 'Agroindustria', label: 'Agroindustria' },
+      { id: 'Artesania', label: 'Artesan\u00eda' }
+    ];
 
     function loadEmprendimientos(done) {
       fetch(API_BASE + '/api/emprendimientos')
@@ -990,23 +1034,48 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
 
     function renderEmprendimientos() {
       var sub = document.getElementById('biz-view-sub');
+      function catLabel(id) {
+        for (var i = 0; i < CATEGORIES.length; i++) {
+          if (CATEGORIES[i].id === id) return CATEGORIES[i].label;
+        }
+        return id;
+      }
       function draw() {
         var grid = document.getElementById('biz-grid');
         grid.innerHTML = '';
-        if (!emprendimientos.length) {
-          grid.innerHTML = '<div class="nc-biz-empty">' + L('Aun no hay emprendimientos registrados.', 'No businesses registered yet.') + '</div>';
+        var list = bizCat === 'General'
+          ? emprendimientos.slice()
+          : emprendimientos.filter(function(b) {
+              var t = String(b.tipo || b.cat || '');
+              return t.toLowerCase() === bizCat.toLowerCase();
+            });
+        if (!list.length) {
+          grid.innerHTML = '<div class="nc-biz-empty">' + tr('Aun no hay emprendimientos registrados.', 'No businesses registered yet.') + '</div>';
         } else {
-          emprendimientos.forEach(function(b) {
+          list.forEach(function(b) {
             grid.insertAdjacentHTML('beforeend', bizCardHtml(b));
           });
         }
-        if (sub) sub.textContent = emprendimientos.length + ' ' + L('Emprendimientos para descubrir.', 'Businesses to discover.');
+        if (sub) sub.textContent = list.length + ' ' + tr('Emprendimientos para descubrir.', 'Businesses to discover.');
       }
       if (!emprendimientosLoaded) {
         loadEmprendimientos(draw);
       } else {
         draw();
       }
+    }
+
+    function selectBizCat(cat) {
+      bizCat = cat;
+      var btns = document.querySelectorAll('.nc-cat-btn');
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].getAttribute('data-cat') === cat) {
+          btns[i].classList.add('active');
+        } else {
+          btns[i].classList.remove('active');
+        }
+      }
+      renderEmprendimientos();
     }
 
     function clearEmprendimientos() {
@@ -1031,6 +1100,12 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         if (title) title.style.display = 'none';
         if (viewTitle) viewTitle.classList.add('show');
         if (bizView) bizView.classList.add('show');
+        var catBtns = document.querySelectorAll('.nc-cat-btn');
+        for (var i = 0; i < catBtns.length; i++) {
+          catBtns[i].onclick = (function(cat) {
+            return function() { selectBizCat(cat); };
+          })(catBtns[i].getAttribute('data-cat'));
+        }
         renderEmprendimientos();
         if (creativeBtn) creativeBtn.classList.remove('active');
         if (businessBtn) businessBtn.classList.add('active');
@@ -1070,33 +1145,29 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       navDest = { lat: latLng.lat, lng: latLng.lng };
       focusDepartment(dep.name);
       var isHere = userDepName === dep.name;
+      var popupImg = CITY_IMAGES[dep.name] ? '<img class="nc-popup-img" src="' + CITY_IMAGES[dep.name] + '" alt="' + dep.name + '" />' : '';
       var html = '<div class="nc-popup">' +
-        '<div class="nc-popup-header">' +
-          '<div class="nc-popup-logo">NC</div>' +
-          '<div><div class="nc-popup-brand">Nicaragua Creativa</div>' +
-          '<div class="nc-popup-sub">' + L('Explora nuestro pais', 'Explore our country') + '</div></div>' +
-        '</div>' +
-        '<div class="nc-popup-dept"><span class="nc-popup-dot" style="background:' + dep.color + ';"></span>' + dep.name + '</div>' +
+        popupImg +
         '<div class="nc-popup-coords">' + latLng.lat.toFixed(4) + ', ' + latLng.lng.toFixed(4) + '</div>' +
         (isHere
-          ? '<p class="nc-popup-desc">' + L('Estas en el departamento de', 'You are in the department of') + ' <strong>' + dep.name + '</strong>. ' +
-            (tourismData[dep.name] ? L('Explora los atractivos turisticos de tu region con una ruta personalizada.', 'Explore the tourist attractions of your region with a custom route.') : L('Disfruta de tu estancia.', 'Enjoy your stay.')) + '</p>'
-          : '<p class="nc-popup-desc">' + L('Descubre los atractivos turisticos, cultura y naturaleza de', 'Discover the tourist attractions, culture and nature of') + ' ' + dep.name + ', ' + L('una de las regiones destacadas de Nicaragua.', 'one of Nicaragua\'s highlighted regions.') + '</p>'
+          ? '<p class="nc-popup-desc">' + tr('Estas en el departamento de', 'You are in the department of') + ' <strong>' + dep.name + '</strong>. ' +
+            (tourismData[dep.name] ? tr('Explora los atractivos turisticos de tu region con una ruta personalizada.', 'Explore the tourist attractions of your region with a custom route.') : tr('Disfruta de tu estancia.', 'Enjoy your stay.')) + '</p>'
+          : '<p class="nc-popup-desc">' + tr('Descubre los atractivos turisticos, cultura y naturaleza de', 'Discover the tourist attractions, culture and nature of') + ' ' + dep.name + ', ' + tr('una de las regiones destacadas de Nicaragua.', 'one of Nicaragua\\\'s highlighted regions.') + '</p>'
         ) +
         (isHere
           ? '<div class="nc-popup-actions">' +
-            (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn" id="pop-tour-full">' + L('Ruta Completa', 'Full Route') + '</button>' : '') +
-            (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + L('Ruta Personalizada', 'Custom Route') + '</button>' : '') +
-            '<button class="nc-btn nc-btn-back" id="pop-back">' + L('Regresar', 'Back') + '</button>' +
+            (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn" id="pop-tour-full">' + tr('Ruta Completa', 'Full Route') + '</button>' : '') +
+            (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + tr('Ruta Pers.', 'Custom Route') + '</button>' : '') +
+            '<button class="nc-btn nc-btn-back" id="pop-back">' + tr('Regresar', 'Back') + '</button>' +
           '</div>'
           : '<div class="nc-popup-actions">' +
-            '<button class="nc-btn nc-btn-route" id="pop-route">' + L('Ver Ruta', 'View Route') + '</button>' +
-            '<button class="nc-btn nc-btn-nav" id="pop-nav">' + L('Iniciar Ruta', 'Start Route') + '</button>' +
-            '<button class="nc-btn nc-btn-back" id="pop-back">' + L('Regresar', 'Back') + '</button>' +
+            '<button class="nc-btn nc-btn-route" id="pop-route">' + tr('Ver Ruta', 'View Route') + '</button>' +
+            '<button class="nc-btn nc-btn-nav" id="pop-nav">' + tr('Iniciar Ruta', 'Start Route') + '</button>' +
+            '<button class="nc-btn nc-btn-back" id="pop-back">' + tr('Regresar', 'Back') + '</button>' +
           '</div>' +
           (tourismData[dep.name] ? '<div class="nc-popup-actions" style="margin-top:6px;">' +
-            '<button class="nc-btn nc-tour-btn" id="pop-tour-full">' + L('Ruta Completa', 'Full Route') + '</button>' +
-            '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + L('Ruta Personalizada', 'Custom Route') + '</button>' +
+            '<button class="nc-btn nc-tour-btn" id="pop-tour-full">' + tr('Ruta Completa', 'Full Route') + '</button>' +
+            '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + tr('Ruta Pers.', 'Custom Route') + '</button>' +
           '</div>' : '')
         ) +
         '<div class="nc-route-info" id="pop-info"></div>' +
@@ -1154,7 +1225,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       if (!userLat || !userLng) {
         getUsersLocation();
         var info = document.getElementById('pop-info');
-        if (info) { info.className = 'nc-route-info show'; info.innerHTML = L('Obteniendo ubicacion... intenta de nuevo.', 'Getting location... try again.'); }
+        if (info) { info.className = 'nc-route-info show'; info.innerHTML = tr('Obteniendo ubicacion... intenta de nuevo.', 'Getting location... try again.'); }
         return;
       }
       if (userDepName && currentDep && userDepName === currentDep.name) {
@@ -1163,8 +1234,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         if (rb) rb.style.display = 'none';
         if (info) {
           info.className = 'nc-route-info show';
-          info.innerHTML = '<strong>' + L('Ya estas en', 'You are already in') + ' ' + currentDep.name + '.</strong> ' +
-            (tourismData[currentDep.name] ? L('Explora la ruta turistica de esta region.', 'Explore the tourist route of this region.') : L('Disfruta de tu estancia.', 'Enjoy your stay.'));
+          info.innerHTML = '<strong>' + tr('Ya estas en', 'You are already in') + ' ' + currentDep.name + '.</strong> ' +
+            (tourismData[currentDep.name] ? tr('Explora la ruta turistica de esta region.', 'Explore the tourist route of this region.') : tr('Disfruta de tu estancia.', 'Enjoy your stay.'));
         }
         return;
       }
@@ -1221,7 +1292,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       var nb = document.getElementById('pop-nav');
       var tf = document.getElementById('pop-tour-full');
       var tc = document.getElementById('pop-tour-custom');
-      if (info) { info.className = 'nc-route-info show'; info.innerHTML = '<strong>' + km + ' km</strong>' + (min !== '--' ? ' - ~' + min + ' min' : '') + ' ' + L('hasta', 'to') + ' ' + currentDep.name; }
+      if (info) { info.className = 'nc-route-info show'; info.innerHTML = '<strong>' + km + ' km</strong>' + (min !== '--' ? ' - ~' + min + ' min' : '') + ' ' + tr('hasta', 'to') + ' ' + currentDep.name; }
       if (rb) rb.style.display = 'none';
       if (tf) tf.parentElement.style.display = 'none';
       if (tc) tc.parentElement.style.display = 'none';
@@ -1235,7 +1306,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       lastReroute = Date.now();
       ensureRoute();
       var nb = document.getElementById('pop-nav');
-      if (nb) { nb.textContent = L('Detener', 'Stop'); nb.className = 'nc-btn nc-btn-stop show'; }
+      if (nb) { nb.textContent = tr('Detener', 'Stop'); nb.className = 'nc-btn nc-btn-stop show'; }
       if (userLat && userLng) {
         map.setView([userLat, userLng], Math.max(map.getZoom(), 16));
       } else {
@@ -1247,7 +1318,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       followMode = false;
       modeLocked = false;
       var nb = document.getElementById('pop-nav');
-      if (nb) { nb.textContent = L('Iniciar Ruta', 'Start Route'); nb.className = 'nc-btn nc-btn-nav show'; }
+      if (nb) { nb.textContent = tr('Iniciar Ruta', 'Start Route'); nb.className = 'nc-btn nc-btn-nav show'; }
     }
 
     function distToSegment(p, a, b) {
@@ -1526,7 +1597,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       var s = stops[idx];
       document.getElementById('tour-img').src = s.img;
       document.getElementById('tour-img').alt = s.name;
-      document.getElementById('tour-num').textContent = L('Parada', 'Stop') + ' ' + (idx + 1) + ' ' + L('de', 'of') + ' ' + stops.length;
+      document.getElementById('tour-num').textContent = tr('Parada', 'Stop') + ' ' + (idx + 1) + ' ' + tr('de', 'of') + ' ' + stops.length;
       document.getElementById('tour-stop-name').textContent = s.name;
       document.getElementById('tour-stop-desc').textContent = s.desc;
       var dots = '';
@@ -1543,7 +1614,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       var html = '<div class="nc-tp-inner">' +
         '<img class="nc-tp-img" src="' + stop.img + '" alt="' + stop.name + '" />' +
         '<div class="nc-tp-body">' +
-          '<div class="nc-tp-num">' + L('Parada', 'Stop') + ' ' + (idx + 1) + ' ' + L('de', 'of') + ' ' + total + '</div>' +
+          '<div class="nc-tp-num">' + tr('Parada', 'Stop') + ' ' + (idx + 1) + ' ' + tr('de', 'of') + ' ' + total + '</div>' +
           '<div class="nc-tp-name">' + stop.name + '</div>' +
           '<div class="nc-tp-desc">' + stop.desc + '</div>' +
         '</div>' +
@@ -1571,8 +1642,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       currentTourStops = stops;
       pickerSelected = {};
 
-      document.getElementById('rp-title').textContent = depName + ' - ' + L('Ruta Personalizada', 'Custom Route');
-      document.getElementById('rp-sub').textContent = L('Elige las paradas a visitar', 'Choose the stops to visit') + ' (' + stops.length + ' ' + L('disponibles', 'available') + ')';
+      document.getElementById('rp-title').textContent = depName + ' - ' + tr('Ruta Personalizada', 'Custom Route');
+      document.getElementById('rp-sub').textContent = tr('Elige las paradas a visitar', 'Choose the stops to visit') + ' (' + stops.length + ' ' + tr('disponibles', 'available') + ')';
 
       var listHtml = '';
       stops.forEach(function(s, i) {
@@ -1627,7 +1698,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       modeLocked = true;
       focusedDep = null;
 
-      document.getElementById('tour-title').textContent = depName + ' - ' + L('Ruta Turistica', 'Tourist Route');
+      document.getElementById('tour-title').textContent = depName + ' - ' + tr('Ruta Turistica', 'Tourist Route');
 
       var allPoints = [];
       if (userLat && userLng) { allPoints.push([userLat, userLng]); }
@@ -1764,8 +1835,15 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       clearTimeout(popupTimer);
       var tp = document.getElementById('tour-panel');
       var tourVisible = tp && tp.classList.contains('show');
-      if (followMode || tourActive || tourVisible) return;
-      clearRoute();
+      var bv = document.getElementById('biz-view');
+      var bizOpen = bv && bv.classList.contains('show');
+      if (followMode || tourActive || tourVisible || modeLocked || bizOpen) return;
+      if (focusedDep || currentDep) {
+        unfocusAll();
+        clearRoute();
+        clearTourism();
+        map.setView([${center}], 7);
+      }
       currentDep = null;
     });
 
@@ -1841,7 +1919,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
               var marker = L.marker(c, {
                 icon: L.divIcon({
                   className: '',
-                  html: '<div class="pin-marker">' + (CITY_IMAGES[dep.name] ? '<img class="pin-img" src="' + CITY_IMAGES[dep.name] + '" alt="' + dep.name + '" />' : '<div class="pin-name" style="color:' + dep.color + ';">' + dep.name + '</div>') + makePinSvg(dep.color) + '</div>',
+                  html: '<div class="pin-marker">' + '<div class="pin-name" style="color:' + dep.color + ';">' + dep.name + '</div>' + makePinSvg(dep.color) + '</div>',
                   iconSize: [72, 68], iconAnchor: [36, 68]
                 })
               }).addTo(map);
