@@ -36,6 +36,14 @@ public class Photo {
     @Column(name = "fecha_upload", nullable = false)
     private LocalDateTime fechaUpload;
 
+    /**
+     * Agrupa fotos subidas juntas (un mismo "post" en la comunidad).
+     * Las fotos que comparten el mismo grupoId se muestran juntas en un carrusel.
+     * Null en fotos subidas individualmente (legado).
+     */
+    @Column(name = "grupo_id")
+    private Long grupoId;
+
     @Column(name = "usuarios_like", columnDefinition = "nvarchar(max)")
     private String usuariosLike; // Almacenaremos los token/userId como JSON simple
 
@@ -114,6 +122,14 @@ public class Photo {
 
     public void setComentarios(Set<Comment> comentarios) {
         this.comentarios = comentarios;
+    }
+
+    public Long getGrupoId() {
+        return grupoId;
+    }
+
+    public void setGrupoId(Long grupoId) {
+        this.grupoId = grupoId;
     }
 
     public String getUsuariosLike() {

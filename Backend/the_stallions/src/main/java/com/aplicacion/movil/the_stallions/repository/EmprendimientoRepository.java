@@ -8,4 +8,6 @@ import java.util.List;
 public interface EmprendimientoRepository extends JpaRepository<Emprendimiento, Long> {
 
     List<Emprendimiento> findAllByOrderByNombreAsc();
+
+    List<Emprendimiento> findByTipoOrderByNombreAsc(String tipo);
 }

@@ -3,6 +3,7 @@ package com.aplicacion.movil.the_stallions.service;
 import com.aplicacion.movil.the_stallions.dto.Response.CommentResponse;
 import com.aplicacion.movil.the_stallions.dto.Response.NotificationResponse;
 import com.aplicacion.movil.the_stallions.dto.Response.PhotoResponse;
+import com.aplicacion.movil.the_stallions.dto.Response.PostResponse;
 import com.aplicacion.movil.the_stallions.exception.NotFoundException;
 import com.aplicacion.movil.the_stallions.model.Comment;
 import com.aplicacion.movil.the_stallions.model.Notification;
@@ -59,8 +60,10 @@ public class FotoService {
     /**
      * Subir una nueva foto. El usuario se obtiene desde el token (SecurityContext),
      * nunca desde un valor enviado por el cliente.
+     * Si `grupoId` no es nulo, la foto se agrupa con otras que compartan ese mismo
+     * grupo para mostrarse juntas en un solo post (carrusel) de la comunidad.
      */
-    public PhotoResponse subirFoto(MultipartFile file, String visibilidad, String descripcion, User usuario) {
+    public PhotoResponse subirFoto(MultipartFile file, String visibilidad, String descripcion, User usuario, Long grupoId) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("No se proporcionó ninguna imagen");
         }
@@ -85,6 +88,7 @@ public class FotoService {
         photo.setVisibilidad(vis);
         photo.setDescripcion(descripcion != null ? descripcion.trim() : null);
         photo.setFechaUpload(LocalDateTime.now());
+        photo.setGrupoId(grupoId);
         photo.setPhotoData(bytes);
         // Content type real del archivo, o fallback razonable según extensión.
         photo.setContentType(resolverContentType(file));
@@ -114,6 +118,80 @@ public class FotoService {
                 .getContent().stream()
                 .map(p -> desde(p, actual))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Posts de la comunidad (solo públicos), con paginación.
+     * Las fotos que comparten un mismo grupoId se agrupan en UN post (carrusel),
+     * de modo que las fotos subidas juntas aparecen juntas en el mismo lugar.
+     */
+    public List<PostResponse> obtenerPostsComunidad(User actual, int page, int pageSize) {
+        List<Photo> todas = photoRepository.findByVisibilidadOrderByFechaUploadDesc(Visibilidad.PUBLICA);
+
+        List<List<Photo>> grupos = agruparEnPosts(todas);
+
+        int inicio = Math.max(page - 1, 0) * Math.min(Math.max(pageSize, 1), 50);
+        if (inicio >= grupos.size()) {
+            return new ArrayList<>();
+        }
+        int fin = Math.min(inicio + Math.min(Math.max(pageSize, 1), 50), grupos.size());
+
+        return grupos.subList(inicio, fin).stream()
+                .map(g -> fromPosts(g, actual))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Agrupa fotos ya ordenadas por fecha desc en posts.
+     * Fotos consecutivas con el mismo grupoId van juntas en un mismo post;
+     * una foto sin grupoId es un post de una sola foto.
+     */
+    private List<List<Photo>> agruparEnPosts(List<Photo> ordenadas) {
+        List<List<Photo>> grupos = new ArrayList<>();
+        for (Photo p : ordenadas) {
+            if (p.getGrupoId() == null) {
+                grupos.add(new ArrayList<>(List.of(p)));
+                continue;
+            }
+            List<Photo> ultimo = grupos.isEmpty() ? null : grupos.get(grupos.size() - 1);
+            if (ultimo != null && !ultimo.isEmpty() && p.getGrupoId().equals(ultimo.get(0).getGrupoId())) {
+                ultimo.add(p);
+            } else {
+                grupos.add(new ArrayList<>(List.of(p)));
+            }
+        }
+        return grupos;
+    }
+
+    private PostResponse fromPosts(List<Photo> fotos, User actual) {
+        Photo principal = fotos.get(0);
+        PostResponse post = new PostResponse();
+        post.setId(principal.getGrupoId() != null ? principal.getGrupoId() : principal.getId());
+        User dueno = principal.getUser();
+        post.setUsuarioNombre(dueno != null ? dueno.getFullName() : "Usuario");
+        post.setUsuarioAvatar(dueno != null ? baseUrl + "/api/user/photo/" + dueno.getId() : null);
+        post.setFecha(principal.getFechaUpload() != null
+                ? principal.getFechaUpload().format(FECHA_FORMATO) : null);
+        post.setVisibilidad(principal.getVisibilidad() == Visibilidad.PUBLICA ? "publica" : "privada");
+        post.setDescripcion(principal.getDescripcion());
+
+        long likes = 0;
+        long comentarios = 0;
+        boolean likedByMe = false;
+        String miId = actual != null ? String.valueOf(actual.getId()) : null;
+        for (Photo f : fotos) {
+            List<String> ids = idsDeLikes(f);
+            likes += ids.size();
+            comentarios += commentRepository.countByPhoto(f);
+            if (!likedByMe && miId != null && ids.contains(miId)) {
+                likedByMe = true;
+            }
+        }
+        post.setLikes(likes);
+        post.setComentarios(comentarios);
+        post.setLikedByMe(likedByMe);
+        post.setFotos(fotos.stream().map(f -> desde(f, actual)).collect(Collectors.toList()));
+        return post;
     }
 
     /** Cambiar visibilidad de una foto propia. */
@@ -350,7 +428,7 @@ public class FotoService {
         List<String> ids = idsDeLikes(p);
         boolean likedByMe = actual != null && ids.contains(String.valueOf(actual.getId()));
         User dueno = p.getUser();
-        return new PhotoResponse(
+        PhotoResponse response = new PhotoResponse(
                 p.getId(),
                 p.getUrl(),
                 dueno != null ? dueno.getFullName() : "Usuario",
@@ -362,6 +440,8 @@ public class FotoService {
                 likedByMe,
                 commentRepository.countByPhoto(p)
         );
+        response.setGrupoId(p.getGrupoId());
+        return response;
     }
 
     private CommentResponse desde(Comment c) {
