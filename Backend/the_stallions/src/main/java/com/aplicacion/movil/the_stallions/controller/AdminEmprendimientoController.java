@@ -28,7 +28,7 @@ public class AdminEmprendimientoController {
 
     @GetMapping
     public String listar(Model model) {
-        model.addAttribute("emprendimientos", emprendimientoService.listar());
+        model.addAttribute("emprendimientos", emprendimientoService.listar(null));
         return "admin/emprendimientos";
     }
 

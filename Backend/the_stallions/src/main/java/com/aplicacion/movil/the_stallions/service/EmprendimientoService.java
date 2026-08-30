@@ -21,6 +21,8 @@ public class EmprendimientoService {
 
     private static final long MAX_FOTO_BYTES = 10L * 1024 * 1024;
 
+    public static final List<String> CATEGORIAS = List.of("Gastronomia", "Agroindustria", "Artesania");
+
     private final EmprendimientoRepository emprendimientoRepository;
 
     @Value("${app.base-url:}")
@@ -31,11 +33,21 @@ public class EmprendimientoService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmprendimientoResponse> listar() {
-        return emprendimientoRepository.findAllByOrderByNombreAsc()
-                .stream()
+    public List<EmprendimientoResponse> listar(String tipo) {
+        List<Emprendimiento> lista;
+        if (tipo != null && !tipo.isBlank()) {
+            lista = emprendimientoRepository.findByTipoOrderByNombreAsc(tipo.trim());
+        } else {
+            lista = emprendimientoRepository.findAllByOrderByNombreAsc();
+        }
+        return lista.stream()
                 .map(EmprendimientoResponse::new)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> listarCategorias() {
+        return CATEGORIAS;
     }
 
     @Transactional(readOnly = true)
@@ -103,13 +115,36 @@ public class EmprendimientoService {
 
     private void aplicar(Emprendimiento e, EmprendimientoRequest request) {
         e.setNombre(request.getNombre().trim());
-        e.setTipo(request.getTipo().trim());
+        e.setTipo(normalizarTipo(request.getTipo()));
         e.setDescripcion(request.getDescripcion() != null ? request.getDescripcion().trim() : null);
         e.setLat(request.getLat());
         e.setLng(request.getLng());
         e.setContactoTelefono(request.getContactoTelefono());
         e.setContactoEmail(request.getContactoEmail());
         e.setContactoRedes(request.getContactoRedes());
+    }
+
+    /**
+     * Normaliza el tipo de un emprendimiento a una de las 3 categorias validas
+     * (Gastronomia, Agroindustria, Artesania), tolerando acentos y diferencias
+     * de mayusculas/minusculas.
+     */
+    private String normalizarTipo(String tipo) {
+        if (tipo == null || tipo.isBlank()) {
+            return CATEGORIAS.get(0);
+        }
+        String t = tipo.trim();
+        for (String categoria : CATEGORIAS) {
+            if (eliminarAcentos(t).equalsIgnoreCase(categoria.toLowerCase())) {
+                return categoria;
+            }
+        }
+        return t;
+    }
+
+    private String eliminarAcentos(String s) {
+        return java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
     }
 
     private String buildFotoUrl(HttpServletRequest request, Long id, long version) {

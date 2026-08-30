@@ -3,6 +3,7 @@ package com.aplicacion.movil.the_stallions.controller;
 import com.aplicacion.movil.the_stallions.dto.Response.CommentResponse;
 import com.aplicacion.movil.the_stallions.dto.Response.NotificationResponse;
 import com.aplicacion.movil.the_stallions.dto.Response.PhotoResponse;
+import com.aplicacion.movil.the_stallions.dto.Response.PostResponse;
 import com.aplicacion.movil.the_stallions.model.Photo;
 import com.aplicacion.movil.the_stallions.model.User;
 import com.aplicacion.movil.the_stallions.service.CommentService;
@@ -39,9 +40,10 @@ public class FotoController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PhotoResponse> subirFoto(@RequestParam("photo") MultipartFile photo,
                                                    @RequestParam("visibilidad") String visibilidad,
-                                                   @RequestParam(value = "descripcion", required = false) String descripcion) {
+                                                   @RequestParam(value = "descripcion", required = false) String descripcion,
+                                                   @RequestParam(value = "grupoId", required = false) Long grupoId) {
         User usuario = fotoService.usuarioActual();
-        return ResponseEntity.ok(fotoService.subirFoto(photo, visibilidad, descripcion, usuario));
+        return ResponseEntity.ok(fotoService.subirFoto(photo, visibilidad, descripcion, usuario, grupoId));
     }
 
     /** GET /api/fotos/mias — fotos privadas y públicas del usuario autenticado */
@@ -61,6 +63,16 @@ public class FotoController {
             @RequestParam(defaultValue = "10") int pageSize) {
         User actual = fotoService.usuarioOpcional();
         return ResponseEntity.ok(fotoService.obtenerFotosComunidad(actual, page, pageSize));
+    }
+
+    /** GET /api/fotos/comunidad/posts?page=1&pageSize=10 — posts públicos (agrupa fotos subidas juntas) */
+
+    @GetMapping("/comunidad/posts")
+    public ResponseEntity<List<PostResponse>> obtenerPostsComunidad(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        User actual = fotoService.usuarioOpcional();
+        return ResponseEntity.ok(fotoService.obtenerPostsComunidad(actual, page, pageSize));
     }
 
     /** PUT /api/fotos/{id} — cambiar visibilidad de una foto propia. Body: { "visibilidad": "publica" } */

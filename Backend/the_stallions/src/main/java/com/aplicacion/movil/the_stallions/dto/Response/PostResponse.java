@@ -1,39 +1,25 @@
 package com.aplicacion.movil.the_stallions.dto.Response;
 
-public class PhotoResponse {
-    private Long id;
-    private String url;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Representa UN post de la comunidad. Puede contener una o varias fotos
+ * (las que se subieron juntas) que se muestran como un carrusel.
+ */
+public class PostResponse {
+    private Long id; // id representativo del post (grupoId o id de la foto única)
     private String usuarioNombre;
     private String usuarioAvatar;
     private String fecha;
     private String visibilidad; // "privada" | "publica"
     private String descripcion;
-    private long likes;
+    private long likes;      // agregado de todas las fotos del post
     private boolean likedByMe;
-    private long comentarios;
-    private Long grupoId;
+    private long comentarios; // agregado de todas las fotos del post
+    private List<PhotoResponse> fotos = new ArrayList<>();
 
-    public PhotoResponse() {
-    }
-
-    /** Constructor simple (solo URL) para usos existentes como el avatar de usuario. */
-    public PhotoResponse(String url) {
-        this.url = url;
-    }
-
-    public PhotoResponse(Long id, String url, String usuarioNombre, String usuarioAvatar,
-                         String fecha, String visibilidad, String descripcion, long likes,
-                         boolean likedByMe, long comentarios) {
-        this.id = id;
-        this.url = url;
-        this.usuarioNombre = usuarioNombre;
-        this.usuarioAvatar = usuarioAvatar;
-        this.fecha = fecha;
-        this.visibilidad = visibilidad;
-        this.descripcion = descripcion;
-        this.likes = likes;
-        this.likedByMe = likedByMe;
-        this.comentarios = comentarios;
+    public PostResponse() {
     }
 
     public Long getId() {
@@ -42,14 +28,6 @@ public class PhotoResponse {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public String getUsuarioNombre() {
@@ -116,11 +94,11 @@ public class PhotoResponse {
         this.comentarios = comentarios;
     }
 
-    public Long getGrupoId() {
-        return grupoId;
+    public List<PhotoResponse> getFotos() {
+        return fotos;
     }
 
-    public void setGrupoId(Long grupoId) {
-        this.grupoId = grupoId;
+    public void setFotos(List<PhotoResponse> fotos) {
+        this.fotos = fotos;
     }
 }

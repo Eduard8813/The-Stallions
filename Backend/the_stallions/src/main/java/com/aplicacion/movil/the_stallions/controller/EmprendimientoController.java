@@ -25,8 +25,13 @@ public class EmprendimientoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EmprendimientoResponse>> listar() {
-        return ResponseEntity.ok(emprendimientoService.listar());
+    public ResponseEntity<List<EmprendimientoResponse>> listar(@RequestParam(required = false) String tipo) {
+        return ResponseEntity.ok(emprendimientoService.listar(tipo));
+    }
+
+    @GetMapping("/categorias")
+    public ResponseEntity<List<String>> categorias() {
+        return ResponseEntity.ok(emprendimientoService.listarCategorias());
     }
 
     @GetMapping("/{id}")
