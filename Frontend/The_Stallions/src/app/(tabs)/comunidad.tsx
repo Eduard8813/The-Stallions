@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import api, { resolveResourceUrl } from '../../services/api';
@@ -37,20 +39,34 @@ type Foto = {
   comentarios: number;
 };
 
+type Post = {
+  id: number;
+  usuarioNombre: string;
+  usuarioAvatar: string | null;
+  fecha: string;
+  descripcion?: string | null;
+  likes: number;
+  likedByMe: boolean;
+  comentarios: number;
+  fotos: Foto[];
+};
+
 const PAGE_SIZE = 10;
+const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function ComunidadScreen() {
   const router = useRouter();
   const { colors, mode } = useTheme();
   const { t } = useLang();
   const styles = createStyles(colors);
-  const [fotos, setFotos] = useState<Foto[]>([]);
+  const [fotos, setFotos] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hayMas, setHayMas] = useState(true);
   const [expandida, setExpandida] = useState<number | null>(null);
   const [miId, setMiId] = useState<number | null>(null);
+  const estadoRef = useRef(false);
 
   useEffect(() => {
     api.get('/user/profile')
@@ -63,7 +79,7 @@ export default function ComunidadScreen() {
       if (reemplazar) setLoading(true);
       else setLoadingMore(true);
       try {
-        const { data } = await api.get<Foto[]>('/fotos/comunidad', {
+        const { data } = await api.get<Post[]>('/fotos/comunidad/posts', {
           params: { page: pagina, pageSize: PAGE_SIZE },
         });
         setFotos((prev) => (reemplazar ? data : [...prev, ...data]));
@@ -79,28 +95,31 @@ export default function ComunidadScreen() {
     [t]
   );
 
+  // Carga única: al volver a esta pestaña la lista conserva su posición (no se recarga).
   useFocusEffect(
     useCallback(() => {
-      cargar(1, true);
+      if (!estadoRef.current) {
+        estadoRef.current = true;
+        cargar(1, true);
+      }
     }, [cargar])
   );
 
-  const darLike = async (foto: Foto) => {
+  const darLike = async (post: Post) => {
+    const principal = post.fotos[0];
     setFotos((prev) =>
-      prev.map((f) =>
-        f.id === foto.id
-          ? { ...f, likedByMe: !f.likedByMe, likes: f.likes + (f.likedByMe ? -1 : 1) }
-          : f
+      prev.map((p) =>
+        p.id === post.id
+          ? { ...p, likedByMe: !p.likedByMe, likes: p.likes + (p.likedByMe ? -1 : 1) }
+          : p
       )
     );
     try {
-      await api.post(`/fotos/${foto.id}/like`);
+      await api.post(`/fotos/${principal.id}/like`);
     } catch (e: any) {
       setFotos((prev) =>
-        prev.map((f) =>
-          f.id === foto.id
-            ? { ...f, likedByMe: foto.likedByMe, likes: foto.likes }
-            : f
+        prev.map((p) =>
+          p.id === post.id ? { ...p, likedByMe: post.likedByMe, likes: post.likes } : p
         )
       );
       Alert.alert('Error', e?.response?.data?.message || t.communityErrorLike);
@@ -129,7 +148,7 @@ export default function ComunidadScreen() {
       ) : (
         <FlatList
           data={fotos}
-          keyExtractor={(f) => String(f.id)}
+          keyExtractor={(f) => `post-${f.id}`}
           onEndReached={() => {
             if (!loadingMore && hayMas) cargar(page + 1, false);
           }}
@@ -137,7 +156,7 @@ export default function ComunidadScreen() {
           ListFooterComponent={loadingMore ? <ActivityIndicator color={colors.cameraBtn} /> : null}
           renderItem={({ item }) => (
             <Publicacion
-              foto={item}
+              post={item}
               miUsuarioId={miId}
               expandida={expandida === item.id}
               onLike={() => darLike(item)}
@@ -155,13 +174,13 @@ export default function ComunidadScreen() {
 // ==================== PUBLICACIÓN ====================
 
 function Publicacion({
-  foto,
+  post,
   miUsuarioId,
   expandida,
   onLike,
   onToggleComentarios,
 }: {
-  foto: Foto;
+  post: Post;
   miUsuarioId: number | null;
   expandida: boolean;
   onLike: () => void;
@@ -170,44 +189,80 @@ function Publicacion({
   const { colors } = useTheme();
   const { t } = useLang();
   const styles = createStyles(colors);
+  const fotos = post.fotos && post.fotos.length > 0 ? post.fotos : [];
+  const multi = fotos.length > 1;
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        {foto.usuarioAvatar ? (
-          <Image source={{ uri: resolveResourceUrl(foto.usuarioAvatar) }} style={styles.avatar} />
+        {post.usuarioAvatar ? (
+          <Image source={{ uri: resolveResourceUrl(post.usuarioAvatar) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarInitial}>{foto.usuarioNombre.charAt(0).toUpperCase()}</Text>
+            <Text style={styles.avatarInitial}>{post.usuarioNombre.charAt(0).toUpperCase()}</Text>
           </View>
         )}
         <View style={{ flex: 1 }}>
-          <Text style={styles.nombre}>{foto.usuarioNombre}</Text>
-          <Text style={styles.fecha}>{foto.fecha}</Text>
+          <Text style={styles.nombre}>{post.usuarioNombre}</Text>
+          <Text style={styles.fecha}>{post.fecha}</Text>
         </View>
+        {multi ? <Text style={styles.multCount}>{fotos.length} 📸</Text> : null}
       </View>
 
-      <Image source={{ uri: resolveResourceUrl(foto.url) }} style={styles.imagen} resizeMode="cover" />
+      {multi ? (
+        <Carrusel fotos={fotos} colors={colors} />
+      ) : (
+        <Image source={{ uri: resolveResourceUrl(fotos[0]?.url) }} style={styles.imagen} resizeMode="cover" />
+      )}
 
-      {foto.descripcion ? (
+      {post.descripcion ? (
         <View style={styles.descBox}>
-          <Text style={styles.descTexto}>{foto.descripcion}</Text>
+          <Text style={styles.descTexto}>{post.descripcion}</Text>
         </View>
       ) : null}
 
       <View style={styles.acciones}>
         <TouchableOpacity style={styles.accionBtn} onPress={onLike}>
-          <Text style={[styles.accionTexto, foto.likedByMe && styles.likeActivo]}>
-            {foto.likedByMe ? '❤️' : '🤍'} {t.communityLike} ({foto.likes})
+          <Text style={[styles.accionTexto, post.likedByMe && styles.likeActivo]}>
+            {post.likedByMe ? '❤️' : '🤍'} {t.communityLike} ({post.likes})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.accionBtn} onPress={onToggleComentarios}>
-          <Text style={styles.accionTexto}>💬 {t.communityComment} ({foto.comentarios})</Text>
+          <Text style={styles.accionTexto}>💬 {t.communityComment} ({post.comentarios})</Text>
         </TouchableOpacity>
       </View>
 
       {expandida && (
-        <SeccionComentarios fotoId={foto.id} miUsuarioId={miUsuarioId} onChange={onToggleComentarios} />
+        <SeccionComentarios fotoId={fotos[0]?.id} miUsuarioId={miUsuarioId} />
       )}
+    </View>
+  );
+}
+
+// ==================== CARRUSEL ====================
+
+function Carrusel({ fotos, colors }: { fotos: Foto[]; colors: any }) {
+  const styles = createStyles(colors);
+  const ancho = SCREEN_W;
+  if (fotos.length <= 1) {
+    return <Image source={{ uri: resolveResourceUrl(fotos[0]?.url) }} style={styles.imagen} resizeMode="cover" />;
+  }
+  return (
+    <View>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+      >
+        {fotos.map((foto, index) => (
+          <View key={String(foto.id)} style={{ width: ancho }}>
+            <Image source={{ uri: resolveResourceUrl(foto.url) }} style={[styles.imagen, { width: ancho }]} resizeMode="cover" />
+          </View>
+        ))}
+      </ScrollView>
+      <View style={styles.masIndicador}>
+        <Text style={styles.masIndicadorText}>+{fotos.length}</Text>
+      </View>
     </View>
   );
 }
@@ -218,9 +273,8 @@ function SeccionComentarios({
   fotoId,
   miUsuarioId,
 }: {
-  fotoId: number;
+  fotoId?: number;
   miUsuarioId: number | null;
-  onChange?: () => void;
 }) {
   const { colors } = useTheme();
   const { t } = useLang();
@@ -234,6 +288,10 @@ function SeccionComentarios({
 
   useEffect(() => {
     let activo = true;
+    if (fotoId == null) {
+      setCargando(false);
+      return;
+    }
     api.get<Comentario[]>(`/fotos/${fotoId}/comentarios`)
       .then(({ data }) => {
         if (!activo) return;
@@ -249,7 +307,7 @@ function SeccionComentarios({
   }, [fotoId]);
 
   const enviar = async () => {
-    if (!texto.trim()) return;
+    if (!texto.trim() || fotoId == null) return;
     setEnviando(true);
     try {
       const { data } = await api.post<Comentario>(`/fotos/${fotoId}/comentarios`, { texto: texto.trim() });
@@ -391,8 +449,20 @@ const createStyles = (colors: any) =>
     avatarInitial: { color: colors.text, fontSize: 16, fontWeight: '700' },
     nombre: { color: colors.text, fontSize: 14, fontWeight: '700' },
     fecha: { color: colors.subtext, fontSize: 12 },
+    multCount: { color: colors.accent, fontSize: 13, fontWeight: '700' },
 
     imagen: { width: '100%', aspectRatio: 1 },
+
+    masIndicador: {
+      position: 'absolute',
+      bottom: 10,
+      right: 10,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 16,
+    },
+    masIndicadorText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
     descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.border },
     descTexto: { color: colors.text, fontSize: 14, lineHeight: 20 },
