@@ -960,18 +960,6 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       });
     }
 
-    var seedEmprendimientos = [
-      { name: 'Taller de Ceramica Monimbo', tipo: 'Artesania', desc: 'Ceramica tradicional hecha a mano en el barrio historico de Masaya.', lat: 11.9715, lng: -86.0960 },
-      { name: 'Cafe Las Nubes', tipo: 'Gastronomia', desc: 'Cafe de especialidad a 1400 msnm en las montanas de Matagalpa.', lat: 12.9780, lng: -85.9020 },
-      { name: 'Mercado de Artesanias', tipo: 'Artesania', desc: 'Puestos de artesanias indigenas y textiles en Granada.', lat: 11.9315, lng: -85.9530 },
-      { name: 'Ruta del Chocolate', tipo: 'Gastronomia', desc: 'Museo y tienda de chocolate artesanal nicaraguense.', lat: 11.9330, lng: -85.9570 },
-      { name: 'Vinos de Esteli', tipo: 'Agroindustria', desc: 'Bodega familiar con vino artesanal de la region norte.', lat: 13.0950, lng: -86.3520 },
-      { name: 'Textil Nagarote', tipo: 'Artesania', desc: 'Tejidos y bordados tradicionales de Nagarote.', lat: 12.2600, lng: -86.5900 },
-      { name: 'Mariscos Bluefields', tipo: 'Gastronomia', desc: 'Restaurante de comida caribena frente al mar.', lat: 12.0135, lng: -83.7640 },
-      { name: 'Joya Juigalpa', tipo: 'Artesania', desc: 'Joyer\u00eda artesanal con disenos locales.', lat: 12.1061, lng: -85.3640 },
-      { name: 'Latte Leon', tipo: 'Gastronomia', desc: 'Cafeteria de especialidad en el centro de Leon.', lat: 12.4355, lng: -86.8785 },
-      { name: 'Galeria Managua', tipo: 'Artesania', desc: 'Galeria de arte contemporaneo local.', lat: 12.1405, lng: -86.2520 }
-    ];
     var emprendimientos = [];
     var emprendimientosLoaded = false;
     var bizCat = 'General';
@@ -988,16 +976,12 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
           return r.json();
         })
         .then(function(data) {
-          if (Array.isArray(data) && data.length) {
-            emprendimientos = data;
-          } else {
-            emprendimientos = seedEmprendimientos.slice();
-          }
+          emprendimientos = Array.isArray(data) ? data : [];
           emprendimientosLoaded = true;
           done();
         })
         .catch(function() {
-          emprendimientos = seedEmprendimientos.slice();
+          emprendimientos = [];
           emprendimientosLoaded = true;
           done();
         });
