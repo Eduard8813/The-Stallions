@@ -100,8 +100,7 @@ const createStyles = (colors: any) =>
       padding: 24,
     },
     panel: {
-      width: '100%',
-      maxWidth: 360,
+      minWidth: 220,
       borderRadius: 16,
       borderWidth: 1,
       backgroundColor: colors.surface,
