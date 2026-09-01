@@ -51,7 +51,7 @@ export default function DeleteAccountModal({ visible, onClose }: DeleteAccountMo
       <ConfirmModal
         visible={visible && step === 'confirm'}
         title="¿Eliminar tu cuenta?"
-        message="Esta acción es irreversible. Perderás tu perfil, tus recorridos y todos tus datos. ¿Deseas continuar?"
+        message="Tu cuenta será suspendida y tu contenido se ocultará de la comunidad. No podrás volver a iniciar sesión. ¿Deseas continuar?"
         confirmLabel="Continuar"
         destructive
         onConfirm={() => {
