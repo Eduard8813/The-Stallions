@@ -16,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -325,16 +326,23 @@ public class UserService {
         return response;
     }
 
+    @Transactional
     public SuccessResponse deleteAccount() {
         User user = currentUser();
         Long userId = user.getId();
 
+        // Soft delete: la cuenta queda SUSPENDIDA (enabled=false) en lugar de eliminarse.
+        // Todo su contenido (fotos/comentarios) se oculta de la comunidad y el usuario
+        // no puede volver a iniciar sesión, pero los datos se conservan en la BD.
+        user.setEnabled(false);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        userSessionRepository.deactivateAllByUserId(userId);
         dataExportRepository.deleteByUserId(userId);
         userNotificationsRepository.deleteByUserId(userId);
         userPrivacyRepository.deleteByUserId(userId);
         blockedUserRepository.deleteByUserId(userId);
-        userSessionRepository.deleteByUserId(userId);
-        userRepository.delete(user);
 
         return new SuccessResponse(true);
     }

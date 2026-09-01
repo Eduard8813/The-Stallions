@@ -63,6 +63,10 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
 
+        if (!user.isEnabled()) {
+            throw new IllegalStateException("Tu cuenta fue suspendida");
+        }
+
         if (user.getProvider() != AuthProvider.LOCAL || user.getPasswordHash() == null) {
             throw new IllegalStateException("Esta cuenta usa inicio de sesión con Google");
         }
@@ -101,6 +105,10 @@ public class AuthService {
             user.setUsername(email.split("@")[0]);
         }
         userRepository.save(user);
+
+        if (!user.isEnabled()) {
+            throw new IllegalStateException("Tu cuenta fue suspendida");
+        }
 
         if (requiresTwoFactor(user)) {
             return requireTwoFactor(user);
