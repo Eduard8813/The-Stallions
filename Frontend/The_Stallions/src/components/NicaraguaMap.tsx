@@ -168,15 +168,19 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       background: linear-gradient(135deg, #0f1923, #162032);
       border-radius: 12px; border: 1px solid rgba(233,69,96,0.25);
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-      padding: 6px 12px 6px 6px; cursor: pointer;
-      display: flex; align-items: center; gap: 8px;
-      transition: all 0.25s; max-width: 190px;
+      padding: 4px; display: flex; gap: 4px;
     }
-    .nc-layer-box:active { transform: scale(0.94); }
-    .nc-toggle-label {
-      font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.9);
-      letter-spacing: 0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    .nc-layer-btn {
+      padding: 8px 12px; font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.55); background: transparent; border: none;
+      border-radius: 8px; cursor: pointer; letter-spacing: 0.3px;
+      white-space: nowrap; transition: all 0.2s; line-height: 1;
     }
+    .nc-layer-btn.active {
+      background: linear-gradient(135deg, #e94560, #0f3460);
+      color: #fff;
+    }
+    .nc-layer-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
     .nc-view-title {
       position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1100;
       font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px;
@@ -186,12 +190,6 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       white-space: nowrap;
     }
     .nc-view-title.show { display: block; }
-    .nc-toggle-thumb {
-      width: 44px; height: 44px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 26px; background: rgba(255,255,255,0.08);
-      overflow: hidden; border: 1px solid rgba(255,255,255,0.12);
-    }
     .nc-biz-view {
       position: absolute; inset: 0; z-index: 1001; display: none;
       background: radial-gradient(circle at 20% 0%, #16213e, #0b1220 55%, #0f1923);
@@ -523,10 +521,10 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     <button class="nc-mode-btn active" id="tog-creative" onclick="switchMode('creative')">${lang === 'es' ? 'Ciudad Creativa' : 'Creative City'}</button>
     <button class="nc-mode-btn" id="tog-business" onclick="switchMode('business')">${lang === 'es' ? 'Emprendimientos' : 'Businesses'}</button>
   </div>
-  <button class="nc-layer-box" id="layer-toggle" onclick="toggleLayer()">
-    <span class="nc-toggle-thumb" id="layer-thumb">🛰</span>
-    <span class="nc-toggle-label" id="layer-label">${lang === 'es' ? 'Vista estándar' : 'Standard view'}</span>
-  </button>
+  <div class="nc-layer-box" id="layer-box">
+    <button class="nc-layer-btn active" id="layer-geo" onclick="switchToGeographic()">🗺 ${lang === 'es' ? 'Vista Geográfica' : 'Geographic view'}</button>
+    <button class="nc-layer-btn" id="layer-relieve" onclick="switchToRelieve()">⛰ ${lang === 'es' ? 'Vista de Relieve' : 'Relief view'}</button>
+  </div>
   <div class="nc-biz-view" id="biz-view">
     <div class="nc-biz-view-head">
       <div class="nc-biz-view-sub" id="biz-view-sub">${lang === 'es' ? 'Descubre los negocios y emprendimientos locales.' : 'Discover local businesses and ventures.'}</div>
@@ -581,14 +579,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       attributionControl: false
     });
 
-    var satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19
-    });
     var hillLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Hillshade/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, opacity: 0.35
-    });
-    var labelsLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd', pane: 'overlayPane'
+      maxZoom: 19, opacity: 0.5
     });
     var geoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19, subdomains: 'abcd'
@@ -596,9 +588,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     var geoLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
       maxZoom: 19, subdomains: 'abcd', pane: 'overlayPane'
     });
-    satLayer.addTo(map);
-    hillLayer.addTo(map);
-    labelsLayer.addTo(map);
+    geoLayer.addTo(map);
+    geoLabels.addTo(map);
     currentMode = 'geography';
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -914,39 +905,31 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       map.setView([${center}], 7);
     }
 
-    // "Geografia" muestra el mapa satelital/relieve; "Relieve" muestra el mapa de calles (voyager).
-    // Se mantiene la posición del recuadro inferior izquierdo tal como estaba.
-    function toggleLayer() {
-      if (currentMode === 'geography') switchToRelieve();
-      else switchToGeographic();
+    // "Vista Geográfica" muestra el mapa base (calles) y "Vista de Relieve" superpone
+    // el relieve del terreno. Se mantiene la posición del recuadro inferior izquierdo.
+    function setLayerActive(geoActive) {
+      var geoBtn = document.getElementById('layer-geo');
+      var relBtn = document.getElementById('layer-relieve');
+      if (geoBtn) geoBtn.classList.toggle('active', geoActive);
+      if (relBtn) relBtn.classList.toggle('active', !geoActive);
     }
 
     function switchToRelieve() {
       currentMode = 'relieve';
-      if (map.hasLayer(satLayer)) map.removeLayer(satLayer);
-      if (map.hasLayer(hillLayer)) map.removeLayer(hillLayer);
-      if (map.hasLayer(labelsLayer)) map.removeLayer(labelsLayer);
-      geoLayer.addTo(map);
-      geoLabels.addTo(map);
+      if (!map.hasLayer(geoLayer)) geoLayer.addTo(map);
+      if (!map.hasLayer(geoLabels)) geoLabels.addTo(map);
+      if (!map.hasLayer(hillLayer)) hillLayer.addTo(map);
       refreshPolys();
-      var thumb = document.getElementById('layer-thumb');
-      if (thumb) thumb.textContent = '🗺';
-      var lbl = document.getElementById('layer-label');
-      if (lbl) lbl.textContent = tr('Elevaci\u00f3n y terreno', 'Elevation & terrain');
+      setLayerActive(false);
     }
 
     function switchToGeographic() {
       currentMode = 'geography';
-      if (map.hasLayer(geoLayer)) map.removeLayer(geoLayer);
-      if (map.hasLayer(geoLabels)) map.removeLayer(geoLabels);
-      satLayer.addTo(map);
-      hillLayer.addTo(map);
-      labelsLayer.addTo(map);
+      if (map.hasLayer(hillLayer)) map.removeLayer(hillLayer);
+      if (!map.hasLayer(geoLayer)) geoLayer.addTo(map);
+      if (!map.hasLayer(geoLabels)) geoLabels.addTo(map);
       refreshPolys();
-      var thumb = document.getElementById('layer-thumb');
-      if (thumb) thumb.textContent = '🛰';
-      var lbl = document.getElementById('layer-label');
-      if (lbl) lbl.textContent = tr('Vista est\u00e1ndar', 'Standard view');
+      setLayerActive(true);
     }
 
     function refreshPolys() {
