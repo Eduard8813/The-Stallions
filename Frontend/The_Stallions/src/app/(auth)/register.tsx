@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { router } from 'expo-router';
 import AuthInput from '../../components/AuthInput';
 import AuthButton from '../../components/AuthButton';
@@ -74,6 +74,8 @@ export default function RegisterScreen() {
         <Text style={styles.title}>{t.register}</Text>
         <Text style={styles.subtitle}>{t.registerSubtitle}</Text>
 
+        <Image source={require('../../assets/images/logo-glow.png')} style={styles.logo} resizeMode="contain" />
+
         <View style={styles.card}>
           <AuthInput label={t.fullName} value={fullName} onChangeText={setFullName} placeholder={t.namePlaceholder} autoCapitalize="words" />
           <AuthInput label={t.email} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder={t.emailPlaceholder} />
@@ -107,6 +109,7 @@ const styles = StyleSheet.create({
   langBtn: { alignSelf: 'flex-end', marginBottom: 6 },
   title: { fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: 2, textAlign: 'center' },
   subtitle: { fontSize: 12, color: '#64748b', marginBottom: 14, textAlign: 'center' },
+  logo: { width: 160, height: 160, marginBottom: 10 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: '5%', width: '100%', maxWidth: 400, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
   errorText: { color: '#ef4444', marginBottom: 8, textAlign: 'center', fontSize: 12 },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },

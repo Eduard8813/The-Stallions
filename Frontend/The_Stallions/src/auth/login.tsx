@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Image } from 'react-native';
 import { router } from 'expo-router';
 import AuthInput from '../components/AuthInput';
 import AuthButton from '../components/AuthButton';
@@ -81,6 +81,8 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <LangToggle style={styles.langBtn} />
 
+        <Image source={require('../../assets/images/logo-glow.png')} style={styles.logo} resizeMode="contain" />
+
         <Text style={styles.title}>{t.login}</Text>
         <Text style={styles.subtitle}>{t.loginSubtitle}</Text>
 
@@ -115,6 +117,7 @@ const styles = StyleSheet.create({
   langBtn: { position: 'absolute', top: 48, right: '4%' },
   title: { fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: 2, textAlign: 'center' },
   subtitle: { fontSize: 12, color: '#64748b', marginBottom: 14, textAlign: 'center' },
+  logo: { width: 160, height: 160, marginBottom: 10 },
   card: { backgroundColor: '#fff', borderRadius: 16, padding: '5%', width: '100%', maxWidth: 400, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
   errorText: { color: '#ef4444', marginBottom: 8, textAlign: 'center', fontSize: 12 },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 10 },
