@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { events } from '../../services/events';
+import { EVENTS, events } from '../../services/events';
 import { userService } from '../../services/userService';
 
 type AssetInfo = {
@@ -35,14 +35,31 @@ export default function CameraScreen() {
     mimeType: a.mimeType,
   });
 
+  const descLimit = 1000;
+  const capDescription = (text: string) => {
+    const arr = Array.from(text);
+    if (arr.length <= descLimit) return text;
+    return arr.slice(0, descLimit).join('');
+  };
+
   const handleCapture = async () => {
     setError('');
 
-    const { status: camStatus } = await ImagePicker.requestCameraPermissionsAsync();
-    if (camStatus !== 'granted') {
-      const { status: libStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const current = await ImagePicker.getCameraPermissionsAsync();
+    let camGranted = current.granted;
+    if (!camGranted && current.canAskAgain) {
+      const asked = await ImagePicker.requestCameraPermissionsAsync();
+      camGranted = asked.granted;
+    }
+
+    if (!camGranted) {
+      const lib = await ImagePicker.getMediaLibraryPermissionsAsync();
+      if (!lib.granted && lib.canAskAgain) {
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      }
+      const { status: libStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
       if (libStatus !== 'granted') {
-        setError('No se permitieron los accesos a cámara ni galería.');
+        setError('No se permitieron los accesos a la cámara ni a la galería. Activá el permiso en los Ajustes del sistema.');
         return;
       }
     }
@@ -108,7 +125,7 @@ export default function CameraScreen() {
         }
       }
       if (!ultimoExito) return;
-      events.emit('fotoSubida', { fecha: new Date().toISOString() });
+      events.emit(EVENTS.fotoSubida, { fecha: new Date().toISOString() });
       setAssets([]);
       setDescripcion('');
       setVisibilidad('publica');
@@ -165,9 +182,8 @@ export default function CameraScreen() {
             placeholder="Escribe una descripción para tus fotos..."
             placeholderTextColor="#777"
             value={descripcion}
-            onChangeText={setDescripcion}
+            onChangeText={(t) => setDescripcion(capDescription(t))}
             multiline
-            maxLength={1000}
           />
 
           <Text style={styles.visLabel}>¿Quién puede ver tu foto?</Text>

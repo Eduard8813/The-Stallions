@@ -59,7 +59,8 @@
           "defaultChannel": "default",
           "color": "#6366F1"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

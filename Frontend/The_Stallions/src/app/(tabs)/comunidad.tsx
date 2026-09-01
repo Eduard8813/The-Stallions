@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import api, { resolveResourceUrl } from '../../services/api';
+import { EVENTS, events } from '../../services/events';
 import { useTheme } from '../../context/ThemeContext';
 import { useLang } from '../../context/LangContext';
 
@@ -104,6 +105,15 @@ export default function ComunidadScreen() {
       }
     }, [cargar])
   );
+
+  // Refresca la comunidad cuando se sube una foto (cámara o galería), sin importar
+  // desde qué pestaña se hizo.
+  useEffect(() => {
+    return events.on(EVENTS.fotoSubida, () => {
+      estadoRef.current = true;
+      cargar(1, true);
+    });
+  }, [cargar]);
 
   const darLike = async (post: Post) => {
     const principal = post.fotos[0];

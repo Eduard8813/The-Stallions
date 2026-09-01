@@ -41,7 +41,6 @@ export default function PerfilScreen() {
   const [signingOut, setSigningOut] = useState(false);
   const [photoUpdating, setPhotoUpdating] = useState(false);
   const [photoError, setPhotoError] = useState('');
-  const [notificationsOn, setNotificationsOn] = useState(false);
   const [deviceStatus, setDeviceStatus] = useState<DeviceNotificationStatus>('checking');
   const [notificationsBusy, setNotificationsBusy] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
@@ -56,7 +55,6 @@ export default function PerfilScreen() {
         notificationsPermissions.getStatus(),
       ]);
       const preferenceOn = isNotificationsOn(settings);
-      setNotificationsOn(preferenceOn);
       setDeviceStatus(status);
       const stored = await localSettings.get();
       await localSettings.set({
@@ -83,51 +81,32 @@ export default function PerfilScreen() {
     await notificationsService.updateSettings(buildMasterPatch(enabled));
   };
 
-  const handleNotifications = async (value: boolean) => {
+  const handleNotifications = async (_value: boolean) => {
     setNotificationsError('');
     setNotificationsBusy(true);
-    if (value) {
-      try {
-        const status = await notificationsPermissions.getStatus();
-        if (status === 'granted') {
+    try {
+      const status = await notificationsPermissions.getStatus();
+      if (status === 'granted') {
+        await persistNotificationPreference(true);
+        setDeviceStatus('granted');
+      } else if (status === 'undetermined') {
+        const result = await notificationsPermissions.request();
+        if (result.granted) {
           await persistNotificationPreference(true);
-          setNotificationsOn(true);
           setDeviceStatus('granted');
-        } else if (status === 'undetermined') {
-          const result = await notificationsPermissions.request();
-          if (result.granted) {
-            await persistNotificationPreference(true);
-            setNotificationsOn(true);
-            setDeviceStatus('granted');
-          } else {
-            setNotificationsOn(false);
-            setDeviceStatus(result.status);
-            if (result.status === 'denied') setDeniedModalVisible(true);
-          }
-        } else if (status === 'denied') {
-          setNotificationsOn(false);
-          setDeviceStatus('denied');
-          setDeniedModalVisible(true);
         } else {
-          setNotificationsOn(false);
-          setDeviceStatus('unavailable');
-          setNotificationsError('Las notificaciones no están disponibles en este dispositivo.');
+          setDeviceStatus(result.status);
+          if (result.status === 'denied') setDeniedModalVisible(true);
         }
-      } catch {
-        setNotificationsOn(false);
-        setNotificationsError('No se pudieron activar las notificaciones.');
+      } else if (status === 'denied') {
+        setDeviceStatus('denied');
+        setDeniedModalVisible(true);
+      } else {
+        setDeviceStatus('unavailable');
+        setNotificationsError('Las notificaciones no están disponibles en este dispositivo.');
       }
-    } else {
-      const previous = notificationsOn;
-      try {
-        await notificationsPermissions.disableDeviceChannel();
-        await persistNotificationPreference(false);
-        setNotificationsOn(false);
-        setDisabledInfoVisible(true);
-      } catch {
-        setNotificationsOn(previous);
-        setNotificationsError('No se pudieron desactivar las notificaciones.');
-      }
+    } catch {
+      setNotificationsError('No se pudieron verificar las notificaciones.');
     }
     setNotificationsBusy(false);
   };
@@ -264,11 +243,11 @@ export default function PerfilScreen() {
                 ? 'Permiso denegado en el sistema. Tocá para ir a Ajustes'
                 : deviceStatus === 'unavailable'
                   ? 'No disponibles en este dispositivo'
-                  : deviceStatus === 'granted' && notificationsOn
+                  : deviceStatus === 'granted'
                     ? 'Activadas · alertas de la app'
                     : 'Activá todas las alertas de la app'
             }
-            value={deviceStatus === 'granted' && notificationsOn}
+            value={deviceStatus === 'granted'}
             onValueChange={handleNotifications}
             pending={notificationsBusy || deviceStatus === 'checking'}
           />
