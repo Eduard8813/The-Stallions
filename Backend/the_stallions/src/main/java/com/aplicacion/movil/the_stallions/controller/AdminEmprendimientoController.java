@@ -35,6 +35,7 @@ public class AdminEmprendimientoController {
     @GetMapping("/nuevo")
     public String nuevo(Model model) {
         model.addAttribute("emprendimiento", new EmprendimientoRequest());
+        model.addAttribute("categorias", emprendimientoService.listarCategorias());
         return "admin/emprendimiento-form";
     }
 
@@ -45,6 +46,7 @@ public class AdminEmprendimientoController {
                           HttpServletRequest httpRequest,
                           Model model) {
         if (result.hasErrors()) {
+            model.addAttribute("categorias", emprendimientoService.listarCategorias());
             return "admin/emprendimiento-form";
         }
         var creado = emprendimientoService.crear(request);
@@ -69,6 +71,7 @@ public class AdminEmprendimientoController {
         model.addAttribute("emprendimiento", request);
         model.addAttribute("idEmprendimiento", e.getId());
         model.addAttribute("fotoActual", e.getFotoUrl());
+        model.addAttribute("categorias", emprendimientoService.listarCategorias());
         return "admin/emprendimiento-form";
     }
 
@@ -81,6 +84,7 @@ public class AdminEmprendimientoController {
                              Model model) {
         if (result.hasErrors()) {
             model.addAttribute("idEmprendimiento", id);
+            model.addAttribute("categorias", emprendimientoService.listarCategorias());
             return "admin/emprendimiento-form";
         }
         emprendimientoService.actualizar(id, request);

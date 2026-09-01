@@ -35,7 +35,9 @@
         <div class="error" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}"></div>
 
         <label for="tipo">Tipo de emprendimiento</label>
-        <input type="text" id="tipo" th:field="*{tipo}" maxlength="60" placeholder="Ej: Artesanía, Gastronomía, Comercio..."/>
+        <select id="tipo" th:field="*{tipo}">
+            <option th:each="c : ${categorias}" th:value="${c}" th:text="${c}">Gastronomia</option>
+        </select>
         <div class="error" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}"></div>
 
         <label for="descripcion">Descripción corta (opcional)</label>

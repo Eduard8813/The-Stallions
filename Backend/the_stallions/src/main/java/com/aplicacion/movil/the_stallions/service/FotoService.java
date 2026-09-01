@@ -128,6 +128,11 @@ public class FotoService {
     public List<PostResponse> obtenerPostsComunidad(User actual, int page, int pageSize) {
         List<Photo> todas = photoRepository.findByVisibilidadOrderByFechaUploadDesc(Visibilidad.PUBLICA);
 
+        // Oculta el contenido de cuentas suspendidas (enabled=false).
+        todas = todas.stream()
+                .filter(p -> p.getUser() == null || p.getUser().isEnabled())
+                .collect(Collectors.toList());
+
         List<List<Photo>> grupos = agruparEnPosts(todas);
 
         int inicio = Math.max(page - 1, 0) * Math.min(Math.max(pageSize, 1), 50);
@@ -254,6 +259,7 @@ public class FotoService {
         Photo photo = photoRepository.findById(fotoId)
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
         return commentRepository.findByPhotoOrderByFechaAsc(photo).stream()
+                .filter(c -> c.getUsuario() == null || c.getUsuario().isEnabled())
                 .map(this::desde)
                 .collect(Collectors.toList());
     }
