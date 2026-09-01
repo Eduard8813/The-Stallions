@@ -6,6 +6,7 @@
 export const EVENTS = {
   sessionExpired: 'session:expired',
   loggedOut: 'auth:logged-out',
+  fotoSubida: 'foto:subida',
 } as const;
 
 type Listener = (payload?: unknown) => void;
