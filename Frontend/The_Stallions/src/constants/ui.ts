@@ -2,6 +2,19 @@
  * Shared palettes (light/dark) for the profile section and tabs.
  * The active palette is selected based on the app theme (ThemeContext).
  */
+/**
+ * Primary brand: celeste blue #69B6E6 (dominant — main actions, active icons, accents).
+ * Secondary: orange #F3961C (sparse — secondary CTAs, badges, alerts).
+ */
+export const brandGradient = [
+  '#69B6E6',
+  '#1562A2',
+  '#5B8C30',
+  '#EACA29',
+  '#F3961C',
+  '#895738',
+] as const;
+
 export const lightColors = {
   bg: '#F2F4F8',
   surface: '#FFFFFF',
@@ -9,8 +22,10 @@ export const lightColors = {
   border: '#E3E6EC',
   text: '#1A1D24',
   subtext: '#6B7280',
-  accent: '#6366F1',
-  accentSoft: 'rgba(99,102,241,0.14)',
+  accent: '#69B6E6',
+  accentSoft: 'rgba(105,182,230,0.16)',
+  secondary: '#F3961C',
+  secondarySoft: 'rgba(243,150,28,0.16)',
   success: '#16A34A',
   successSoft: 'rgba(22,163,74,0.12)',
   danger: '#DC2626',
@@ -20,7 +35,7 @@ export const lightColors = {
   tabBorder: '#E3E6EC',
   tabActive: '#111111',
   tabInactive: '#9CA3AF',
-  cameraBtn: '#e40077',
+  cameraBtn: '#69B6E6',
 } as const;
 
 export const darkColors = {
@@ -30,8 +45,10 @@ export const darkColors = {
   border: '#2A2F3B',
   text: '#F2F4F8',
   subtext: '#98A1B3',
-  accent: '#6366F1',
-  accentSoft: 'rgba(99,102,241,0.16)',
+  accent: '#69B6E6',
+  accentSoft: 'rgba(105,182,230,0.18)',
+  secondary: '#F3961C',
+  secondarySoft: 'rgba(243,150,28,0.18)',
   success: '#22C55E',
   successSoft: 'rgba(34,197,94,0.14)',
   danger: '#EF4444',
@@ -41,7 +58,7 @@ export const darkColors = {
   tabBorder: '#222222',
   tabActive: '#ffffff',
   tabInactive: '#555555',
-  cameraBtn: '#e40077',
+  cameraBtn: '#69B6E6',
 } as const;
 
 export type ProfileColors = typeof lightColors;

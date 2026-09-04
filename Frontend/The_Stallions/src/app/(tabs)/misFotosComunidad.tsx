@@ -142,13 +142,13 @@ export default function MisFotosComunidadScreen() {
       <View style={styles.topBar}>
         <Text style={styles.tabTitle}>{tab === 'misFotos' ? 'Mis fotos' : 'Comunidad'}</Text>
         <TouchableOpacity
-          style={[styles.tabBtn, { backgroundColor: tab === 'misFotos' ? '#e40077' : '#333' }]}
+          style={[styles.tabBtn, { backgroundColor: tab === 'misFotos' ? '#69B6E6' : '#333' }]}
           onPress={() => toggleTab('misFotos')}
         >
           <Text style={styles.tabBtnText}>Mis fotos</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabBtn, { backgroundColor: tab === 'comunidad' ? '#e40077' : '#333' }]}
+          style={[styles.tabBtn, { backgroundColor: tab === 'comunidad' ? '#69B6E6' : '#333' }]}
           onPress={() => toggleTab('comunidad')}
         >
           <Text style={styles.tabBtnText}>Comunidad</Text>
@@ -158,7 +158,7 @@ export default function MisFotosComunidadScreen() {
       {tab === 'misFotos' ? (
         <View style={styles.screenContent}>
           {loadingMisFotos ? (
-            <ActivityIndicator style={styles.center} size="large" color="#e40077" />
+            <ActivityIndicator style={styles.center} size="large" color="#69B6E6" />
           ) : misFotos.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>📸</Text>
@@ -176,7 +176,7 @@ export default function MisFotosComunidadScreen() {
                 <RefreshControl
                   refreshing={refreshingMisFotos}
                   onRefresh={cargarMisFotos}
-                  tintColor="#e40077"
+                  tintColor="#69B6E6"
                 />
               }
             />
@@ -185,7 +185,7 @@ export default function MisFotosComunidadScreen() {
       ) : (
         <View style={styles.screenContent}>
           {loadingComunidad ? (
-            <ActivityIndicator style={styles.center} size="large" color="#e40077" />
+            <ActivityIndicator style={styles.center} size="large" color="#69B6E6" />
           ) : comunidad.length === 0 ? (
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>🌍</Text>
@@ -199,7 +199,7 @@ export default function MisFotosComunidadScreen() {
                 if (!loadingMore && hayMas) cargarComunidad(page + 1, false);
               }}
               onEndReachedThreshold={0.3}
-              ListFooterComponent={loadingMore ? <ActivityIndicator color="#e40077" /> : null}
+              ListFooterComponent={loadingMore ? <ActivityIndicator color="#69B6E6" /> : null}
               renderItem={({ item }) => renderFotoItem(item, 'comunidad')}
             />
           )}
@@ -324,6 +324,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
+    fontFamily: 'Gilroy-Bold',
     flex: 1,
     textAlign: 'center',
   },
@@ -379,11 +380,11 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#111', marginBottom: 10 },
   header: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
   avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarFallback: { backgroundColor: '#e40077', justifyContent: 'center', alignItems: 'center' },
+  avatarFallback: { backgroundColor: '#69B6E6', justifyContent: 'center', alignItems: 'center' },
   avatarInitial: { color: '#fff', fontSize: 16, fontWeight: '700' },
   nombre: { color: '#fff', fontSize: 14, fontWeight: '700' },
   fecha: { color: '#888', fontSize: 12 },
-  multCount: { color: '#e40077', fontSize: 13, fontWeight: '700' },
+  multCount: { color: '#69B6E6', fontSize: 13, fontWeight: '700' },
 
   imagen: { width: '100%', aspectRatio: 1 },
 

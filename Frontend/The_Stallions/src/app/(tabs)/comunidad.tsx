@@ -13,7 +13,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import api, { resolveResourceUrl } from '../../services/api';
 import { EVENTS, events } from '../../services/events';
 import { useTheme } from '../../context/ThemeContext';
@@ -56,7 +56,6 @@ const PAGE_SIZE = 10;
 const { width: SCREEN_W } = Dimensions.get('window');
 
 export default function ComunidadScreen() {
-  const router = useRouter();
   const { colors, mode } = useTheme();
   const { t } = useLang();
   const styles = createStyles(colors);
@@ -141,12 +140,6 @@ export default function ComunidadScreen() {
       <StatusBar barStyle={mode === 'light' ? 'dark-content' : 'light-content'} backgroundColor={colors.surface} />
       <View style={styles.topBar}>
         <Text style={styles.title}>{t.tabCommunity}</Text>
-        <TouchableOpacity
-          style={styles.campana}
-          onPress={() => router.push('/(tabs)/notificaciones')}
-        >
-          <Text style={{ fontSize: 20 }}>🔔</Text>
-        </TouchableOpacity>
       </View>
       {loading ? (
         <ActivityIndicator style={styles.center} size="large" color={colors.cameraBtn} />
@@ -445,8 +438,7 @@ const createStyles = (colors: any) =>
       borderBottomColor: colors.border,
       backgroundColor: colors.surface,
     },
-    title: { color: colors.text, fontSize: 18, fontWeight: '700' },
-    campana: { position: 'absolute', right: 14 },
+    title: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: 'Gilroy-Bold' },
     center: { flex: 1 },
     empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
     emptyIcon: { fontSize: 48, marginBottom: 12 },
@@ -480,7 +472,7 @@ const createStyles = (colors: any) =>
     acciones: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border },
     accionBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
     accionTexto: { color: colors.subtext, fontSize: 13, fontWeight: '600' },
-    likeActivo: { color: colors.cameraBtn },
+    likeActivo: { color: '#F3961C' },
 
     comentariosBox: { paddingHorizontal: 12, paddingBottom: 12, backgroundColor: colors.inputBg },
     sinComentarios: { color: colors.subtext, fontSize: 13, paddingVertical: 10 },
@@ -506,5 +498,5 @@ const createStyles = (colors: any) =>
       fontSize: 13,
     },
     enviarBtn: { justifyContent: 'center', paddingHorizontal: 8 },
-    enviarTexto: { color: colors.cameraBtn, fontWeight: '700', fontSize: 13 },
+    enviarTexto: { color: '#5B8C30', fontWeight: '700', fontSize: 13 },
   });

@@ -1,16 +1,20 @@
 import { Tabs, Redirect } from 'expo-router';
-import { Text, View, ActivityIndicator, StyleSheet, type ColorValue } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, type ColorValue } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
-import { useTheme } from '../../context/ThemeContext';
 
-function TabIcon({ emoji, color, size }: { emoji: string; color: ColorValue; size?: number }) {
-  return <Text style={{ fontSize: size ?? 22, color }}>{emoji}</Text>;
+type IconoProps = { color: ColorValue; size?: number; focused?: boolean };
+
+function TabIcon({ name, color, size }: { name: string; color: ColorValue; size: number }) {
+  return <MaterialCommunityIcons name={name as any} size={size} color={color} />;
 }
 
-const icon = (emoji: string) => {
-  function Icono({ color }: { color: ColorValue }) {
-    return <TabIcon emoji={emoji} color={color} />;
+const icon = (name: string, nameFocused: string) => {
+  function Icono({ color, size, focused }: IconoProps) {
+    const n = focused ? nameFocused : name;
+    const s = focused ? (size ?? 24) + 6 : size ?? 24;
+    return <TabIcon name={n} color={color} size={s} />;
   }
   return Icono;
 };
@@ -19,15 +23,18 @@ function CameraIcon({ color }: { color: ColorValue }) {
   void color;
   return (
     <View style={styles.cameraBtn}>
-      <Text style={styles.cameraEmoji}>📷</Text>
+      <MaterialCommunityIcons name="camera-outline" size={26} color="#ffffff" />
     </View>
   );
 }
 
+const BRAND_BAR = '#69B6E6';
+const ACTIVE_TINT = '#ffffff';
+const INACTIVE_TINT = 'rgba(255,255,255,0.6)';
+
 export default function TabsLayout() {
   const { user, loading } = useAuth();
   const { t } = useLang();
-  const { colors } = useTheme();
 
   if (loading) {
     return (
@@ -43,19 +50,19 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { ...styles.tabBar, backgroundColor: colors.tabBar, borderTopColor: colors.tabBorder },
-        tabBarActiveTintColor: colors.tabActive,
-        tabBarInactiveTintColor: colors.tabInactive,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarShowLabel: false,
+        tabBarStyle: { ...styles.tabBar, backgroundColor: BRAND_BAR, borderTopColor: BRAND_BAR },
+        tabBarActiveTintColor: ACTIVE_TINT,
+        tabBarInactiveTintColor: INACTIVE_TINT,
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{ title: t.tabExplore, tabBarIcon: icon('🧭') }}
+        options={{ title: t.tabExplore, tabBarIcon: icon('compass-outline', 'compass') }}
       />
       <Tabs.Screen
         name="eventos"
-        options={{ title: t.tabEvents, tabBarIcon: icon('★') }}
+        options={{ title: t.tabEvents, tabBarIcon: icon('calendar-outline', 'calendar') }}
       />
       <Tabs.Screen
         name="camera"
@@ -67,11 +74,11 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="comunidad"
-        options={{ title: t.tabCommunity, tabBarIcon: icon('🌍') }}
+        options={{ title: t.tabCommunity, tabBarIcon: icon('earth', 'earth') }}
       />
       <Tabs.Screen
         name="perfil"
-        options={{ title: t.tabProfile, tabBarIcon: icon('👤') }}
+        options={{ title: t.tabProfile, tabBarIcon: icon('account-outline', 'account') }}
       />
       <Tabs.Screen name="misFotos"           options={{ href: null }} />
       <Tabs.Screen name="misFotosComunidad"  options={{ href: null }} />
@@ -91,13 +98,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#e40077',
+    backgroundColor: BRAND_BAR,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: -20,
-    boxShadow: '0 4px 12px rgba(228, 0, 119, 0.4)',
-  },
-  cameraEmoji: {
-    fontSize: 26,
+    boxShadow: '0 4px 12px rgba(105, 182, 230, 0.4)',
   },
 });

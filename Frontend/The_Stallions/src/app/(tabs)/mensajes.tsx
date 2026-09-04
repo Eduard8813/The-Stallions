@@ -10,5 +10,5 @@ export default function MensajesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#111', alignItems: 'center', justifyContent: 'center' },
-  text: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  text: { color: '#fff', fontSize: 24, fontWeight: '700', fontFamily: 'Gilroy-Bold' },
 });

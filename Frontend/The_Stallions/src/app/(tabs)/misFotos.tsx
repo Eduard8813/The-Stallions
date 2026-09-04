@@ -117,7 +117,7 @@ export default function MisFotosScreen() {
         <Text style={styles.title}>Mis fotos</Text>
       </View>
       {loading ? (
-        <ActivityIndicator style={styles.center} size="large" color="#e40077" />
+        <ActivityIndicator style={styles.center} size="large" color="#69B6E6" />
       ) : fotos.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>📸</Text>
@@ -132,7 +132,7 @@ export default function MisFotosScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.grid}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={loadFotos} tintColor="#e40077" />
+            <RefreshControl refreshing={refreshing} onRefresh={loadFotos} tintColor="#69B6E6" />
           }
         />
       )}
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#222',
   },
-  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  title: { color: '#fff', fontSize: 18, fontWeight: '700', fontFamily: 'Gilroy-Bold' },
   center: { flex: 1 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },

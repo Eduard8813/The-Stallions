@@ -57,11 +57,11 @@ export default function NotificacionesScreen() {
       <View style={styles.topBar}>
         <Text style={styles.title}>Notificaciones</Text>
         <TouchableOpacity style={styles.campana} onPress={() => {}}>
-          <Text style={{ fontSize: 20, color: '#e40077' }}>🔔</Text>
+          <Text style={{ fontSize: 20, color: '#69B6E6' }}>🔔</Text>
         </TouchableOpacity>
       </View>
       {loading ? (
-        <ActivityIndicator style={styles.center} size="large" color="#e40077" />
+        <ActivityIndicator style={styles.center} size="large" color="#69B6E6" />
       ) : notificaciones.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>🔔</Text>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     position: 'relative',
   },
-  title: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  title: { color: '#fff', fontSize: 18, fontWeight: '700', fontFamily: 'Gilroy-Bold' },
   campana: {
     position: 'absolute',
     right: 14,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#e40077',
+    backgroundColor: '#69B6E6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -142,5 +142,5 @@ const styles = StyleSheet.create({
   mensaje: { color: '#ddd', fontSize: 14 },
   mensajeNuevo: { color: '#fff', fontWeight: '700' },
   fecha: { color: '#777', fontSize: 12, marginTop: 2 },
-  punto: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#e40077' },
+  punto: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#69B6E6' },
 });

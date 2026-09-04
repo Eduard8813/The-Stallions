@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import AuthInput from '../../components/AuthInput';
 import AuthButton from '../../components/AuthButton';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
+import { brandGradient } from '../../constants/ui';
 
 export default function TwoFactorScreen() {
   const { challengeId } = useLocalSearchParams<{ challengeId?: string }>();
@@ -40,44 +42,49 @@ export default function TwoFactorScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.container}>
-        <Text style={styles.title}>{t.twoFactorTitle}</Text>
-        <Text style={styles.subtitle}>{t.twoFactorSubtitle}</Text>
+      <LinearGradient colors={brandGradient} style={styles.flex}>
+        <View style={styles.container}>
+          <Image source={require('@/assets/images/app-icon.png')} style={styles.logo} resizeMode="contain" />
 
-        <View style={styles.card}>
-          <AuthInput
-            label={t.twoFactorCode}
-            value={code}
-            onChangeText={setCode}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="123456"
-            autoFocus
-          />
+          <Text style={styles.title}>{t.twoFactorTitle}</Text>
+          <Text style={styles.subtitle}>{t.twoFactorSubtitle}</Text>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <View style={styles.card}>
+            <AuthInput
+              label={t.twoFactorCode}
+              value={code}
+              onChangeText={setCode}
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholder="123456"
+              autoFocus
+            />
 
-          <AuthButton title={t.twoFactorVerify} onPress={handleVerify} loading={loading} />
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <Text style={styles.hint}>{t.twoFactorAppHint}</Text>
+            <AuthButton title={t.twoFactorVerify} onPress={handleVerify} loading={loading} />
+
+            <Text style={styles.hint}>{t.twoFactorAppHint}</Text>
+          </View>
+
+          <Text style={styles.link} onPress={() => router.replace('/(auth)/login')}>
+            {t.twoFactorBack}
+          </Text>
         </View>
-
-        <Text style={styles.link} onPress={() => router.replace('/(auth)/login')}>
-          {t.twoFactorBack}
-        </Text>
-      </View>
+      </LinearGradient>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: '#f1f5f9' },
+  flex: { flex: 1, backgroundColor: '#69B6E6' },
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: '6%' },
-  title: { fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: 2, textAlign: 'center' },
-  subtitle: { fontSize: 12, color: '#64748b', marginBottom: 14, textAlign: 'center' },
+  logo: { width: 160, height: 160, marginBottom: 10 },
+  title: { fontSize: 22, fontWeight: '800', fontFamily: 'Gilroy-Bold', color: '#ffffff', marginBottom: 2, textAlign: 'center' },
+  subtitle: { fontSize: 12, fontFamily: 'Gilroy-Medium', color: 'rgba(255,255,255,0.9)', marginBottom: 14, textAlign: 'center' },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 28,
     padding: '5%',
     width: '100%',
     maxWidth: 400,
@@ -88,6 +95,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   errorText: { color: '#ef4444', marginBottom: 8, textAlign: 'center', fontSize: 12 },
-  hint: { color: '#94a3b8', marginTop: 10, textAlign: 'center', fontSize: 12 },
-  link: { marginTop: 14, textAlign: 'center', color: '#64748b', fontSize: 13 },
+  hint: { color: 'rgba(255,255,255,0.85)', marginTop: 10, textAlign: 'center', fontSize: 12 },
+  link: { marginTop: 14, textAlign: 'center', color: 'rgba(255,255,255,0.9)', fontSize: 13 },
 });

@@ -4,15 +4,16 @@ import { useTheme } from '../../context/ThemeContext';
 
 interface SectionProps {
   title: string;
+  titleColor?: string;
   children: React.ReactNode;
 }
 
-export default function Section({ title, children }: SectionProps) {
+export default function Section({ title, titleColor, children }: SectionProps) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={[styles.title, titleColor ? { color: titleColor } : null]}>{title}</Text>
       <View style={styles.card}>{children}</View>
     </View>
   );
@@ -29,6 +30,7 @@ const createStyles = (colors: any) =>
       letterSpacing: 0.8,
       marginBottom: 8,
       marginLeft: 4,
+      fontFamily: 'Gilroy-Medium',
     },
     card: {
       backgroundColor: colors.surfaceAlt,

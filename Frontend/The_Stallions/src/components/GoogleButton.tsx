@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Image } from 'react-native';
+import { useLang } from '../context/LangContext';
 
 interface GoogleButtonProps {
   onPress: () => void;
@@ -7,6 +8,7 @@ interface GoogleButtonProps {
 }
 
 export default function GoogleButton({ onPress, disabled }: GoogleButtonProps) {
+  const { t } = useLang();
   return (
     <TouchableOpacity
       style={[styles.button, disabled && styles.disabled]}
@@ -14,10 +16,8 @@ export default function GoogleButton({ onPress, disabled }: GoogleButtonProps) {
       disabled={disabled}
       activeOpacity={0.85}
     >
-      <View style={styles.logo}>
-        <Text style={styles.logoText}>G</Text>
-      </View>
-      <Text style={styles.text}>Continuar con Google</Text>
+      <Image source={require('../../assets/images/google-logo.png')} style={styles.logo} resizeMode="contain" />
+      <Text style={styles.text}>{t.continueWithGoogle}</Text>
     </TouchableOpacity>
   );
 }
@@ -36,14 +36,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   disabled: { opacity: 0.4 },
-  logo: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoText: { fontSize: 13, fontWeight: '800', color: '#4285F4' },
+  logo: { width: 18, height: 18 },
   text: { fontSize: 13, fontWeight: '600', color: '#0f172a' },
 });

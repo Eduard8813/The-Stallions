@@ -100,7 +100,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 8,
   },
-  mesTitulo: { color: colors.text, fontSize: 16, fontWeight: '800' },
+  mesTitulo: { color: '#F3961C', fontSize: 16, fontWeight: '800', fontFamily: 'Gilroy-Bold' },
   flecha: { color: colors.accent, fontSize: 26, fontWeight: '700', paddingHorizontal: 8 },
   grilla: { flexDirection: 'row', flexWrap: 'wrap' },
   celda: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 2 } as const,
@@ -112,7 +112,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  diaHoy: { backgroundColor: colors.accent },
+  diaHoy: { backgroundColor: '#1562A2' },
   diaTexto: { color: colors.text, fontSize: 13, fontWeight: '600' },
   diaTextoHoy: { color: '#fff', fontWeight: '800' },
   punto: {

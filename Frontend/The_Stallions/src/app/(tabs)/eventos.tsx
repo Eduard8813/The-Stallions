@@ -121,13 +121,14 @@ export default function EventosScreen() {
 const createStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
   header: { paddingHorizontal: 16, paddingTop: 8 },
-  titulo: { color: colors.text, fontSize: 26, fontWeight: '800' },
+  titulo: { color: colors.text, fontSize: 26, fontWeight: '800', fontFamily: 'Gilroy-Bold' },
   lista: { paddingBottom: 24 },
   itemWrap: { paddingHorizontal: 16 },
   tituloMes: {
-    color: colors.subtext,
+    color: '#5B8C30',
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Gilroy-Medium',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginTop: 18,

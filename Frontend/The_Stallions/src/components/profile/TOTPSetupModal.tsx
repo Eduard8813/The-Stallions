@@ -74,7 +74,7 @@ const createStyles = (colors: any) =>
       padding: 20,
     },
     content: { alignItems: 'center' },
-    title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 6, textAlign: 'center' },
+    title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 6, textAlign: 'center', fontFamily: 'Gilroy-Bold' },
     subtitle: { fontSize: 13, color: colors.subtext, lineHeight: 19, textAlign: 'center', marginBottom: 16 },
     qrWrap: {
       backgroundColor: colors.inputBg,
