@@ -140,7 +140,7 @@ export default function CameraScreen() {
       <View style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#000000" />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#e40077" />
+          <ActivityIndicator size="large" color="#69B6E6" />
           <Text style={styles.loadingText}>Subiendo foto...</Text>
         </View>
       </View>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 42,
     backgroundColor: '#1c1c1c',
     borderWidth: 3,
-    borderColor: '#e40077',
+    borderColor: '#69B6E6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 10,
   },
-  galeriaText: { color: '#e40077', fontWeight: '600', fontSize: 15 },
+  galeriaText: { color: '#69B6E6', fontWeight: '600', fontSize: 15 },
   errorText: { color: '#ff5c5c', marginTop: 12, fontSize: 14, textAlign: 'center' },
 
   publishContainer: { padding: 16 },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#e40077',
+    backgroundColor: '#69B6E6',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -301,13 +301,13 @@ const styles = StyleSheet.create({
     borderColor: '#333',
     alignItems: 'center',
   },
-  visBtnActiva: { borderColor: '#e40077', backgroundColor: '#2a1020' },
+  visBtnActiva: { borderColor: '#69B6E6', backgroundColor: '#2a1020' },
   visText: { color: '#aaa', fontWeight: '600', fontSize: 14 },
-  visTextActiva: { color: '#e40077' },
+  visTextActiva: { color: '#69B6E6' },
 
   publishButtons: { marginTop: 4 },
   publicarBtn: {
-    backgroundColor: '#e40077',
+    backgroundColor: '#69B6E6',
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
@@ -323,5 +323,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
-  otraText: { color: '#e40077', fontWeight: '700', fontSize: 14 },
+  otraText: { color: '#69B6E6', fontWeight: '700', fontSize: 14 },
 });

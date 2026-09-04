@@ -50,11 +50,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: 600,
     lineHeight: 52,
+    fontFamily: 'Gilroy-Bold',
   },
   subtitle: {
     fontSize: 32,
     lineHeight: 44,
     fontWeight: 600,
+    fontFamily: 'Gilroy-Medium',
   },
   link: {
     lineHeight: 30,

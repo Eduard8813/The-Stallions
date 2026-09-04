@@ -182,7 +182,7 @@ export default function PerfilScreen() {
           ) : null}
         </View>
 
-        <Section title={t.sectionAccount}>
+        <Section title={t.sectionAccount} titleColor="#F3961C">
           <ListRow
             icon="📸"
             title={t.myPhotos}
@@ -214,7 +214,7 @@ export default function PerfilScreen() {
           />
         </Section>
 
-        <Section title={t.themeSection}>
+        <Section title={t.themeSection} titleColor="#69B6E6">
           <View style={styles.idiomaRow}>
             <Text style={styles.idiomaLabel}>{t.languageLabel}</Text>
             <SelectDropdown
@@ -235,7 +235,7 @@ export default function PerfilScreen() {
           />
         </Section>
 
-        <Section title={t.sectionPreferences}>
+        <Section title={t.sectionPreferences} titleColor="#5B8C30">
           <ToggleRow
             title={t.notifications}
             description={
@@ -262,7 +262,7 @@ export default function PerfilScreen() {
           />
         </Section>
 
-        <Section title={t.sectionSupport}>
+        <Section title={t.sectionSupport} titleColor="#895738">
           <ListRow
             icon="🛟"
             title={t.helpSupport}
@@ -309,9 +309,9 @@ export default function PerfilScreen() {
 const createStyles = (colors: any) =>
   StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.bg },
-    headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 16 },
+    headerTitle: { fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 16, fontFamily: 'Gilroy-Bold' },
     profileCard: { alignItems: 'center', marginVertical: 14 },
-    name: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 12 },
+    name: { fontSize: 20, fontWeight: '800', color: colors.text, marginTop: 12, fontFamily: 'Gilroy-Bold' },
     username: { fontSize: 14, color: colors.accent, marginTop: 2, fontWeight: '600' },
     email: { fontSize: 13, color: colors.subtext, marginTop: 4 },
     photoHint: { color: colors.accent, fontSize: 12, marginTop: 10, fontWeight: '600' },

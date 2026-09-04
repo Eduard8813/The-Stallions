@@ -25,7 +25,7 @@ export default function AuthInput({ label, ...props }: AuthInputProps) {
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 10 },
   label: { fontSize: 11, fontWeight: '500', color: '#64748b', marginBottom: 4 },
-  labelFocused: { color: '#6366f1' },
+  labelFocused: { color: '#69B6E6' },
   input: {
     backgroundColor: '#f8fafc',
     borderWidth: 1.5,
@@ -35,5 +35,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#0f172a',
   },
-  inputFocused: { borderColor: '#6366f1', backgroundColor: '#fff' },
+  inputFocused: { borderColor: '#69B6E6', backgroundColor: '#fff' },
 });

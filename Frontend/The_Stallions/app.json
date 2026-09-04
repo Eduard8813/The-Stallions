@@ -57,7 +57,7 @@
         "expo-notifications",
         {
           "defaultChannel": "default",
-          "color": "#6366F1"
+          "color": "#69B6E6"
         }
       ],
       "expo-sharing"

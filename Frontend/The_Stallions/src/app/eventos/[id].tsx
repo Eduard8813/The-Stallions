@@ -216,7 +216,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   FERIADO: { color: colors.danger },
   CONMEMORACION: { color: '#F59E0B' },
   CELEBRACION: { color: colors.success },
-  titulo: { color: colors.text, fontSize: 28, fontWeight: '800', marginTop: 8 },
+  titulo: { color: colors.text, fontSize: 28, fontWeight: '800', marginTop: 8, fontFamily: 'Gilroy-Bold' },
   fecha: {
     color: colors.subtext,
     fontSize: 15,
@@ -225,14 +225,14 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   countdownBox: {
     alignItems: 'center',
-    backgroundColor: colors.accentSoft,
+    backgroundColor: 'rgba(243,150,28,0.16)',
     borderWidth: 1,
-    borderColor: colors.accent,
+    borderColor: '#F3961C',
     borderRadius: 14,
     paddingVertical: 14,
     marginTop: 18,
   },
-  countdownNumero: { color: colors.accent, fontSize: 32, fontWeight: '900' },
+  countdownNumero: { color: '#F3961C', fontSize: 32, fontWeight: '900' },
   countdownLabel: { color: colors.subtext, fontSize: 13, marginTop: 2 },
   descripcion: { color: colors.text, fontSize: 15, lineHeight: 24, marginTop: 20 },
   notifRow: {

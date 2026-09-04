@@ -79,7 +79,7 @@ const createStyles = (colors: any) =>
       borderColor: colors.border,
       padding: 20,
     },
-    title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 8 },
+    title: { fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 8, fontFamily: 'Gilroy-Bold' },
     message: { fontSize: 13, color: colors.subtext, lineHeight: 19, marginBottom: 14 },
     actions: { flexDirection: 'row', gap: 10, marginTop: 6 },
     btn: {

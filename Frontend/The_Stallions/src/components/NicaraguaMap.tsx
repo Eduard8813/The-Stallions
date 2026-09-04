@@ -66,11 +66,11 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     }
     .nicaragua-title {
       position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 1000;
-      background: linear-gradient(135deg, #0f3460, #16213e); color: #e94560;
+      background: linear-gradient(135deg, #0f3460, #16213e); color: #69B6E6;
       font-weight: 800; font-size: 16px; padding: 8px 24px; border-radius: 20px;
       letter-spacing: 2px; text-transform: uppercase;
-      box-shadow: 0 4px 20px rgba(233,69,96,0.4), 0 0 40px rgba(233,69,96,0.15);
-      border: 1px solid rgba(233,69,96,0.3); pointer-events: none;
+      box-shadow: 0 4px 20px rgba(105,182,230,0.4), 0 0 40px rgba(105,182,230,0.15);
+      border: 1px solid rgba(105,182,230,0.3); pointer-events: none;
     }
     .nicaragua-title span { color: #ffffff; }
 
@@ -84,21 +84,21 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       background: linear-gradient(135deg, #0f1923, #162032);
       border-radius: 16px; padding: 14px; width: 250px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-      border: 1px solid rgba(233,69,96,0.2); color: #fff;
+      border: 1px solid rgba(105,182,230,0.2); color: #fff;
     }
     .nc-popup-img {
       width: 100%; height: auto; max-height: 190px; object-fit: cover; display: block;
       border-radius: 12px; margin: 0 auto 12px;
-      border: 2px solid rgba(233,69,96,0.4); box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      border: 2px solid rgba(105,182,230,0.4); box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       background: rgba(255,255,255,0.05);
     }
     .nc-popup-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .nc-popup-logo {
-      width: 40px; height: 40px; background: linear-gradient(135deg, #e94560, #0f3460);
+      width: 40px; height: 40px; background: linear-gradient(135deg, #69B6E6, #0f3460);
       border-radius: 10px; display: flex; align-items: center; justify-content: center;
       font-size: 16px; font-weight: 900; color: #fff; flex-shrink: 0;
     }
-    .nc-popup-brand { font-size: 12px; font-weight: 800; color: #e94560; letter-spacing: 0.5px; }
+    .nc-popup-brand { font-size: 12px; font-weight: 800; color: #69B6E6; letter-spacing: 0.5px; }
     .nc-popup-sub { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 1px; }
     .nc-popup-dept { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 2px; }
     .nc-popup-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
@@ -113,8 +113,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       white-space: nowrap; overflow: hidden;
     }
     .nc-btn-route {
-      background: linear-gradient(135deg, #e94560, #c23152); color: #fff;
-      box-shadow: 0 4px 12px rgba(233,69,96,0.3);
+      background: linear-gradient(135deg, #69B6E6, #3E87C4); color: #fff;
+      box-shadow: 0 4px 12px rgba(105,182,230,0.3);
     }
     .nc-btn-route:hover { transform: translateY(-1px); }
     .nc-btn-nav {
@@ -129,7 +129,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.4;
     }
     .nc-route-info.show { display: block; }
-    .nc-route-info strong { color: #e94560; }
+    .nc-route-info strong { color: #69B6E6; }
     .nc-btn-stop {
       background: linear-gradient(135deg, #e03131, #c92a2a) !important; color: #fff !important;
       box-shadow: 0 4px 12px rgba(224,49,49,0.4) !important; display: none;
@@ -150,7 +150,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       position: absolute; top: 55px; left: 50%; transform: translateX(-50%); z-index: 1100;
       display: flex; background: linear-gradient(135deg, #0f1923, #162032);
       border-radius: 12px; overflow: hidden;
-      border: 1px solid rgba(233,69,96,0.3);
+      border: 1px solid rgba(105,182,230,0.3);
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     }
     .nc-mode-btn {
@@ -159,14 +159,14 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       cursor: pointer; transition: all 0.25s; letter-spacing: 0.5px;
     }
     .nc-mode-btn.active {
-      background: linear-gradient(135deg, #e94560, #c23152);
-      color: #fff; box-shadow: 0 2px 10px rgba(233,69,96,0.35);
+      background: linear-gradient(135deg, #69B6E6, #3E87C4);
+      color: #fff; box-shadow: 0 2px 10px rgba(105,182,230,0.35);
     }
     .nc-mode-btn:hover:not(.active) { color: rgba(255,255,255,0.8); }
     .nc-layer-box {
       position: absolute; bottom: 16px; left: 16px; z-index: 1001;
       background: linear-gradient(135deg, #0f1923, #162032);
-      border-radius: 12px; border: 1px solid rgba(233,69,96,0.25);
+      border-radius: 12px; border: 1px solid rgba(105,182,230,0.25);
       box-shadow: 0 4px 16px rgba(0,0,0,0.5);
       padding: 4px; display: flex; gap: 4px;
     }
@@ -177,7 +177,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       white-space: nowrap; transition: all 0.2s; line-height: 1;
     }
     .nc-layer-btn.active {
-      background: linear-gradient(135deg, #e94560, #0f3460);
+      background: linear-gradient(135deg, #69B6E6, #0f3460);
       color: #fff;
     }
     .nc-layer-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
@@ -185,7 +185,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1100;
       font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 1px;
       text-transform: uppercase; padding: 6px 18px; border-radius: 20px;
-      background: linear-gradient(135deg, #e94560, #0f3460);
+      background: linear-gradient(135deg, #69B6E6, #0f3460);
       box-shadow: 0 4px 16px rgba(0,0,0,0.5); display: none; pointer-events: none;
       white-space: nowrap;
     }
@@ -199,7 +199,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-biz-view-head { text-align: center; margin-bottom: 14px; max-width: 1080px; margin-left: auto; margin-right: auto; padding: 8px 16px 4px; }
     .nc-biz-view-title {
       font-size: 20px; font-weight: 900; color: #fff; letter-spacing: 1px;
-      text-transform: uppercase; background: linear-gradient(135deg, #e94560, #0f3460);
+      text-transform: uppercase; background: linear-gradient(135deg, #69B6E6, #0f3460);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
     }
     .nc-biz-view-sub { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 4px; }
@@ -214,8 +214,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       transition: all 0.2s; white-space: nowrap;
     }
     .nc-cat-btn.active {
-      background: linear-gradient(135deg, #e94560, #0f3460);
-      border-color: #e94560; color: #fff;
+      background: linear-gradient(135deg, #69B6E6, #0f3460);
+      border-color: #69B6E6; color: #fff;
     }
     .nc-biz-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -223,7 +223,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     }
     .nc-biz-card {
       background: linear-gradient(135deg, #162032, #0f1923);
-      border-radius: 16px; overflow: hidden; border: 1px solid rgba(233,69,96,0.18);
+      border-radius: 16px; overflow: hidden; border: 1px solid rgba(105,182,230,0.18);
       box-shadow: 0 6px 22px rgba(0,0,0,0.45); display: flex; flex-direction: column;
     }
     .nc-biz-card-img {
@@ -301,7 +301,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       animation: nc-pulse 2s ease-in-out infinite;
     }
     .nc-user-tooltip {
-      background: #162032; color: #fff; border: 1px solid rgba(233,69,96,0.3);
+      background: #162032; color: #fff; border: 1px solid rgba(105,182,230,0.3);
       border-radius: 8px; font-size: 10px; font-weight: 700; padding: 4px 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
@@ -370,7 +370,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       position: absolute; bottom: 16px; right: 16px; z-index: 1000;
       background: linear-gradient(135deg, #0f1923, #162032);
       border-radius: 16px; width: 300px; max-height: 420px; overflow: hidden;
-      border: 1px solid rgba(233,69,96,0.25);
+      border: 1px solid rgba(105,182,230,0.25);
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       transform: translateY(120%); transition: transform 0.35s ease;
       display: flex; flex-direction: column;
@@ -394,7 +394,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     }
     .nc-tour-stop-view { padding: 10px 14px 6px; flex: 1; overflow-y: auto; }
     .nc-tour-num {
-      font-size: 9px; font-weight: 800; color: #e94560;
+      font-size: 9px; font-weight: 800; color: #69B6E6;
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
     }
     .nc-tour-name { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 4px; }
@@ -409,7 +409,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       cursor: pointer; display: flex; align-items: center; justify-content: center;
       transition: background 0.2s; flex-shrink: 0;
     }
-    .nc-tour-nav-btn:hover { background: rgba(233,69,96,0.4); }
+    .nc-tour-nav-btn:hover { background: rgba(105,182,230,0.4); }
     .nc-tour-nav-btn:disabled { opacity: 0.3; cursor: default; }
     .nc-tour-dots {
       display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; flex: 1;
@@ -418,7 +418,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       width: 6px; height: 6px; border-radius: 50%;
       background: rgba(255,255,255,0.2); transition: background 0.3s;
     }
-    .nc-tour-dot.active { background: #e94560; }
+    .nc-tour-dot.active { background: #69B6E6; }
     .nc-tour-actions {
       padding: 8px 14px 10px; border-top: 1px solid rgba(255,255,255,0.06);
       display: flex; gap: 8px; flex-shrink: 0;
@@ -426,8 +426,8 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-tour-start {
       flex: 1; padding: 9px; border-radius: 10px; border: none;
       font-weight: 800; font-size: 11px; cursor: pointer;
-      background: linear-gradient(135deg, #e94560, #c23152); color: #fff;
-      box-shadow: 0 4px 12px rgba(233,69,96,0.3);
+      background: linear-gradient(135deg, #69B6E6, #3E87C4); color: #fff;
+      box-shadow: 0 4px 12px rgba(105,182,230,0.3);
       transition: all 0.2s;
     }
     .nc-tour-start:hover { transform: translateY(-1px); }
@@ -458,7 +458,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     }
     .nc-tour-popup .leaflet-popup-content-wrapper {
       background: #0f1923 !important; border-radius: 14px !important;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.6) !important; border: 1px solid rgba(233,69,96,0.25) !important;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.6) !important; border: 1px solid rgba(105,182,230,0.25) !important;
       padding: 0 !important;
     }
     .nc-tour-popup .leaflet-popup-content { margin: 0 !important; min-width: auto !important; }
@@ -466,7 +466,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-tp-inner { width: 200px; overflow: hidden; }
     .nc-tp-img { width: 100%; height: 110px; object-fit: cover; }
     .nc-tp-body { padding: 10px 12px; }
-    .nc-tp-num { font-size: 9px; font-weight: 800; color: #e94560; text-transform: uppercase; letter-spacing: 0.5px; }
+    .nc-tp-num { font-size: 9px; font-weight: 800; color: #69B6E6; text-transform: uppercase; letter-spacing: 0.5px; }
     .nc-tp-name { font-size: 13px; font-weight: 800; color: #fff; margin: 2px 0 4px; }
     .nc-tp-desc { font-size: 10px; color: rgba(255,255,255,0.5); line-height: 1.4; }
     @media (max-width: 480px) {
@@ -562,7 +562,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
   <div class="nc-route-pick-panel" id="route-pick-panel">
     <div class="nc-rp-header">
       <div>
-        <div class="nc-rp-title" id="rp-title">${lang === 'es' ? 'Ruta Personalizada' : 'Custom Route'}</div>
+        <div class="nc-rp-title" id="rp-title">${lang === 'es' ? 'Mi ruta' : 'My route'}</div>
         <div class="nc-rp-sub" id="rp-sub">${lang === 'es' ? 'Elige las paradas a visitar' : 'Choose the stops to visit'}</div>
       </div>
       <button class="nc-rp-close" id="rp-close">&times;</button>
@@ -582,14 +582,10 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     var hillLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Hillshade/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19, opacity: 0.5
     });
-    var geoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd'
-    });
-    var geoLabels = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd', pane: 'overlayPane'
+    var geoLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
     });
     geoLayer.addTo(map);
-    geoLabels.addTo(map);
     currentMode = 'geography';
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -917,7 +913,6 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     function switchToRelieve() {
       currentMode = 'relieve';
       if (!map.hasLayer(geoLayer)) geoLayer.addTo(map);
-      if (!map.hasLayer(geoLabels)) geoLabels.addTo(map);
       if (!map.hasLayer(hillLayer)) hillLayer.addTo(map);
       refreshPolys();
       setLayerActive(false);
@@ -927,7 +922,6 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       currentMode = 'geography';
       if (map.hasLayer(hillLayer)) map.removeLayer(hillLayer);
       if (!map.hasLayer(geoLayer)) geoLayer.addTo(map);
-      if (!map.hasLayer(geoLabels)) geoLabels.addTo(map);
       refreshPolys();
       setLayerActive(true);
     }
@@ -1124,7 +1118,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         (isHere
           ? '<div class="nc-popup-actions">' +
             (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn" id="pop-tour-full">' + tr('Ruta Completa', 'Full Route') + '</button>' : '') +
-            (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + tr('Ruta Pers.', 'Custom Route') + '</button>' : '') +
+            (tourismData[dep.name] ? '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + tr('Mi ruta', 'My route') + '</button>' : '') +
             '<button class="nc-btn nc-btn-back" id="pop-back">' + tr('Regresar', 'Back') + '</button>' +
           '</div>'
           : '<div class="nc-popup-actions">' +
@@ -1134,7 +1128,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
           '</div>' +
           (tourismData[dep.name] ? '<div class="nc-popup-actions" style="margin-top:6px;">' +
             '<button class="nc-btn nc-tour-btn" id="pop-tour-full">' + tr('Ruta Completa', 'Full Route') + '</button>' +
-            '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + tr('Ruta Pers.', 'Custom Route') + '</button>' +
+            '<button class="nc-btn nc-tour-btn-purple" id="pop-tour-custom">' + tr('Mi ruta', 'My route') + '</button>' +
           '</div>' : '')
         ) +
         '<div class="nc-route-info" id="pop-info"></div>' +
@@ -1219,7 +1213,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
           routeCoords = [[userLat, userLng], [currentCenter.lat, currentCenter.lng]];
           activeRouteCoords = routeCoords;
           lastReroute = Date.now();
-          routeLine = L.polyline(routeCoords, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(map);
+          routeLine = L.polyline(routeCoords, { color: '#69B6E6', weight: 4, opacity: 0.9 }).addTo(map);
           var dist = map.distance([userLat, userLng], [currentCenter.lat, currentCenter.lng]);
           showRouteInfo((dist / 1000).toFixed(1), '--');
           return;
@@ -1229,7 +1223,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         routeCoords = [[userLat, userLng]].concat(coords).concat([[currentCenter.lat, currentCenter.lng]]);
         activeRouteCoords = coords;
         lastReroute = Date.now();
-        routeLine = L.polyline(coords, { color: '#e94560', weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+        routeLine = L.polyline(coords, { color: '#69B6E6', weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
 
         userMarker = L.marker([userLat, userLng], {
           icon: L.divIcon({
@@ -1247,7 +1241,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         routeCoords = [[userLat, userLng], [currentCenter.lat, currentCenter.lng]];
         activeRouteCoords = routeCoords;
         lastReroute = Date.now();
-        routeLine = L.polyline(routeCoords, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(map);
+        routeLine = L.polyline(routeCoords, { color: '#69B6E6', weight: 4, opacity: 0.9 }).addTo(map);
         var dist = map.distance([userLat, userLng], [currentCenter.lat, currentCenter.lng]);
         showRouteInfo((dist / 1000).toFixed(1), '--');
       });
@@ -1334,7 +1328,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       routeCoords = [[userLat, userLng]].concat(coords).concat([[toLat, toLng]]);
       activeRouteCoords = coords;
       if (routeLine) map.removeLayer(routeLine);
-      routeLine = L.polyline(coords, { color: '#e94560', weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+      routeLine = L.polyline(coords, { color: '#69B6E6', weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
       if (userMarker) userMarker.setLatLng([userLat, userLng]);
       var km, min;
       if (route) {
@@ -1358,7 +1352,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
           routeCoords = coords;
           activeRouteCoords = coords;
           if (routeLine) map.removeLayer(routeLine);
-          routeLine = L.polyline(coords, { color: '#e94560', weight: 4, opacity: 0.9 }).addTo(map);
+          routeLine = L.polyline(coords, { color: '#69B6E6', weight: 4, opacity: 0.9 }).addTo(map);
           showRouteInfo((map.distance([userLat, userLng], [navDest.lat, navDest.lng]) / 1000).toFixed(1), '--');
         }
       });
@@ -1399,7 +1393,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         lastReroute = Date.now();
         if (tourActive && tourCurrentDep) {
           var dep = departamentos.find(function(d) { return d.name === tourCurrentDep; });
-          var color = dep ? dep.color : '#e94560';
+          var color = dep ? dep.color : '#69B6E6';
           tourOsrmCoords = c;
           activeRouteCoords = c;
           if (tourPolyline) map.removeLayer(tourPolyline);
@@ -1609,7 +1603,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       currentTourStops = stops;
       pickerSelected = {};
 
-      document.getElementById('rp-title').textContent = depName + ' - ' + tr('Ruta Personalizada', 'Custom Route');
+      document.getElementById('rp-title').textContent = depName + ' - ' + tr('Mi ruta', 'My route');
       document.getElementById('rp-sub').textContent = tr('Elige las paradas a visitar', 'Choose the stops to visit') + ' (' + stops.length + ' ' + tr('disponibles', 'available') + ')';
 
       var listHtml = '';
@@ -1659,7 +1653,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       document.getElementById('route-pick-panel').classList.remove('show');
       if (!stops || !stops.length) return;
       var dep = departamentos.find(function(d) { return d.name === depName; });
-      var color = dep ? dep.color : '#e94560';
+      var color = dep ? dep.color : '#69B6E6';
       tourCurrentDep = depName;
       tourActiveStops = stops;
       modeLocked = true;
@@ -1756,7 +1750,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       var stops = tourismData[tourCurrentDep];
       if (!stops || !stops[i]) return;
       var dep = departamentos.find(function(d) { return d.name === tourCurrentDep; });
-      var color = dep ? dep.color : '#e94560';
+      var color = dep ? dep.color : '#69B6E6';
       updateTourPanel(stops, i);
       showTourStopPopup(stops[i], i, stops.length, color);
     };
@@ -1767,7 +1761,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       tourActive = true;
 
       var dep = departamentos.find(function(d) { return d.name === depName; });
-      var color = dep ? dep.color : '#e94560';
+      var color = dep ? dep.color : '#69B6E6';
 
       document.getElementById('tour-start').style.display = 'none';
       var tstop = document.getElementById('tour-stop-btn');
@@ -2074,7 +2068,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B1F3A',
   },
   locationFallbackTitle: {
-    color: '#e94560',
+    color: '#69B6E6',
     fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
