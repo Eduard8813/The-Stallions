@@ -7,7 +7,7 @@
 
 > Aplicación móvil para explorar y conectar con las Ciudades Creativas de Nicaragua.
 
-Wani connect facilita el descubrimiento de las Ciudades Creativas de Nicaragua — Bluefields, Estelí, Granada, Juigalpa, León, Managua, Masaya, Matagalpa, Nagarote y San Juan de Oriente — mediante un mapa interactivo con rutas turísticas y de navegación. Conecta a visitantes y locales con el patrimonio cultural, artesanal y gastronómico del país, impulsando la economía creativa. El proyecto es un monorepo con un frontend en React Native (Expo) y un backend en Spring Boot.
+Wani connect facilita el descubrimiento de las Ciudades Creativas de Nicaragua — Bluefields, Estelí, Granada, Juigalpa, León, Managua, Masaya, Matagalpa, Nagarote y San Juan de Oriente — mediante un mapa interactivo con rutas turísticas y de navegación. Conecta a visitantes y locales con el patrimonio cultural y gastronómico del país, impulsando la economía creativa. El proyecto es un monorepo con un frontend en React Native (Expo) y un backend en Spring Boot.
 
 ---
 
@@ -53,10 +53,10 @@ Wani connect es una aplicación móvil (iOS, Android y web) para explorar las Ci
 |------|-----------|---------|
 | **Frontend** | React Native + Expo | SDK 57 (React Native 0.86.2) |
 | **Frontend (UI)** | React | 19.2.3 |
-| **Frontend (lenguaje)** | TypeScript | ~6.0.3 |
-| **Navegación** | expo-router | ~57.0.11 |
-| **HTTP client** | Axios | ^1.18.1 |
-| **Autenticación (cliente)** | Firebase Auth (SDK JS) | ^12.16.0 |
+| **Frontend (lenguaje)** | TypeScript | 6.0.3 |
+| **Navegación** | expo-router | 57.0.11 |
+| **HTTP client** | Axios | 1.18.1 |
+| **Autenticación (cliente)** | Firebase Auth (SDK JS) | 12.16.0 |
 | **Mapas** | Leaflet + OSRM (WebView/iframe) | Leaflet 1.9.4 |
 | **Backend** | Spring Boot | 4.1.0 |
 | **Backend (lenguaje)** | Java | 21 |
