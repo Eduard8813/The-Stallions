@@ -1,4 +1,4 @@
-import { Platform, Linking } from 'react-native';
+import { Linking } from 'react-native';
 
 type LocationModule = typeof import('expo-location');
 type ImagePickerModule = typeof import('expo-image-picker');
@@ -11,20 +11,11 @@ interface PermissionHolder {
   request(mod: any): Promise<{ granted: boolean }>;
 }
 
-function requireModule(pkg: string): any {
-  if (Platform.OS === 'web') return null;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require(pkg);
-  } catch {
-    return null;
-  }
-}
-
 const holders: Record<SystemPermissionKey, PermissionHolder> = {
   location: {
     async load(): Promise<LocationModule | null> {
-      return requireModule('expo-location') as LocationModule | null;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('expo-location') as LocationModule;
     },
     async getStatus(mod: any) {
       const r = await mod.getForegroundPermissionsAsync();
@@ -37,7 +28,8 @@ const holders: Record<SystemPermissionKey, PermissionHolder> = {
   },
   gallery: {
     async load(): Promise<ImagePickerModule | null> {
-      return requireModule('expo-image-picker') as ImagePickerModule | null;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('expo-image-picker') as ImagePickerModule;
     },
     async getStatus(mod: any) {
       const r = await mod.getMediaLibraryPermissionsAsync();
