@@ -31,7 +31,7 @@ Wani connect facilita el descubrimiento de las Ciudades Creativas de Nicaragua �
 
 ## Descripción
 
-Wani connect es una aplicación móvil (iOS, Android y web) para explorar las Ciudades Creativas de Nicaragua, una red reconocida por el Ministerio de Turismo y UNESCO. Incluye un mapa interactivo del país con detección de ubicación, rutas de navegación entre departamentos, y rutas turísticas con paradas e información de cada ciudad. Busca promover la economía creativa nicaragüense conectando a visitantes con el patrimonio material e inmaterial del país.
+Wani connect es una aplicación móvil (iOS, Android y web) para explorar las Ciudades Creativas de Nicaragua, una red reconocida por INTUR y la red Nacionales de cuidades creativas. Incluye un mapa interactivo del país con detección de ubicación, rutas de navegación entre departamentos, y rutas turísticas con paradas e información de cada ciudad. Busca promover la economía creativa nicaragüense conectando a visitantes con el patrimonio material e inmaterial del país.
 
 ## Características
 
