@@ -74,7 +74,7 @@ export default function RegisterScreen() {
         <Text style={styles.title}>{t.register}</Text>
         <Text style={styles.subtitle}>{t.registerSubtitle}</Text>
 
-        <Image source={require('../../assets/images/logo-glow.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('@/assets/images/logo-glow.png')} style={styles.logo} resizeMode="contain" />
 
         <View style={styles.card}>
           <AuthInput label={t.fullName} value={fullName} onChangeText={setFullName} placeholder={t.namePlaceholder} autoCapitalize="words" />
