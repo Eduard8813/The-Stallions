@@ -391,6 +391,7 @@ public class UserService {
         response.setCity(nvl(user.getCity()));
         response.setBio(nvl(user.getBio()));
         response.setPhotoUrl(user.getPhotoUrl());
+        response.setRol(user.getRol().name());
         response.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : "");
         return response;
     }

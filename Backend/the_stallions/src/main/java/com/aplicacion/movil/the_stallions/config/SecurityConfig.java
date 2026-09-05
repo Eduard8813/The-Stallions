@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
@@ -23,6 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -100,11 +103,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/user/photo/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/fotos/*/imagen").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/eventos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/fotos/*/imagen").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/eventos/**").permitAll()
                 .requestMatchers("/api/eventos/**").authenticated()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/emprendimientos/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/emprendimientos/**").permitAll()
                 .requestMatchers("/api/emprendimientos/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/admin/**").hasAnyRole("ADMIN", "AUDITOR")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<ProfileResponse> updateProfile(@RequestBody UpdateProfileRequest request) {
+    public ResponseEntity<ProfileResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(userService.updateProfile(request));
     }
 

@@ -12,6 +12,7 @@ public class ProfileResponse {
     private String city;
     private String bio;
     private String photoUrl;
+    private String rol;
     private String createdAt;
 
     public String getId() {
@@ -100,6 +101,14 @@ public class ProfileResponse {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
     }
 
     public String getCreatedAt() {

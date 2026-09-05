@@ -66,6 +66,10 @@ public class User {
     @Column(name = "IsEnabled", nullable = false)
     private boolean enabled = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "Role", length = 20)
+    private Rol rol = Rol.USER;
+
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -228,6 +232,16 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Rol getRol() {
+        // Los usuarios creados antes de existir la columna quedan con NULL;
+        // por defecto siempre se tratan como USER.
+        return rol != null ? rol : Rol.USER;
+    }
+
+    public void setRol(Rol rol) {
+        this.rol = rol;
     }
 
     public LocalDateTime getCreatedAt() {

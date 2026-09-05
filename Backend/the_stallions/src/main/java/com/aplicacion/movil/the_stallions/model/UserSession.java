@@ -36,6 +36,17 @@ public class UserSession {
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /**
+     * La sesión caduca por inactividad cuando pasan {@code inactivityMinutes}
+     * sin actividad ({@link #lastActive}) desde el último acceso.
+     */
+    public boolean isExpired(long inactivityMinutes) {
+        if (!active || lastActive == null) {
+            return true;
+        }
+        return lastActive.plusMinutes(inactivityMinutes).isBefore(LocalDateTime.now());
+    }
+
     public Long getId() {
         return id;
     }

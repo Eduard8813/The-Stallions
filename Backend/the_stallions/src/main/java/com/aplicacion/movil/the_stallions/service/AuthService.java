@@ -221,7 +221,7 @@ public class AuthService {
         userSessionRepository.save(session);
 
         String token = jwtUtils.generateToken(user.getEmail(), tokenId);
-        return new AuthResponse(token, user.getEmail(), user.getFullName());
+        return new AuthResponse(token, user.getEmail(), user.getFullName(), user.getRol().name());
     }
 
     private String derivePlatform(String userAgent) {

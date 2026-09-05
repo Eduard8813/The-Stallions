@@ -4,17 +4,28 @@ public class AuthResponse {
     private String token;
     private String email;
     private String fullName;
+    private String rol;
     private Boolean requiresTwoFactor;
     private String challengeId;
 
     public AuthResponse(String token, String email, String fullName) {
-        this(token, email, fullName, null, null);
+        this(token, email, fullName, null, null, null);
+    }
+
+    public AuthResponse(String token, String email, String fullName, String rol) {
+        this(token, email, fullName, rol, null, null);
     }
 
     public AuthResponse(String token, String email, String fullName, Boolean requiresTwoFactor, String challengeId) {
+        this(token, email, fullName, null, requiresTwoFactor, challengeId);
+    }
+
+    public AuthResponse(String token, String email, String fullName, String rol,
+                        Boolean requiresTwoFactor, String challengeId) {
         this.token = token;
         this.email = email;
         this.fullName = fullName;
+        this.rol = rol;
         this.requiresTwoFactor = requiresTwoFactor;
         this.challengeId = challengeId;
     }
@@ -43,6 +54,14 @@ public class AuthResponse {
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
     }
 
     public Boolean getRequiresTwoFactor() {
