@@ -1,700 +1,905 @@
-# Wani Connect (The Stallions)
-
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-0B1F3A)
-![Estado](https://img.shields.io/badge/estado-en%20desarrollo-yellow)
-![Plataformas](https://img.shields.io/badge/plataformas-Android%20%7C%20iOS%20%7C%20Web-green)
-![Licencia](https://img.shields.io/badge/licencia-privada-lightgrey)
-
-> **Readme técnico: Documentación técnica completa: Arquitectura, dependencias, variables de entorno, estructura modular, scripts y ejemplos de endpoints**
-
-Aplicación móvil para explorar y conectar con las Ciudades Creativas de Nicaragua. Wani Connect facilita el descubrimiento de las Ciudades Creativas de Nicaragua — Bluefields, Estelí, Granada, Juigalpa, León, Managua, Masaya, Matagalpa, Nagarote y San Juan de Oriente — mediante un mapa interactivo con rutas turísticas y de navegación, agenda de eventos, directorio de emprendimientos y una comunidad social de fotos. Conecta a visitantes y locales con el patrimonio cultural y gastronómico del país, impulsando la economía creativa.
-
-El proyecto es un **monorepo** con dos aplicaciones:
-
-| App | Tecnología | Ruta |
-|---|---|---|
-| Frontend | Expo (React Native 0.86, React 19, TypeScript), file-based routing | `Frontend/The_Stallions` |
-| Backend | Spring Boot 4 (Java 21, Maven), JPA/Hibernate + SQL Server | `Backend/the_stallions` |
-
-> Estado: en desarrollo (v1.0.0 de la app móvil / 0.0.1-SNAPSHOT del backend). No se incluyen insignias de CI/build porque el repositorio aún no cuenta con pipelines (ver [Despliegue](#13-despliegue)).
-
----
-
-## Tabla de contenidos
-
-1. [Descripción](#1-descripción)
-2. [Características](#2-características)
-3. [Stack tecnológico](#3-stack-tecnológico)
-4. [Arquitectura](#4-arquitectura)
-5. [Estructura modular](#5-estructura-modular)
-6. [Dependencias y requisitos](#6-dependencias-y-requisitos)
-7. [Variables de entorno](#7-variables-de-entorno)
-8. [Instalación, configuración y uso](#8-instalación-configuración-y-uso)
-9. [Scripts](#9-scripts)
-10. [Endpoints de la API](#10-endpoints-de-la-api)
-11. [Base de datos](#11-base-de-datos)
-12. [Pruebas](#12-pruebas)
-13. [Despliegue](#13-despliegue)
-14. [Contribución](#14-contribución)
-15. [Licencia y autores](#15-licencia-y-autores)
-16. [Pendientes para completar manualmente](#16-pendientes-para-completar-manualmente)
-
----
-
-## 1. Descripción
-
-Wani Connect es una aplicación móvil (iOS, Android y web) para explorar las Ciudades Creativas de Nicaragua, una red reconocida por INTUR y la Red Nacional de Ciudades Creativas. Incluye un mapa interactivo del país con detección de ubicación, rutas de navegación entre departamentos y rutas turísticas con paradas e información de cada ciudad. Además integra una **comunidad social de fotos** (subir, comentar y dar like), **directorio de emprendimientos** locales con ubicación y contacto, y una **agenda de eventos** con recordatorios push. Busca promover la economía creativa nicaragüense conectando a visitantes con el patrimonio material e inmaterial del país.
-
-## 2. Características
-
-- **Mapa interactivo de Nicaragua** con polígonos departamentales, marcadores por ciudad, emprendimientos y modos de vista satelital y vectorial.
-- **Rutas de navegación** entre la ubicación del usuario y cada ciudad creativa/emprendimiento, con distancia y tiempo estimado (servicio OSRM).
-- **Rutas turísticas** con paradas, descripciones e imágenes para las ciudades creativas del proyecto.
-- **Sección de Eventos**: calendario mensual navegable que marca los días con eventos y lista los del mes visible; si el mes no tiene eventos, indica en qué meses hay y permite saltar a ellos con un toque. Descarga en formato iCalendar (`.ics`).
-- **Notificaciones**: push (Firebase Cloud Messaging) para eventos próximos — enviadas automáticamente por el backend — y notificaciones locales programables por evento desde su detalle.
-- **Comunidad de fotos**: cámara, muro de la comunidad con carruseles (fotos agrupadas), fotos privadas/públicas, likes y comentarios, y notificaciones in-app de actividad.
-- **Directorio de emprendimientos** por rubro con ubicación en mapa y datos de contacto.
-- **Panel de administración web** (`/admin`) para crear, editar y eliminar eventos y emprendimientos, protegido con login propio independiente del flujo de la app.
-- **Perfil**: foto guardada en la base de datos y servida por una URL pública con caché, edición de datos y ajustes de privacidad.
-- **Seguridad**: verificación en dos pasos con app autenticadora (TOTP), cambio de contraseña, sesiones activas revocables, usuarios bloqueados y exportación de datos.
-- **Autenticación** por correo/contraseña y con Google (Firebase Auth + JWT).
-- **Desbloqueo biométrico** (huella / Face ID) mediante `expo-local-authentication`.
-- **Interfaz bilingüe** (español/inglés) y tema oscuro/claro.
-- **Soporte multiplataforma**: Android, iOS y web.
-
-## 3. Stack tecnológico
-
-| Capa | Tecnología | Versión |
-|------|-----------|---------|
-| **Frontend** | React Native + Expo | SDK 57 (React Native 0.86.2) |
-| **Frontend (UI)** | React | 19.2.3 |
-| **Frontend (lenguaje)** | TypeScript | 6.0.3 |
-| **Navegación** | expo-router | 57.0.11 (file-based routing) |
-| **HTTP client** | Axios | 1.18.1 |
-| **Autenticación (cliente)** | Firebase Auth / Google Sign-In | 12.16.0 / 16.1.4 |
-| **Mapas** | Leaflet + OSRM (WebView/iframe) | Leaflet 1.9.4 |
-| **Backend** | Spring Boot | 4.1.0 |
-| **Backend (lenguaje)** | Java | 21 |
-| **Build** | Apache Maven (wrapper) | 3.9.16 |
-| **Persistencia** | Spring Data JPA (Hibernate, `ddl-auto=update`) | — |
-| **Base de datos** | Microsoft SQL Server | — |
-| **Seguridad** | Spring Security + JWT (jjwt) | 0.12.5 |
-| **Firebase (servidor)** | firebase-admin | 9.3.0 |
-| **2FA** | TOTP (RFC 6238), HMAC-SHA1, 6 dígitos / 30 s | propia (`security/TOTP.java`) |
-| **Despliegue backend** | Docker / Render (histórico) | — |
-
-## 4. Arquitectura
-
-Patrón general: **SPA móvil (Expo) conectada a una API REST stateless (JWT) + panel administrativo server-rendered** en un único backend Spring Boot.
-
-```text
-┌──────────────────────────────┐        ┌───────────────────────────────────────────────┐
-│  FRONTEND · Expo/React Native │  HTTPS │  BACKEND · Spring Boot 4 (Puerto 8080)        │
-│  expo-router (file-based)     │--------►│                                              │
-│  axios + JWT (SecureStore)    │        │  /api/**        → REST JSON stateless (JWT)   │
-│  Firebase Auth (Google)       │        │  /admin/**      → Thymeleaf + formulario      │
-│  Notificaciones push (FCM)    │        │  @Scheduled     → recordatorio de eventos FCM │
-│  Mapas Leaflet/OSRM (WebView) │        │  JPA/Hibernate  → SQL Server (Somee.com)      │
-└──────────────────────────────┘        └───────────────────────────────────────────────┘
-```
-
-### Decisiones de diseño
-
-1. **API REST stateless con JWT + registro de sesiones** en la tabla `UserSessions`. El token mantiene la API sin estado (simple de escalar y consumir desde móvil/web), mientras que el registro de sesiones permite listarlas y revocarlas desde la app (`/api/user/sessions`), y el `logout` invalida la sesión asociada al token.
-2. **Panel admin separado con Thymeleaf y login por formulario** (`/admin/**`), con cadena de seguridad independiente de la API JWT. El CRUD de eventos y emprendimientos queda fuera del alcance de la app móvil sin exponer endpoints de escritura abiertos.
-3. **Imágenes guardadas como BLOB en SQL Server** (`varbinary(max)`) y servidas por endpoints dedicados (`/api/eventos/{id}/foto`, `/api/emprendimientos/{id}/foto`, `/api/user/photo/{id}`, `/api/fotos/{id}/imagen`). Se elige la base de datos como almacenamiento para evitar depender de un CDN en la etapa inicial; los campos `*Url` ya existen para migrar a almacenamiento externo sin cambios de contrato.
-4. **Recordatorios push con FCM programados por `@Scheduled`** (cron diario a las 08:00). El scheduler `EventoNotificacionScheduler` detecta eventos de los próximos 24-48 h y envía una notificación al topic de FCM `eventos`, al que se suscriben los clientes. Un topic (y no tokens por usuario) simplifica la operación.
-
-### Acceso y seguridad
-
-- **Cadena 1 — `/admin/**`**: login por formulario (`/admin/login`), usuario en memoria definido por `app.admin.username` / `app.admin.password` (rol `ADMIN`).
-- **Cadena 2 — `/api/**`**: sin estado, CSRF desactivado, CORS configurado. Rutas públicas: `/api/auth/**`, `/api/user/photo/**`, `GET /api/fotos/*/imagen`, `GET /api/eventos/**`, `GET /api/emprendimientos/**`. El resto exige JWT (`Authorization: Bearer {token}`).
-- **Autenticación**: correo+contraseña (BCrypt) o Google (ID token de Firebase verificado con Firebase Admin). La cuenta queda ligada a su `provider` (`LOCAL` o `GOOGLE`).
-- **2FA**: TOTP (RFC 6238) verificable con apps como Google Authenticator o Authy. El secreto se genera en el backend (`TOTP.generateSecret()`), se registra en el dispositivo con un QR `otpauth://` y se valida por `challengeId`.
-- **Tokens**: librería `jjwt` 0.12.5; vigencia configurable (`jwt.expiration-ms`, por defecto 1 h).
-
-## 5. Estructura modular
-
-### Frontend (`Frontend/The_Stallions`)
-
-```text
-Frontend/The_Stallions/
-├── app.json                     # nombre "Wani Connect", slug "the-stallions", paquete Android com.eduard8813steam.thestallions
-├── package.json                 # dependencias y scripts npm
-├── .env                         # variables locales (no versionar)
-├── assets/                      # fuentes Gilroy, imágenes e iconos
-├── scripts/reset-project.js     # utilidad del template de Expo (dev)
-└── src/
-    ├── app/                     # rutas definidas por archivos (expo-router)
-    │   ├── _layout.tsx          # providers (Lang, Theme, Auth) + gate biométrico + listener de fin de sesión
-    │   ├── index.tsx            # puerta de autenticación/biometría → redirige a (tabs) o (auth)
-    │   ├── (auth)/              # login.tsx, register.tsx, two-factor.tsx
-    │   ├── (tabs)/              # navegación inferior y pantallas principales
-    │   │   ├── _layout.tsx      # define la barra de pestañas (5 visibles + rutas ocultas)
-    │   │   ├── index.tsx        # Explorar
-    │   │   ├── eventos/         # listado y detalle dinámico (eventos/{id}.tsx)
-    │   │   ├── camera.tsx       # captura y subida de fotos (carrusel por grupo)
-    │   │   ├── comunidad.tsx    # feed de la comunidad
-    │   │   ├── perfil.tsx       # perfil propio
-    │   │   └── misFotos.tsx / misFotosComunidad.tsx / notificaciones.tsx / mensajes.tsx / mapa.tsx  # rutas ocultas (href: null)
-    │   └── profile/             # edit.tsx, help.tsx, privacy.tsx, security.tsx
-    ├── components/              # UI reutilizable: NicaraguaMap, AuthButton, GoogleButton, BiometricUnlockGate, TOTPSetupModal, LangToggle, CalendarioEventos...
-    ├── config/                  # firebaseConfig.js (inicializa Firebase Auth con persistencia)
-    ├── constants/               # tema, colores y espaciados
-    ├── context/                 # AuthContext, LangContext (i18n ES/EN), ThemeContext
-    ├── hooks/                   # use-theme, use-color-scheme, useAsync, useGoogleAuth
-    └── services/                # lógica de negocio y acceso a datos
-        ├── api.js               # cliente axios (base URL, interceptor JWT, resolución de URL de imágenes)
-        ├── authService.js       # login, register, google, 2FA
-        ├── userService.ts       # perfil, seguridad, sesiones, notificaciones, privacidad, bloqueos, exportación
-        ├── eventosService.ts    # eventos y descarga ICS
-        ├── token.ts             # persistencia del JWT (SecureStore/AsyncStorage)
-        ├── biometrics.ts        # autenticación biométrica (expo-local-authentication)
-        ├── localSettings.ts     # preferencias locales del dispositivo
-        ├── dataExportService.ts # exportación de datos (PDF/JSON)
-        ├── privacyService.ts    # ajustes de privacidad
-        ├── notificationsService.ts / notificationsPermissions.ts  # push
-        ├── mockApi.ts           # capa mock para funciones sin backend real (sesión expirada simulada)
-        └── events.ts            # bus de eventos globales de la app
-```
-
-**Convenciones de nomenclatura (frontend):** pantallas y rutas en español (`eventos`, `comunidad`, `perfil`, `misFotos`); servicios, hooks y utilidades en inglés (`userService`, `token`, `biometrics`); componentes en PascalCase. Textos de UI con i18n vía `LangContext` (objeto `t`).
-
-> Nota: `src/app/explore.tsx` es código de ejemplo del template de Expo sin uso en la app (ver sección 16).
-
-### Backend (`Backend/the_stallions`)
-
-```text
-Backend/the_stallions/
-├── pom.xml                      # Spring Boot parent 4.1.0, Java 21
-├── Dockerfile                   # build multi-stage (maven → temurin 21-jre)
-├── mvnw / mvnw.cmd              # Maven Wrapper (.mvn/)
-├── src/main/
-│   ├── java/com/aplicacion/movil/the_stallions/
-│   │   ├── config/              # SecurityConfig, FirebaseConfig, FirebaseTokenService
-│   │   ├── controller/          # Auth, User, Evento, Emprendimiento, Foto, AdminEvento, AdminEmprendimiento, AdminLoginPage
-│   │   ├── dto/                 # Request/ (entrada) y Response/ (salida)
-│   │   ├── model/               # entidades JPA (Users, Eventos, Emprendimientos, Photos...)
-│   │   ├── repository/          # Spring Data JPA
-│   │   ├── scheduler/           # EventoNotificacionScheduler (cron 0 0 8 * * *)
-│   │   ├── security/            # JwtUtils, JwtAuthenticationFilter, TOTP (RFC 6238)
-│   │   └── service/             # AuthService, UserService, EventoService, EmprendimientoService, FotoService, CommentService, FcmService
-│   └── resources/
-│       ├── application.properties
-│       ├── templates/admin/     # páginas Thymeleaf: login, eventos, evento-form, emprendimientos, emprendimiento-form
-│       └── firebase-credentials.json  # service account de Firebase (ver sección 16)
-└── src/test/                    # pruebas (ver sección 12)
-```
-
-**Convenciones de nomenclatura (backend):** rutas REST en plural español para dominio de negocio (`/api/eventos`, `/api/emprendimientos`, `/api/fotos`); controladores mixtos español/inglés (`EventoController`, `UserController`, `FotoController`); DTOs agrupados por `Request`/`Response`. Comentarios y mensajes de error en español.
-
-> Hallazgo de consistencia: las columnas JPA mezclan estilos. `Photos`/`Comments` usan `snake_case` (`photo_id`, `fecha_upload`), mientras `Users`, `Eventos`, `Emprendimientos`, `UserSessions` y demás usan `PascalCase` (`PasswordHash`, `CreatedAt`). Al mantenerse con `ddl-auto=update`, el esquema es coherente con las entidades, pero la convención debería unificarse (ver sección 16).
-
-## 6. Dependencias y requisitos
-
-### Frontend — librerías principales
-
-| Librería | Versión | Propósito |
-|---|---|---|
-| `expo` | ~57.0.11 | SDK y tooling de la app |
-| `expo-router` | ~57.0.11 | Navegación basada en archivos (`src/app`) |
-| `react` / `react-native` | 19.2.3 / 0.86.2 | Framework UI |
-| `typescript` | ~6.0.3 | Tipado estático |
-| `axios` | ^1.18.1 | Cliente HTTP hacia la API (con interceptor JWT) |
-| `firebase` | ^12.16.0 | Firebase Auth (login con Google) y Firebase Cloud Messaging |
-| `@react-native-google-signin/google-signin` | ^16.1.4 | Inicio de sesión con Google nativo |
-| `expo-secure-store` | ~57.0.1 | Almacenamiento seguro del JWT y preferencias |
-| `expo-local-authentication` | ~57.0.2 | Desbloqueo con huella / Face ID |
-| `expo-notifications` | ~57.0.9 | Notificaciones push (FCM) locales/remotas |
-| `expo-location` | ~57.0.8 | Ubicación (tab de mapa) |
-| `expo-image-picker` | ~57.0.8 | Selección/captura de fotos |
-| `expo-print` / `expo-sharing` | ~57.0.1 / ~57.0.16 | Exportación de datos (PDF) |
-| `qrcode-generator` | ^2.0.4 | QR `otpauth://` para registrar el secreto TOTP |
-| `react-native-webview` | 13.16.1 | Vista del mapa (Leaflet/OSRM) |
-| `react-native-reanimated` | 4.5.1 | Animaciones |
-| `@react-native-async-storage/async-storage` | 2.2.0 | Persistencia (sesión de Firebase en RN) |
-| `eslint` + `eslint-config-expo` | ^9.0.0 / ~57.0.0 | Linter |
-
-### Backend — dependencias (pom.xml)
-
-| Dependencia | Versión | Propósito |
-|---|---|---|
-| `spring-boot-starter-parent` | 4.1.0 | Padre de configuración de Spring Boot |
-| `spring-boot-starter-web` | (parent) | API REST y servidor web |
-| `spring-boot-starter-security` | (parent) | Autenticación/autorización (JWT + panel admin) |
-| `spring-boot-starter-data-jpa` | (parent) | Persistencia con Hibernate |
-| `spring-boot-starter-thymeleaf` | (parent) | Panel de administración server-rendered |
-| `spring-boot-starter-validation` | (parent) | Validación de DTOs (`jakarta.validation`) |
-| `mssql-jdbc` | (parent) | Driver de SQL Server |
-| `jjwt-api` / `jjwt-impl` / `jjwt-jackson` | 0.12.5 | Creación y validación de JWT |
-| `firebase-admin` | 9.3.0 | Verificación del ID token de Google y FCM |
-| `lombok` | (parent) | Reducción de boilerplate |
-| `spring-boot-devtools` | (parent, runtime) | Recarga en desarrollo |
-| `spring-boot-starter-test` | (parent, test) | JUnit 5 y utilidades de prueba |
-
-### Requisitos previos
-
-| Herramienta | Versión mínima | Verificación |
-|---|---|---|
-| **Node.js** | 20+ (el proyecto se desarrolló con 24) | `node --version` |
-| **npm** | v10+ | `npm --version` |
-| **Java JDK** | 21+ | `java -version` |
-| **Apache Maven** | 3.9+ (o usar el wrapper incluido) | `mvn -version` |
-| **Git** | 2.x | `git --version` |
-| **Microsoft SQL Server** | — | solo si se corre el backend localmente |
-
-**Opcionales:** **Android Studio** (emulador), **Xcode** (simulador iOS, solo macOS) y **EAS CLI** (builds en la nube: `npm install -g eas-cli`).
-
-> **Nota para builds Android locales:** el prebuild nativo (`expo prebuild` / Gradle) puede requerir JDK 17. Si tu JDK por defecto es más nuevo y la compilación falla, fija la ruta con `org.gradle.java.home={RUTA_JDK_17}` en `Frontend/The_Stallions/android/gradle.properties`. El backend compila y corre con JDK 21+.
-
-Cuentas externas necesarias: **Firebase** (Auth + FCM/service account), **Google Cloud Console** (Client IDs OAuth Web/Android/iOS) y la base de datos (**Somee.com** o tu propio SQL Server).
-
-## 7. Variables de entorno
-
-El proyecto requiere variables de entorno para conectarse a Firebase, a la API y a la base de datos. No se versionan valores reales: se copian plantillas y se completan localmente.
-
-### Frontend — creación de `.env`
-
-Crea un archivo `.env` en `Frontend/The_Stallions/`. Las variables con prefijo `EXPO_PUBLIC_` se incrustan en el bundle y son visibles en el cliente:
-
-1. Ve a `Frontend/The_Stallions/` y crea el archivo `.env`.
-2. Copia las claves de Firebase desde la consola de Firebase (pestaña *Project settings → General* y *Cloud Messaging*) en las `EXPO_PUBLIC_FIREBASE_*`.
-3. Genera los Client IDs OAuth Web/Android/iOS en Google Cloud Console y complétalos en `EXPO_PUBLIC_GOOGLE_*`.
-4. Define `EXPO_PUBLIC_API_URL` con la URL de tu backend (IP local o dominio público).
-5. Reinicia `npm start` (un cambio de `.env` exige reiniciar el proceso de Expo) y verifica que la app autentica y consulta la API.
-
-Plantilla de referencia (equivalente al `.env.example` que debe crearse — ver sección 16):
-
-```env
-# URL del backend (local o desplegado)
-EXPO_PUBLIC_API_URL=http://localhost:8080
-
-# Firebase (consolas de Firebase / Google Cloud)
-EXPO_PUBLIC_FIREBASE_API_KEY=
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-EXPO_PUBLIC_FIREBASE_APP_ID=
-
-# Google Sign-In (OAuth Client IDs)
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
-EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=
-# Solo iOS
-EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
-```
-
-| Variable | Descripción | Requerida | Dónde se consume |
-|---|---|---|---|
-| `EXPO_PUBLIC_API_URL` | URL base del backend **sin** `/api` (p. ej. `http://192.168.1.10:8080`) | Recomendada* | `src/services/api.js` |
-| `EXPO_PUBLIC_FIREBASE_API_KEY` | API key del proyecto Firebase | Sí | `src/config/firebaseConfig.js` |
-| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Dominio de autenticación (`{proyecto}.firebaseapp.com`) | Sí | `src/config/firebaseConfig.js` |
-| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | ID del proyecto Firebase | Sí | `src/config/firebaseConfig.js` |
-| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | Bucket de Firebase Storage | Sí (configuración) | `src/config/firebaseConfig.js` |
-| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Sender ID de FCM | Sí (push) | `src/config/firebaseConfig.js` |
-| `EXPO_PUBLIC_FIREBASE_APP_ID` | App ID de Firebase | Sí | `src/config/firebaseConfig.js` |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Client ID OAuth Web de Google (login con Google) | Sí | `src/hooks/useGoogleAuth.js` |
-| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Client ID OAuth de Android (build nativa) | Opcional (solo Android) | `src/hooks/useGoogleAuth.js` |
-
-<!-- TODO: variable no documentada, confirmar con el equipo --!> `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (Client ID OAuth iOS): aparece en la plantilla del README pero **no está definida en el `.env` actual ni referenciada en `src/`**. Si se habilita el login con Google en iOS, hay que definirla y añadirla a `useGoogleAuth.js`.
-
-\* `EXPO_PUBLIC_API_URL` no es estrictamente obligatoria: `src/services/api.js` cae a `http://{host}:8080` (detecta la IP del dev server de Metro) y finalmente a `http://localhost:8080`.
-
-### Backend — `application.properties` y variables de entorno
-
-Configura `Backend/the_stallions/src/main/resources/application.properties` (o sobrescribe por variable de entorno):
-
-```properties
-spring.datasource.url=jdbc:sqlserver://{HOST}:1433;databaseName={DB};encrypt=true;trustServerCertificate=true
-spring.datasource.username={USUARIO}
-spring.datasource.password={CLAVE}
-spring.jpa.hibernate.ddl-auto=update
-
-jwt.secret={SECRETO_JWT_MINIMO_32_CARACTERES}
-jwt.expiration-ms=3600000
-
-firebase.credentials-path=firebase-credentials.json
-
-# URL pública del backend (para construir enlaces en notificaciones y fotos)
-app.base-url={URL_BASE}
-
-# Panel de administración (/admin/login)
-app.admin.username={USUARIO_ADMIN}
-app.admin.password={CLAVE_ADMIN}
-```
-
-- `firebase-credentials.json` es la *service account* de Firebase que debe existir en el classpath (`src/main/resources/`).
-- En despliegue, Firebase también puede configurarse con la variable de entorno `FIREBASE_CREDENTIALS_JSON` con el contenido del JSON (ver `FirebaseConfig`).
-
-Spring Boot permite sobrescribir cada propiedad por variable de entorno con la nomenclatura relajada (mayúsculas, `_` en vez de `.`):
-
-| Variable de entorno | Propiedad | Descripción | Requerida |
-|---|---|---|---|
-| `SPRING_DATASOURCE_URL` | `spring.datasource.url` | JDBC URL de SQL Server | Sí |
-| `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | Usuario de la BD | Sí |
-| `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | Contraseña de la BD | Sí |
-| `JWT_SECRET` | `jwt.secret` | Secreto HMAC del JWT (mínimo 32 caracteres) | Sí (producción) |
-| `JWT_EXPIRATION_MS` | `jwt.expiration-ms` | Vigencia del token en ms (default `3600000`) | No |
-| `FIREBASE_CREDENTIALS_JSON` | `firebase.credentials-path` | JSON del service account de Firebase (alternativa al archivo en `resources/`) | No* |
-| `APP_BASE_URL` | `app.base-url` | URL pública del backend para construir la foto de perfil; vacío = usar el host de la petición | No |
-| `APP_ADMIN_USERNAME` | `app.admin.username` | Usuario del panel `/admin` | Sí (producción) |
-| `APP_ADMIN_PASSWORD` | `app.admin.password` | Contraseña del panel `/admin` | Sí (producción) |
-| `SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE` | `spring.servlet.multipart.max-file-size` | Límite de subida por archivo (default `10MB`) | No |
-| `SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE` | `spring.servlet.multipart.max-request-size` | Límite de subida por petición (default `10MB`) | No |
-
-\* `firebase.credentials-path` apunta al archivo incluido en `resources/`. Si se define `FIREBASE_CREDENTIALS_JSON`, `FirebaseConfig` usa ese valor y **no** el archivo (ver sección 16 sobre el riesgo de secretos versionados).
-
-> **Seguridad:** no comitees credenciales reales. En producción, sobrescribe estos valores con variables de entorno del proveedor de despliegue.
-
-## 8. Instalación, configuración y uso
-
-### Clonar e instalar
-
-```bash
-git clone https://github.com/Eduard8813/The-Stallions.git
-cd The-Stallions
-```
-
-**Frontend (Expo / React Native):**
-
-```bash
-cd Frontend/The_Stallions
-npm install
-```
-
-**Backend (Spring Boot):**
-
-```bash
-cd Backend/the_stallions
-# Unix/macOS
-./mvnw install
-# Windows
-mvnw.cmd install
-```
-
-### Desarrollo
-
-Backend (servidor en `http://localhost:8080`):
-
-```bash
-cd Backend/the_stallions
-# Unix/macOS
-./mvnw spring-boot:run
-# Windows
-mvnw.cmd spring-boot:run
-```
-
-Verifica: API pública en `http://localhost:8080/api/eventos` y panel admin en `http://localhost:8080/admin/login`.
-
-> El esquema de BD se sincroniza automáticamente al arrancar (`spring.jpa.hibernate.ddl-auto=update`).
+WANI CONNECT (THE STALLIONS)
+============================
+
+Readme técnico: Documentación técnica completa: Arquitectura, dependencias,
+variables de entorno, estructura modular, scripts y ejemplos de endpoints.
+
+Aplicación móvil y web para explorar y conectar con las Ciudades Creativas de
+Nicaragua: Bluefields, Estelí, Granada, Juigalpa, León, Managua, Masaya,
+Matagalpa, Nagarote y San Juan de Oriente. Incluye mapa interactivo con rutas
+turísticas y de navegación, agenda de eventos con recordatorios, directorio de
+emprendimientos locales y una comunidad social de fotos. Conecta a visitantes y
+locales con el patrimonio cultural y gastronómico del país, impulsando la
+economía creativa.
+
+El proyecto es un monorepo con dos aplicaciones:
+
+  - Frontend: Expo (React Native 0.86, React 19, TypeScript), en
+    Frontend/The_Stallions
+  - Backend: Spring Boot 4 (Java 21, Maven), JPA/Hibernate + SQL Server, en
+    Backend/the_stallions
+
+Estado: en desarrollo (v1.0.0 de la app móvil / 0.0.1-SNAPSHOT del backend).
+Plataformas: Android / iOS / Web. Licencia: privada. No se incluyen insignias
+de CI/build porque el repositorio aún no cuenta con pipelines (ver sección 13).
+
+
+INDICE
+------
+
+  1. Descripción
+  2. Características
+  3. Stack tecnológico
+  4. Arquitectura
+  5. Estructura modular
+  6. Dependencias y requisitos
+  7. Variables de entorno
+  8. Instalación, configuración y uso
+  9. Scripts
+ 10. Endpoints de la API
+ 11. Base de datos
+ 12. Pruebas
+ 13. Despliegue
+ 14. Contribución
+ 15. Licencia y autores
+ 16. Pendientes para completar manualmente
+
+
+1. DESCRIPCIÓN
+--------------
+
+Wani Connect es una aplicación móvil (iOS, Android y web) para explorar las
+Ciudades Creativas de Nicaragua, una red reconocida por INTUR y la Red Nacional
+de Ciudades Creativas. Incluye un mapa interactivo del país con detección de
+ubicación, rutas de navegación entre departamentos y rutas turísticas con
+paradas e información de cada ciudad. Además integra una comunidad social de
+fotos (subir, comentar y dar like), un directorio de emprendimientos locales con
+ubicación y contacto, y una agenda de eventos con recordatorios push. Busca
+promover la economía creativa nicaragüense conectando a visitantes con el
+patrimonio material e inmaterial del país.
+
+
+2. CARACTERÍSTICAS
+------------------
+
+  - Mapa interactivo de Nicaragua con polígonos departamentales, marcadores por
+    ciudad, emprendimientos y modos de vista satelital y vectorial.
+  - Rutas de navegación entre la ubicación del usuario y cada ciudad
+    creativa/emprendimiento, con distancia y tiempo estimado (servicio OSRM).
+  - Rutas turísticas con paradas, descripciones e imágenes para las ciudades
+    creativas del proyecto.
+  - Sección de Eventos: calendario mensual navegable que marca los días con
+    eventos y lista los del mes visible; si el mes no tiene eventos, indica en
+    qué meses hay y permite saltar a ellos. Descarga en formato iCalendar (.ics).
+  - Notificaciones push (Firebase Cloud Messaging) para eventos próximos,
+    enviadas automáticamente por el backend, y notificaciones locales
+    programables por evento desde su detalle.
+  - Comunidad de fotos: cámara, muro de la comunidad con carruseles (fotos
+    agrupadas), fotos privadas/públicas, likes y comentarios, y notificaciones
+    in-app de actividad.
+  - Directorio de emprendimientos por rubro con ubicación en mapa y contactos.
+  - Panel de administración web (/admin) para crear, editar y eliminar eventos
+    y emprendimientos, protegido con login propio independiente de la app.
+  - Perfil: foto guardada en la base de datos y servida por URL pública con
+    caché, edición de datos y ajustes de privacidad.
+  - Seguridad: verificación en dos pasos con app autenticadora (TOTP), cambio
+    de contraseña, sesiones activas revocables, usuarios bloqueados y
+    exportación de datos.
+  - Autenticación por correo/contraseña y con Google (Firebase Auth + JWT).
+  - Desbloqueo biométrico (huella / Face ID) con expo-local-authentication.
+  - Interfaz bilingüe (español/inglés) y tema oscuro/claro.
+  - Soporte multiplataforma: Android, iOS y web.
+
+
+3. STACK TECNOLÓGICO
+--------------------
+
+  - Frontend: React Native + Expo, SDK 57 (React Native 0.86.2)
+  - Frontend (UI): React 19.2.3
+  - Frontend (lenguaje): TypeScript 6.0.3
+  - Navegación: expo-router 57.0.11 (file-based routing)
+  - HTTP client: Axios 1.18.1
+  - Autenticación (cliente): Firebase Auth 12.16.0 / Google Sign-In 16.1.4
+  - Mapas: Leaflet 1.9.4 + OSRM (WebView/iframe)
+  - Backend: Spring Boot 4.1.0
+  - Backend (lenguaje): Java 21
+  - Build: Apache Maven (wrapper) 3.9.16
+  - Persistencia: Spring Data JPA (Hibernate, ddl-auto=update)
+  - Base de datos: Microsoft SQL Server
+  - Seguridad: Spring Security + JWT (jjwt 0.12.5)
+  - Firebase (servidor): firebase-admin 9.3.0
+  - 2FA: TOTP (RFC 6238), HMAC-SHA1, 6 dígitos / 30 s (security/TOTP.java)
+  - Despliegue backend: Docker / Render (histórico)
+
+
+4. ARQUITECTURA
+---------------
+
+Patrón general: SPA móvil (Expo) conectada a una API REST sin estado (JWT) más
+un panel administrativo server-rendered, dentro de un único backend Spring Boot.
+
+  +------------------------------+        +-----------------------------------+
+  |  FRONTEND · Expo/React Native |  HTTPS |  BACKEND · Spring Boot 4 (8080)   |
+  |  expo-router (file-based)     |-------->|                                  |
+  |  axios + JWT (SecureStore)    |        |  /api/**   REST JSON stateless JWT|
+  |  Firebase Auth (Google)       |        |  /admin/** Thymeleaf + formulario |
+  |  Notificaciones push (FCM)    |        |  @Scheduled recordatorio FCM      |
+  |  Mapas Leaflet/OSRM (WebView) |        |  JPA/Hibernate SQL Server        |
+  +------------------------------+        +-----------------------------------+
+
+Decisiones de diseño:
+
+  1. API REST sin estado con JWT + registro de sesiones en la tabla
+     UserSessions. El token mantiene la API sin estado (fácil de escalar y
+     consumir desde móvil/web), mientras el registro de sesiones permite
+     listarlas y revocarlas desde la app (/api/user/sessions), y el logout
+     invalida la sesión asociada al token.
+
+  2. Panel admin separado con Thymeleaf y login por formulario (/admin/**),
+     con una cadena de seguridad independiente de la API JWT. El CRUD de
+     eventos y emprendimientos queda fuera del alcance de la app móvil sin
+     exponer endpoints de escritura abiertos.
+
+  3. Imágenes guardadas como BLOB en SQL Server (varbinary(max)) y servidas por
+     endpoints dedicados (/api/eventos/{id}/foto, /api/emprendimientos/{id}/foto,
+     /api/user/photo/{id}, /api/fotos/{id}/imagen). Se elige la base de datos
+     como almacenamiento para no depender de un CDN en la etapa inicial; los
+     campos *Url ya existen para migrar a almacenamiento externo sin cambios de
+     contrato.
+
+  4. Recordatorios push con FCM programados por @Scheduled (cron diario a las
+     08:00). El scheduler EventoNotificacionScheduler detecta eventos de los
+     próximos 24-48 h y envía una notificación al topic de FCM "eventos", al que
+     se suscriben los clientes. Un topic (y no tokens por usuario) simplifica la
+     operación.
+
+Acceso y seguridad:
+
+  - Cadena 1 (/admin/**): login por formulario (/admin/login), usuario en
+    memoria definido por app.admin.username / app.admin.password (rol ADMIN).
+  - Cadena 2 (/api/**): sin estado, CSRF desactivado, CORS configurado. Rutas
+    públicas: /api/auth/**, /api/user/photo/**, GET /api/fotos/*/imagen,
+    GET /api/eventos/**, GET /api/emprendimientos/**. El resto exige JWT con el
+    encabezado: Authorization: Bearer {token}.
+  - Autenticación: correo+contraseña (BCrypt) o Google (ID token verificado con
+    Firebase Admin). La cuenta queda ligada a su provider (LOCAL o GOOGLE).
+  - 2FA: TOTP (RFC 6238) verificable con Google Authenticator o Authy. El
+    secreto se genera en el backend (TOTP.generateSecret()), se registra en el
+    dispositivo con un QR otpauth:// y se valida por challengeId.
+  - Tokens: librería jjwt 0.12.5; vigencia configurable (jwt.expiration-ms,
+    por defecto 1 hora).
+
+
+5. ESTRUCTURA MODULAR
+---------------------
+
+Frontend (Frontend/The_Stallions):
+
+  Frontend/The_Stallions/
+    app.json                   nombre "Wani Connect", slug "the-stallions",
+                               paquete Android com.eduard8813steam.thestallions
+    package.json               dependencias y scripts npm
+    .env                       variables locales (no versionar)
+    assets/                    fuentes Gilroy, imágenes e iconos
+    scripts/reset-project.js   utilidad del template de Expo (solo dev)
+    src/
+      app/                     rutas definidas por archivos (expo-router)
+        _layout.tsx            providers (Lang, Theme, Auth) + gate biométrico
+        index.tsx              puerta de autenticación/biometría, redirige a
+                               (tabs) o (auth)
+        (auth)/                login.tsx, register.tsx, two-factor.tsx
+        (tabs)/                navegación inferior y pantallas principales
+          _layout.tsx          barra de pestañas (5 visibles + rutas ocultas)
+          index.tsx            Explorar
+          eventos/             listado y detalle dinámico (eventos/{id}.tsx)
+          camera.tsx           captura y subida de fotos (carrusel por grupo)
+          comunidad.tsx        feed de la comunidad
+          perfil.tsx           perfil propio
+          misFotos.tsx / misFotosComunidad.tsx / notificaciones.tsx /
+          mensajes.tsx / mapa.tsx     rutas ocultas (href: null)
+        profile/               edit.tsx, help.tsx, privacy.tsx, security.tsx
+      components/              UI reutilizable: NicaraguaMap, AuthButton,
+                               GoogleButton, BiometricUnlockGate,
+                               TOTPSetupModal, LangToggle, CalendarioEventos...
+      config/                  firebaseConfig.js (inicializa Firebase Auth)
+      constants/               tema, colores y espaciados
+      context/                 AuthContext, LangContext (i18n ES/EN),
+                               ThemeContext
+      hooks/                   use-theme, use-color-scheme, useAsync,
+                               useGoogleAuth
+      services/                lógica de negocio y acceso a datos
+        api.js                 cliente axios (base URL, interceptor JWT,
+                               resolución de URL de imágenes)
+        authService.js         login, register, google, 2FA
+        userService.ts         perfil, seguridad, sesiones, notificaciones,
+                               privacidad, bloqueos, exportación
+        eventosService.ts      eventos y descarga ICS
+        token.ts               persistencia del JWT (SecureStore/AsyncStorage)
+        biometrics.ts          autenticación biométrica
+        localSettings.ts       preferencias locales del dispositivo
+        dataExportService.ts   exportación de datos (PDF/JSON)
+        privacyService.ts      ajustes de privacidad
+        notificationsService.ts / notificationsPermissions.ts   push
+        mockApi.ts             capa mock para funciones sin backend real
+        events.ts              bus de eventos globales de la app
+
+Convenciones de nomenclatura (frontend): pantallas y rutas en español
+(eventos, comunidad, perfil, misFotos); servicios, hooks y utilidades en inglés
+(userService, token, biometrics); componentes en PascalCase. Textos de UI con
+i18n vía LangContext (objeto t).
+
+Nota: src/app/explore.tsx es código de ejemplo del template de Expo sin uso en
+la app (ver sección 16).
+
+Backend (Backend/the_stallions):
+
+  Backend/the_stallions/
+    pom.xml                    Spring Boot parent 4.1.0, Java 21
+    Dockerfile                 build multi-stage (maven -> temurin 21-jre)
+    mvnw / mvnw.cmd            Maven Wrapper (.mvn/)
+    src/main/
+      java/com/aplicacion/movil/the_stallions/
+        config/                SecurityConfig, FirebaseConfig, FirebaseTokenService
+        controller/            Auth, User, Evento, Emprendimiento, Foto,
+                               AdminEvento, AdminEmprendimiento, AdminLoginPage
+        dto/                   Request/ (entrada) y Response/ (salida)
+        model/                 entidades JPA (Users, Eventos, Emprendimientos,
+                               Photos...)
+        repository/            Spring Data JPA
+        scheduler/             EventoNotificacionScheduler (cron 0 0 8 * * *)
+        security/              JwtUtils, JwtAuthenticationFilter, TOTP
+        service/               AuthService, UserService, EventoService,
+                               EmprendimientoService, FotoService,
+                               CommentService, FcmService
+      resources/
+        application.properties
+        templates/admin/       páginas Thymeleaf: login, eventos, evento-form,
+                               emprendimientos, emprendimiento-form
+        firebase-credentials.json   service account de Firebase (ver sección 16)
+    src/test/                  pruebas (ver sección 12)
+
+Convenciones de nomenclatura (backend): rutas REST en plural español para
+dominio de negocio (/api/eventos, /api/emprendimientos, /api/fotos);
+controladores mixtos español/inglés (EventoController, UserController,
+FotoController); DTOs agrupados por Request/Response. Comentarios y mensajes de
+error en español.
+
+Hallazgo de consistencia: las columnas JPA mezclan estilos. Photos/Comments usan
+snake_case (photo_id, fecha_upload), mientras Users, Eventos, Emprendimientos,
+UserSessions y demás usan PascalCase (PasswordHash, CreatedAt). Con
+ddl-auto=update el esquema es coherente con las entidades, pero la convención
+debería unificarse (ver sección 16).
+
+
+6. DEPENDENCIAS Y REQUISITOS
+----------------------------
+
+Frontend, librerías principales:
+
+  - expo ~57.0.11                        SDK y tooling de la app
+  - expo-router ~57.0.11                 navegación basada en archivos
+  - react 19.2.3 / react-native 0.86.2   framework UI
+  - typescript ~6.0.3                    tipado estático
+  - axios ^1.18.1                        cliente HTTP hacia la API (JWT)
+  - firebase ^12.16.0                    Firebase Auth (Google) + FCM
+  - @react-native-google-signin/google-signin ^16.1.4   login Google nativo
+  - expo-secure-store ~57.0.1            almacenamiento seguro del JWT
+  - expo-local-authentication ~57.0.2    desbloqueo con huella / Face ID
+  - expo-notifications ~57.0.9           notificaciones push (FCM)
+  - expo-location ~57.0.8                ubicación (tab de mapa)
+  - expo-image-picker ~57.0.8            selección/captura de fotos
+  - expo-print ~57.0.1 / expo-sharing ~57.0.16   exportación de datos (PDF)
+  - qrcode-generator ^2.0.4              QR otpauth:// para registrar TOTP
+  - react-native-webview 13.16.1         vista del mapa (Leaflet/OSRM)
+  - react-native-reanimated 4.5.1        animaciones
+  - @react-native-async-storage/async-storage 2.2.0   persistencia
+  - eslint ^9.0.0 + eslint-config-expo ~57.0.0       linter
+
+Backend, dependencias (pom.xml):
+
+  - spring-boot-starter-parent 4.1.0     padre de configuración de Spring Boot
+  - spring-boot-starter-web              API REST y servidor web
+  - spring-boot-starter-security         JWT + panel admin
+  - spring-boot-starter-data-jpa         persistencia con Hibernate
+  - spring-boot-starter-thymeleaf        panel server-rendered
+  - spring-boot-starter-validation       validación de DTOs
+  - mssql-jdbc                           driver de SQL Server
+  - jjwt-api / jjwt-impl / jjwt-jackson 0.12.5   creación y validación de JWT
+  - firebase-admin 9.3.0                 verificación de ID token + FCM
+  - lombok                                reducción de boilerplate
+  - spring-boot-devtools (runtime)       recarga en desarrollo
+  - spring-boot-starter-test (test)      JUnit 5 y utilidades de prueba
+
+Requisitos previos:
+
+  - Node.js 20+ (el proyecto se desarrolló con 24)      node --version
+  - npm v10+                                            npm --version
+  - Java JDK 21+                                        java --version
+  - Apache Maven 3.9+ (o usar el wrapper incluido)      mvn --version
+  - Git 2.x                                             git --version
+  - Microsoft SQL Server (solo si se corre el backend localmente)
+
+Opcionales: Android Studio (emulador), Xcode (simulador iOS, solo macOS) y
+EAS CLI (builds en la nube: npm install -g eas-cli).
+
+Nota para builds Android locales: el prebuild nativo (expo prebuild / Gradle)
+puede requerir JDK 17. Si tu JDK por defecto es más nuevo y la compilación
+falla, fija la ruta con  org.gradle.java.home={RUTA_JDK_17}  en
+Frontend/The_Stallions/android/gradle.properties. El backend compila y corre
+con JDK 21+.
+
+Cuentas externas necesarias: Firebase (Auth + FCM/service account), Google
+Cloud Console (Client IDs OAuth Web/Android/iOS) y la base de datos (Somee.com
+o tu propio SQL Server).
+
+
+7. VARIABLES DE ENTORNO
+-----------------------
+
+El proyecto requiere variables de entorno para conectarse a Firebase, a la API
+y a la base de datos. No se versionan valores reales: se copian plantillas y se
+completan localmente.
+
+Frontend, creación del .env en Frontend/The_Stallions/:
+
+  1. Ve a Frontend/The_Stallions/ y crea el archivo .env.
+  2. Copia las claves de Firebase desde la consola de Firebase (Project
+     settings, sección General y Cloud Messaging) en las EXPO_PUBLIC_FIREBASE_*.
+  3. Genera los Client IDs OAuth Web/Android/iOS en Google Cloud Console y
+     complétalos en las EXPO_PUBLIC_GOOGLE_*.
+  4. Define EXPO_PUBLIC_API_URL con la URL de tu backend (IP local o dominio
+     público).
+  5. Reinicia npm start (un cambio de .env exige reiniciar Expo) y verifica que
+     la app autentica y consulta la API.
+
+Las variables con prefijo EXPO_PUBLIC_ se incrustan en el bundle y son visibles
+en el cliente.
+
+Plantilla de referencia (equivalente al .env.example que debe crearse, ver
+sección 16):
+
+  # URL del backend (local o desplegado)
+  EXPO_PUBLIC_API_URL=http://localhost:8080
+
+  # Firebase (consolas de Firebase / Google Cloud)
+  EXPO_PUBLIC_FIREBASE_API_KEY=
+  EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+  EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+  EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+  EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+  EXPO_PUBLIC_FIREBASE_APP_ID=
+
+  # Google Sign-In (OAuth Client IDs)
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
+  EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=
+  # Solo iOS
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
+
+  EXPO_PUBLIC_API_URL                 URL base del backend sin /api (p. ej.
+                                      http://192.168.1.10:8080).
+                                      Requerida: recomendada*.
+                                      Se consume en src/services/api.js.
+  EXPO_PUBLIC_FIREBASE_API_KEY        API key del proyecto Firebase.
+                                      Requerida: sí. Se consume en
+                                      src/config/firebaseConfig.js.
+  EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN    Dominio de autenticación
+                                      ({proyecto}.firebaseapp.com).
+                                      Requerida: sí.
+  EXPO_PUBLIC_FIREBASE_PROJECT_ID     ID del proyecto Firebase.
+                                      Requerida: sí.
+  EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET Bucket de Firebase Storage.
+                                      Requerida: sí (configuración).
+  EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID  Sender ID de FCM.
+                                      Requerida: sí (push).
+  EXPO_PUBLIC_FIREBASE_APP_ID         App ID de Firebase. Requerida: sí.
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID    Client ID OAuth Web (login Google).
+                                      Requerida: sí. Se consume en
+                                      src/hooks/useGoogleAuth.js.
+  EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID Client ID OAuth Android (build nativa).
+                                      Requerida: opcional (solo Android).
+
+Pendiente por confirmar con el equipo: EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+(Client ID OAuth iOS) aparece en la plantilla del README, pero NO está definida
+en el .env actual ni referenciada en src/. Si se habilita el login con Google
+en iOS, hay que definirla y añadirla a useGoogleAuth.js.
+
+* EXPO_PUBLIC_API_URL no es estrictamente obligatoria: src/services/api.js cae
+  a http://{host}:8080 (detecta la IP del dev server de Metro) y finalmente a
+  http://localhost:8080.
+
+Backend, application.properties y variables de entorno:
+
+Configura Backend/the_stallions/src/main/resources/application.properties (o
+sobrescribe por variable de entorno, usando mayúsculas y guion bajo en lugar de
+punto, p. ej. spring.datasource.url se vuelve SPRING_DATASOURCE_URL):
+
+  spring.datasource.url=jdbc:sqlserver://{HOST}:1433;databaseName={DB};encrypt=true;trustServerCertificate=true
+  spring.datasource.username={USUARIO}
+  spring.datasource.password={CLAVE}
+  spring.jpa.hibernate.ddl-auto=update
+
+  jwt.secret={SECRETO_JWT_MINIMO_32_CARACTERES}
+  jwt.expiration-ms=3600000
+
+  firebase.credentials-path=firebase-credentials.json
+
+  # URL pública del backend (para construir enlaces en notificaciones y fotos)
+  app.base-url={URL_BASE}
+
+  # Panel de administración (/admin/login)
+  app.admin.username={USUARIO_ADMIN}
+  app.admin.password={CLAVE_ADMIN}
+
+  - firebase-credentials.json es la service account de Firebase que debe existir
+    en el classpath (src/main/resources/).
+  - En despliegue, Firebase también puede configurarse con la variable de
+    entorno FIREBASE_CREDENTIALS_JSON con el contenido del JSON (ver
+    FirebaseConfig).
+
+  SPRING_DATASOURCE_URL                  JDBC URL de SQL Server. Requerida: sí.
+  SPRING_DATASOURCE_USERNAME             Usuario de la BD. Requerida: sí.
+  SPRING_DATASOURCE_PASSWORD             Contraseña de la BD. Requerida: sí.
+  JWT_SECRET                             Secreto HMAC (mínimo 32 caracteres).
+                                         Requerida: sí (producción).
+  JWT_EXPIRATION_MS                      Vigencia del token en ms (default
+                                         = 3600000). Requerida: no.
+  FIREBASE_CREDENTIALS_JSON              JSON del service account de Firebase
+                                         (alternativa al archivo en resources/).
+                                         Requerida: no*.
+  APP_BASE_URL                           URL pública del backend para construir
+                                         la foto de perfil; vacío = usar el
+                                         host de la petición. Requerida: no.
+  APP_ADMIN_USERNAME                     Usuario del panel /admin.
+                                         Requerida: sí (producción).
+  APP_ADMIN_PASSWORD                     Contraseña del panel /admin.
+                                         Requerida: sí (producción).
+  SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE Límite de subida por archivo
+                                         (default 10MB). Requerida: no.
+  SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE  Límite de subida por petición
+                                         (default 10MB). Requerida: no.
+
+* firebase.credentials-path apunta al archivo incluido en resources/. Si se
+  define FIREBASE_CREDENTIALS_JSON, FirebaseConfig usa ese valor y no el
+  archivo (ver sección 16 sobre el riesgo de secretos versionados).
+
+Seguridad: no comitees credenciales reales. En producción, sobrescribe estos
+valores con variables de entorno del proveedor de despliegue.
+
+
+8. INSTALACIÓN, CONFIGURACIÓN Y USO
+-----------------------------------
+
+Clonar e instalar:
+
+  git clone https://github.com/Eduard8813/The-Stallions.git
+  cd The-Stallions
+
+Frontend (Expo / React Native):
+
+  cd Frontend/The_Stallions
+  npm install
+
+Backend (Spring Boot):
+
+  cd Backend/the_stallions
+  ./mvnw install          (Windows: mvnw.cmd install)
+
+Desarrollo:
+
+Backend, servidor en http://localhost:8080:
+
+  cd Backend/the_stallions
+  ./mvnw spring-boot:run          (Windows: mvnw.cmd spring-boot:run)
+
+Verifica: API pública en http://localhost:8080/api/eventos y panel admin en
+http://localhost:8080/admin/login. El esquema de BD se sincroniza
+automáticamente al arrancar (spring.jpa.hibernate.ddl-auto=update).
 
 Frontend (dev server de Expo):
 
-```bash
-cd Frontend/The_Stallions
-npm start
-```
+  cd Frontend/The_Stallions
+  npm start
 
-- `a` → emulador Android · `i` → simulador iOS · `w` → web.
-- En dispositivo físico, apunta `EXPO_PUBLIC_API_URL` a la IP de la máquina donde corre el backend (puerto 8080).
+  - a  -> emulador Android
+  - i  -> simulador iOS
+  - w  -> web
+  - En dispositivo físico, apunta EXPO_PUBLIC_API_URL a la IP de la máquina
+    donde corre el backend (puerto 8080).
 
-Panel de administración de eventos (con el backend corriendo):
+Panel de administración (con el backend corriendo):
 
-```
-http://localhost:8080/admin/login
-```
+  http://localhost:8080/admin/login
 
-Entra con las credenciales definidas en `app.admin.username` / `app.admin.password`. Desde ahí se crean, editan y eliminan los eventos y emprendimientos que consume la app.
+Entra con las credenciales definidas en app.admin.username / app.admin.password.
+Desde ahí se crean, editan y eliminan los eventos y emprendimientos que consume
+la app.
 
-> La mayoría de flujos usan el backend real vía `axios`; algunas funcionalidades pasan aún por `mockApi` (ver sección 16).
+La mayoría de flujos usan el backend real vía axios; algunas funcionalidades
+pasan aún por mockApi (ver sección 16).
 
-### Producción
+Producción:
 
-Backend — build del JAR o imagen Docker:
+Backend, build del JAR o imagen Docker:
 
-```bash
-cd Backend/the_stallions
-./mvnw clean package -DskipTests
+  cd Backend/the_stallions
+  ./mvnw clean package -DskipTests
 
-# Alternativa con Docker
-docker build -t the-stallions .
-docker run -p 8080:8080 the-stallions
-```
+  # Alternativa con Docker
+  docker build -t the-stallions .
+  docker run -p 8080:8080 the-stallions
 
-Frontend — export estático web o build con EAS:
+Frontend, export estático web o build con EAS:
 
-```bash
-cd Frontend/The_Stallions
-npx expo export --platform web
-# o build de binario móvil:
-npx eas build --platform android
-```
+  cd Frontend/The_Stallions
+  npx expo export --platform web
+  # o build de binario móvil:
+  npx eas build --platform android
 
-## 9. Scripts
 
-### Frontend (`Frontend/The_Stallions`)
+9. SCRIPTS
+----------
 
-| Script | Comando | Descripción |
-|---|---|---|
-| start | `npm start` | Inicia el servidor de desarrollo de Expo |
-| android | `npm run android` | Build y ejecución en Android (`expo run:android`) |
-| ios | `npm run ios` | Build y ejecución en iOS (`expo run:ios`) |
-| web | `npm run web` | Versión web (`expo start --web`) |
-| lint | `npm run lint` | Linter (`expo lint`) |
-| reset-project | `npm run reset-project` | Utilidad del template de Expo (resetea el proyecto; no usar en este repo) |
+Frontend (en Frontend/The_Stallions):
 
-### Backend (`Backend/the_stallions`)
+  npm start                  inicia el servidor de desarrollo de Expo
+  npm run android            build y ejecución en Android
+  npm run ios                build y ejecución en iOS
+  npm run web                versión web
+  npm run lint               linter (expo lint)
+  npm run reset-project      utilidad del template de Expo (no usar en este repo)
 
-| Script | Comando | Descripción |
-|---|---|---|
-| spring-boot:run | `./mvnw spring-boot:run` | Arranca API + panel admin (puerto 8080) |
-| test | `./mvnw test` | Ejecuta las pruebas |
-| clean install | `./mvnw clean install` | Compila, ejecuta tests y genera el artefacto |
-| package | `./mvnw clean package -DskipTests` | Compila y genera el JAR sin ejecutar tests |
-| docker build | `docker build -t the-stallions .` | Imagen multietapa (JDK 21) |
-| docker run | `docker run -p 8080:8080 -e SPRING_DATASOURCE_URL=... the-stallions` | Ejecuta el contenedor |
+Backend (en Backend/the_stallions):
 
-> En Windows usa `mvnw.cmd` en lugar de `./mvnw`.
+  ./mvnw spring-boot:run               arranca API + panel admin (puerto 8080)
+  ./mvnw test                          ejecuta las pruebas
+  ./mvnw clean install                 compila, ejecuta tests y genera artefacto
+  ./mvnw clean package -DskipTests     compila y genera el JAR sin tests
+  docker build -t the-stallions .      imagen multietapa (JDK 21)
+  docker run -p 8080:8080 -e SPRING_DATASOURCE_URL=... the-stallions
 
-## 10. Endpoints de la API
+En Windows usa mvnw.cmd en lugar de ./mvnw.
 
-Base: `http://{host}:8080/api`. Salvo los marcados como públicos, todos requieren cabecera `Authorization: Bearer {token}`.
 
-### Autenticación — `/api/auth` (públicos)
+10. ENDPOINTS DE LA API
+-----------------------
 
-| Método | Ruta | Descripción | Parámetros |
-|---|---|---|---|
-| POST | `/api/auth/register` | Registro con correo+contraseña | `{ email, password, fullName }` |
-| POST | `/api/auth/login` | Inicio de sesión | `{ email, password }` |
-| POST | `/api/auth/google` | Login/registro con Google | `{ idToken }` (ID token de Firebase) |
-| POST | `/api/auth/2fa/verify` | Verifica el código TOTP de un desafío | `{ challengeId, code }` |
-| POST | `/api/auth/2fa/resend` | Validación del desafío (con TOTP no hay reenvío real; el código se regenera en la app de autenticación) | `{ challengeId }` |
-| POST | `/api/auth/logout` | Cierra la sesión del token | cabecera `Authorization` |
+Base: http://{host}:8080/api . Salvo los marcados como públicos, todos
+requieren el encabezado: Authorization: Bearer {token}.
 
-**Respuesta común de autenticación** (`AuthResponse`):
+Autenticación: /api/auth (públicos)
 
-```json
-{
-  "token": "eyJhbGciOi...",
-  "email": "usuario@example.com",
-  "fullName": "Nombre Apellido",
-  "requiresTwoFactor": false,
-  "challengeId": null
-}
-```
+  POST  /api/auth/register           Registro con correo+contraseña.
+                                     Body: { email, password, fullName }
+  POST  /api/auth/login              Inicio de sesión.
+                                     Body: { email, password }
+  POST  /api/auth/google             Login/registro con Google.
+                                     Body: { idToken } (ID token de Firebase)
+  POST  /api/auth/2fa/verify         Verifica el código TOTP de un desafío.
+                                     Body: { challengeId, code }
+  POST  /api/auth/2fa/resend         Valida un desafío (con TOTP no hay
+                                     reenvío real; el código se regenera solo).
+                                     Body: { challengeId }
+  POST  /api/auth/logout             Cierra la sesión del token (usa el
+                                     encabezado Authorization).
 
-Cuando el usuario tiene 2FA activo, `token` es `null`, `requiresTwoFactor` es `true` y llega `challengeId`; hay que completar el flujo con `/auth/2fa/verify`.
+Respuesta común de autenticación (AuthResponse):
+
+  {
+    "token": "eyJhbGciOi...",
+    "email": "usuario@example.com",
+    "fullName": "Nombre Apellido",
+    "requiresTwoFactor": false,
+    "challengeId": null
+  }
+
+Cuando el usuario tiene 2FA activo, token es null, requiresTwoFactor es true y
+llega challengeId; hay que completar el flujo con /api/auth/2fa/verify.
 
 Ejemplo:
 
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"usuario@example.com","password":"s3cr3t"}'
-```
+  curl -X POST http://localhost:8080/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"usuario@example.com","password":"s3cr3t"}'
 
-### Usuario — `/api/user`
+Usuario: /api/user
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| GET | `/api/user/profile` | Perfil del usuario autenticado |
-| PUT | `/api/user/profile` | Actualiza perfil (`UpdateProfileRequest`) |
-| POST | `/api/user/profile/photo` | Sube foto de perfil (`multipart/form-data`, campo `photo`) |
-| GET | `/api/user/photo/{userId}` | Bytes de la foto de perfil (**público**) |
-| GET | `/api/user/security` | Estado de seguridad (2FA activo, TOTP, etc.) |
-| PUT | `/api/user/security/password` | Cambia contraseña (`{ currentPassword, newPassword }`) |
-| PATCH | `/api/user/security/2fa` | Activa/desactiva 2FA (`{ enabled }`) |
-| GET | `/api/user/sessions` | Lista de sesiones activas |
-| DELETE | `/api/user/sessions/{id}` | Revoca una sesión |
-| GET | `/api/user/notifications` | Ajustes de notificaciones |
-| PATCH | `/api/user/notifications` | Actualiza ajustes de notificaciones (patch parcial) |
-| GET | `/api/user/privacy` | Ajustes de privacidad |
-| PATCH | `/api/user/privacy` | Actualiza privacidad (patch parcial) |
-| GET | `/api/user/blocked` | Usuarios bloqueados |
-| DELETE | `/api/user/blocked/{id}` | Desbloquea usuario |
-| POST | `/api/user/data-export` | Solicita exportación de datos |
-| DELETE | `/api/user/account` | Elimina la cuenta |
+  GET    /api/user/profile            Perfil del usuario autenticado
+  PUT    /api/user/profile            Actualiza perfil (UpdateProfileRequest)
+  POST   /api/user/profile/photo      Sube foto de perfil (multipart, campo photo)
+  GET    /api/user/photo/{userId}     Bytes de la foto de perfil (público)
+  GET    /api/user/security           Estado de seguridad (2FA, TOTP, etc.)
+  PUT    /api/user/security/password  Cambia contraseña
+                                      Body: { currentPassword, newPassword }
+  PATCH  /api/user/security/2fa       Activa/desactiva 2FA. Body: { enabled }
+  GET    /api/user/sessions           Lista de sesiones activas
+  DELETE /api/user/sessions/{id}      Revoca una sesión
+  GET    /api/user/notifications      Ajustes de notificaciones
+  PATCH  /api/user/notifications      Actualiza ajustes (patch parcial)
+  GET    /api/user/privacy            Ajustes de privacidad
+  PATCH  /api/user/privacy            Actualiza privacidad (patch parcial)
+  GET    /api/user/blocked            Usuarios bloqueados
+  DELETE /api/user/blocked/{id}       Desbloquea usuario
+  POST   /api/user/data-export        Solicita exportación de datos
+  DELETE /api/user/account            Elimina la cuenta
 
-### Eventos — `/api/eventos` (lectura pública)
+Eventos: /api/eventos (lectura pública)
 
-| Método | Ruta | Descripción | Parámetros |
-|---|---|---|---|
-| GET | `/api/eventos` | Lista de eventos | `?categoria=FERIADO|CONMEMORACION|CELEBRACION` (opcional) |
-| GET | `/api/eventos/{id}` | Detalle de un evento | — |
-| GET | `/api/eventos/{id}/foto` | Bytes de la foto del evento (**público**) | — |
-| POST | `/api/eventos/{id}/foto` | Sube/reemplaza foto (`multipart`, campo `foto`) | requiere JWT |
-| GET | `/api/eventos/{id}/ics` | Descarga del evento en formato iCalendar (`text/calendar`) | — |
+  GET   /api/eventos                  Lista de eventos
+                                      Opcional: ?categoria=FERIADO, CONMEMORACION, CELEBRACION
+  GET   /api/eventos/{id}             Detalle de un evento
+  GET   /api/eventos/{id}/foto        Bytes de la foto del evento (público)
+  POST  /api/eventos/{id}/foto        Sube/reemplaza foto (multipart, campo foto)
+                                      Requiere JWT.
+  GET   /api/eventos/{id}/ics         Descarga en iCalendar (text/calendar)
 
 Ejemplos:
 
-```bash
-curl http://localhost:8080/api/eventos?categoria=FERIADO
+  curl http://localhost:8080/api/eventos?categoria=FERIADO
 
-# Descargar como evento de calendario
-curl http://localhost:8080/api/eventos/1/ics -o evento.ics
-```
+  # Descargar como evento de calendario
+  curl http://localhost:8080/api/eventos/1/ics -o evento.ics
 
-### Emprendimientos — `/api/emprendimientos` (lectura pública)
+Emprendimientos: /api/emprendimientos (lectura pública)
 
-| Método | Ruta | Descripción | Parámetros |
-|---|---|---|---|
-| GET | `/api/emprendimientos` | Lista de emprendimientos | `?tipo={rubro}` (opcional) |
-| GET | `/api/emprendimientos/categorias` | Rubros/tipos disponibles | — |
-| GET | `/api/emprendimientos/{id}` | Detalle | — |
-| GET | `/api/emprendimientos/{id}/foto` | Bytes de la foto (**público**) | — |
-| POST | `/api/emprendimientos` | Crea (201) | body `EmprendimientoRequest` |
-| PUT | `/api/emprendimientos/{id}` | Actualiza | body `EmprendimientoRequest` |
-| POST | `/api/emprendimientos/{id}/foto` | Sube foto (`multipart`, campo `foto`) | — |
-| DELETE | `/api/emprendimientos/{id}` | Elimina (204) | — |
+  GET   /api/emprendimientos          Lista de emprendimientos
+                                      Opcional: ?tipo={rubro}
+  GET   /api/emprendimientos/categorias   Rubros/tipos disponibles
+  GET   /api/emprendimientos/{id}     Detalle
+  GET   /api/emprendimientos/{id}/foto  Bytes de la foto (público)
+  POST  /api/emprendimientos          Crea (201). Body: EmprendimientoRequest
+  PUT   /api/emprendimientos/{id}     Actualiza. Body: EmprendimientoRequest
+  POST  /api/emprendimientos/{id}/foto  Sube foto (multipart, campo foto)
+  DELETE /api/emprendimientos/{id}    Elimina (204)
 
-Los métodos de escritura exigen JWT. El campo `tipo` es libre (artesanía, gastronomía, etc.), no un enum.
+Los métodos de escritura exigen JWT. El campo tipo es libre (artesanía,
+gastronomía, etc.), no es un enum.
 
-### Fotos y comunidad — `/api/fotos`
+Fotos y comunidad: /api/fotos
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| POST | `/api/fotos` | Sube foto. `multipart/form-data`: `photo` (archivo), `visibilidad` (`PRIVADA`/`PUBLICA`), `descripcion` (opcional), `grupoId` (opcional, para carrusel) |
-| GET | `/api/fotos/mias` | Fotografías propias (privadas y públicas) |
-| GET | `/api/fotos/comunidad` | Feed público paginado: `?page=1&pageSize=10` |
-| GET | `/api/fotos/comunidad/posts` | Posts públicos (agrupa fotos con mismo `grupoId`): `?page=1&pageSize=10` |
-| PUT | `/api/fotos/{id}` | Cambia visibilidad de foto propia: `{ "visibilidad": "PUBLICA" }` |
-| DELETE | `/api/fotos/{id}` | Elimina foto propia (204) |
-| GET | `/api/fotos/{id}/imagen` | Bytes de la imagen (**público**; las privadas solo para su dueño; acepta `?token={token}` para servir imágenes privadas al cliente móvil) |
-| POST | `/api/fotos/{id}/like` | Toggle de like del usuario autenticado |
-| GET | `/api/fotos/{id}/comentarios` | Lista comentarios de la foto |
-| POST | `/api/fotos/{id}/comentarios` | Agrega comentario: `{ "texto": "..." }` |
-| PUT | `/api/fotos/comentarios/{id}` | Edita comentario propio: `{ "texto": "..." }` |
-| DELETE | `/api/fotos/comentarios/{id}` | Elimina comentario propio (204) |
-| GET | `/api/fotos/notificaciones` | Notificaciones del usuario autenticado |
-| PUT | `/api/fotos/notificaciones/{id}/leida` | Marca notificación como leída (204) |
+  POST  /api/fotos                    Sube foto. Multipart: photo (archivo),
+                                      visibilidad (PRIVADA/PUBLICA),
+                                      descripcion (opcional), grupoId (opcional,
+                                      para carrusel).
+  GET   /api/fotos/mias               Fotografías propias (privadas y públicas)
+  GET   /api/fotos/comunidad          Feed público paginado: ?page=1&pageSize=10
+  GET   /api/fotos/comunidad/posts    Posts públicos (agrupa fotos con el mismo
+                                      grupoId): ?page=1&pageSize=10
+  PUT   /api/fotos/{id}               Cambia visibilidad de foto propia.
+                                      Body: { "visibilidad": "PUBLICA" }
+  DELETE /api/fotos/{id}              Elimina foto propia (204)
+  GET   /api/fotos/{id}/imagen        Bytes de la imagen (público; las privadas
+                                      solo para su dueño; acepta ?token={token}
+                                      para servirlas al cliente móvil)
+  POST  /api/fotos/{id}/like          Toggle de like del usuario autenticado
+  GET   /api/fotos/{id}/comentarios   Lista comentarios de la foto
+  POST  /api/fotos/{id}/comentarios   Agrega comentario.
+                                      Body: { "texto": "..." }
+  PUT   /api/fotos/comentarios/{id}   Edita comentario propio.
+                                      Body: { "texto": "..." }
+  DELETE /api/fotos/comentarios/{id}  Elimina comentario propio (204)
+  GET   /api/fotos/notificaciones     Notificaciones del usuario autenticado
+  PUT   /api/fotos/notificaciones/{id}/leida  Marca notificación como leída (204)
 
-Los likes se almacenan como JSON en la columna `usuarios_like` de `Photos` (ver sección 11).
+Los likes se almacenan como JSON en la columna usuarios_like de Photos (ver
+sección 11).
 
 Ejemplo de subida:
 
-```bash
-curl -X POST http://localhost:8080/api/fotos \
-  -H "Authorization: Bearer {token}" \
-  -F "photo=@/ruta/imagen.jpg" \
-  -F "visibilidad=PUBLICA" \
-  -F "descripcion=Plaza de la cultura"
-```
+  curl -X POST http://localhost:8080/api/fotos \
+    -H "Authorization: Bearer {token}" \
+    -F "photo=@/ruta/imagen.jpg" \
+    -F "visibilidad=PUBLICA" \
+    -F "descripcion=Plaza de la cultura"
 
-### Panel de administración — `/admin/**`
+Panel de administración: /admin/**
 
 CRUD server-rendered (Thymeleaf) para eventos y emprendimientos:
 
-| Ruta | Descripción |
-|---|---|
-| `/admin/login` | Login por formulario (público) |
-| `/admin/logout` | Cierre de sesión |
-| `/admin/eventos` | Listado de eventos + alta/edición/baja |
-| `/admin/eventos/nuevo`, `/admin/eventos/{id}/editar` | Formularios de evento |
-| `/admin/emprendimientos` | Listado de emprendimientos + alta/edición/baja |
-| `/admin/emprendimientos/nuevo`, `/admin/emprendimientos/{id}/editar` | Formularios de emprendimiento |
+  /admin/login                         login por formulario (público)
+  /admin/logout                        cierre de sesión
+  /admin/eventos                       listado + alta/edición/baja
+  /admin/eventos/nuevo , /admin/eventos/{id}/editar   formularios de evento
+  /admin/emprendimientos               listado + alta/edición/baja
+  /admin/emprendimientos/nuevo , /admin/emprendimientos/{id}/editar
+                                       formularios de emprendimiento
 
-La gestión de fotos de la comunidad, usuarios y notificaciones no dispone aún de pantalla de administración (ver sección 16).
+La gestión de fotos de la comunidad, usuarios y notificaciones no dispone aún
+de pantalla de administración (ver sección 16).
 
-## 11. Base de datos
 
-Backend: **SQL Server** con **Hibernate** (`ddl-auto=update`), dialecto `SQLServerDialect`. Las imágenes se guardan como BLOB (`varbinary(max)`).
+11. BASE DE DATOS
+-----------------
 
-| Tabla | Descripción | Campos destacados |
-|---|---|---|
-| `Users` | Usuarios | `id`, `email`, `PasswordHash`, `FullName`, `provider` (`LOCAL`/`GOOGLE`), `ProviderId`, `PhotoUrl`/`PhotoData`/`PhotoContentType`, `Username`, `Phone`, `BirthDate`, `Gender`, `City`, `Bio`, `TwoFactorEnabled`, `TotpSecret`, `IsEnabled`, `CreatedAt`, `UpdatedAt` |
-| `Eventos` | Eventos culturales | `id`, `titulo`, `fecha`, `FechaFin`, `categoria` (`FERIADO`/`CONMEMORACION`/`CELEBRACION`), `descripcion`, `FotoData`/`FotoContentType`/`FotoUrl`, `CreatedAt`, `UpdatedAt` |
-| `Emprendimientos` | Emprendimientos locales | `id`, `nombre`, `tipo` (rubro libre), `descripcion`, `lat`, `lng`, `ContactoTelefono`, `ContactoEmail`, `ContactoRedes`, `FotoData`/`FotoContentType`/`FotoUrl`, `CreatedAt`, `UpdatedAt` |
-| `Photos` | Fotos de la comunidad | `id`, `user_id` (FK), `visibilidad` (`PRIVADA`/`PUBLICA`), `url`, `photo_data` (BLOB), `content_type`, `descripcion`, `fecha_upload`, `grupo_id` (agrupa fotos de un mismo post/carrusel), `usuarios_like` (JSON, `nvarchar(max)`) |
-| `Comments` | Comentarios de fotos | `id`, `photo_id` (FK), `user_id` (FK), `texto` (`nvarchar(max)`), `fecha`, `editado` |
-| `Notifications` | Notificaciones in-app | `id`, `usuario_destino_id` (FK), `usuario_origen_id` (FK), `tipo` (like/comentario/…), `mensaje`, `relacion_id`, `leida`, `fecha` |
-| `UserSessions` | Sesiones activas | `id`, `UserId` (FK), `Device`, `Platform`, `Location`, `LastActive`, `IsActive`, `TokenId` (único), `CreatedAt` |
-| `TwoFactorChallenges` | Desafíos 2FA pendientes | `id`, `ChallengeId` (único), `Email`, `CodeHash`, `ExpiresAt` (5 min), `Used`, `CreatedAt` |
-| `BlockedUsers` | Usuarios bloqueados | `id`, `UserId` (FK), `BlockedUserId`, `Name`, `Username` |
-| `UserNotifications` | Preferencias de notificaciones | `id`, `UserId` (FK), `SettingsJson` (`nvarchar(max)`) |
-| `UserPrivacy` | Preferencias de privacidad | `id`, `UserId` (FK), `Visibility`, `ShowEmail`, `ShowPhone`, `ShowLocation`, `Discoverable` |
-| `DataExports` | Solicitudes de exportación de datos | `id`, `UserId` (FK), `ExportId` (único), `Status` (default `processing`), `AvailableForHours` (default 48), `CreatedAt` |
+Backend: SQL Server con Hibernate (ddl-auto=update), dialecto SQLServerDialect.
+Las imágenes se guardan como BLOB (varbinary(max)).
 
-Enums: `AuthProvider { LOCAL, GOOGLE }`, `Visibilidad { PRIVADA, PUBLICA }`, `CategoriaEvento { FERIADO, CONMEMORACION, CELEBRACION }`.
+Tablas:
 
-## 12. Pruebas
+  Users                Usuarios. Campos: id, email, PasswordHash, FullName,
+                       provider (LOCAL/GOOGLE), ProviderId, PhotoUrl / PhotoData
+                       / PhotoContentType, Username, Phone, BirthDate, Gender,
+                       City, Bio, TwoFactorEnabled, TotpSecret, IsEnabled,
+                       CreatedAt, UpdatedAt.
 
-### Backend
+  Eventos              Eventos culturales. Campos: id, titulo, fecha, FechaFin,
+                       categoria (FERIADO/CONMEMORACION/CELEBRACION),
+                       descripcion, FotoData / FotoContentType / FotoUrl,
+                       CreatedAt, UpdatedAt.
 
-- Framework: **JUnit 5** (`spring-boot-starter-test`).
-- Situación actual: existe una única prueba de humo, `TheStallionsApplicationTests#contextLoads`, que verifica que el contexto de Spring arranca. No hay cobertura configurada ni tests unitarios de servicios/controladores.
-- Ejecutar:
+  Emprendimientos      Emprendimientos locales. Campos: id, nombre, tipo (rubro
+                       libre), descripcion, lat, lng, ContactoTelefono,
+                       ContactoEmail, ContactoRedes, FotoData /
+                       FotoContentType / FotoUrl, CreatedAt, UpdatedAt.
 
-  ```bash
-  cd Backend/the_stallions
-  ./mvnw test
-  ```
+  Photos               Fotos de la comunidad. Campos: id, user_id (FK),
+                       visibilidad (PRIVADA/PUBLICA), url, photo_data (BLOB),
+                       content_type, descripcion, fecha_upload, grupo_id
+                       (agrupa fotos de un mismo post/carrusel), usuarios_like
+                       (JSON, nvarchar(max)).
 
-### Frontend
+  Comments             Comentarios de fotos. Campos: id, photo_id (FK),
+                       user_id (FK), texto (nvarchar(max)), fecha, editado.
 
-- No hay suite de pruebas configurada en el proyecto (sin `jest`/`vitest` en `package.json`).
-- Verificación por linter:
+  Notifications        Notificaciones in-app. Campos: id, usuario_destino_id
+                       (FK), usuario_origen_id (FK), tipo (like/comentario/...),
+                       mensaje, relacion_id, leida, fecha.
 
-  ```bash
-  cd Frontend/The_Stallions
-  npm run lint
-  ```
+  UserSessions         Sesiones activas. Campos: id, UserId (FK), Device,
+                       Platform, Location, LastActive, IsActive, TokenId
+                       (único), CreatedAt.
 
-## 13. Despliegue
+  TwoFactorChallenges  Desafíos 2FA pendientes. Campos: id, ChallengeId
+                       (único), Email, CodeHash, ExpiresAt (5 min), Used,
+                       CreatedAt.
 
-**CI/CD:** no configurado. El directorio `.github/` del repositorio no contiene pipelines (workflows) para build, test o deploy. Debe definirse (p. ej., GitHub Actions para: build backend con Maven, build frontend con Expo/EAS, y despliegue de la imagen Docker del backend).
+  BlockedUsers         Usuarios bloqueados. Campos: id, UserId (FK),
+                       BlockedUserId, Name, Username.
 
-**Backend:**
+  UserNotifications    Preferencias de notificaciones. Campos: id, UserId (FK),
+                       SettingsJson (nvarchar(max)).
 
-- Existe un `Dockerfile` multietapa: build con `maven:3.9.6-eclipse-temurin-21` y runtime `eclipse-temurin:21-jre`, expone el puerto `8080`.
-- `CorsConfigurationSource` ya permite, además de orígenes locales de desarrollo (`localhost:19006/8081/8082`, `exp://…`), el origen `https://the-stallions.onrender.com` — huella de un despliegue previo en Render. Verificar si ese despliegue sigue vigente y si debe mantenerse (ver sección 16).
-- En producción es obligatorio sobrescribir por entorno los secretos de `application.properties` (BD, JWT, admin, Firebase).
+  UserPrivacy          Preferencias de privacidad. Campos: id, UserId (FK),
+                       Visibility, ShowEmail, ShowPhone, ShowLocation,
+                       Discoverable.
 
-**Frontend:**
+  DataExports          Solicitudes de exportación de datos. Campos: id, UserId
+                       (FK), ExportId (único), Status (default processing),
+                       AvailableForHours (default 48), CreatedAt.
 
-- Configuración nativa en `app.json`: paquete Android `com.eduard8813steam.thestallions`, `googleServicesFile` apuntando a `./google-services.json`, tablets iOS soportadas.
-- Builds nativos vía Expo/EAS o `expo run:*`; también publicable como web (`expo start --web` / `expo export`).
+Enums: AuthProvider { LOCAL, GOOGLE }, Visibilidad { PRIVADA, PUBLICA },
+CategoriaEvento { FERIADO, CONMEMORACION, CELEBRACION }.
 
-## 14. Contribución
 
-Toda la información sobre el flujo de trabajo, estándares de código y cómo enviar cambios está en **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+12. PRUEBAS
+-----------
 
-**Modelo de ramas por capa:**
+Backend:
 
-```text
-main          ← rama principal, estable
-├── frontend  ← desarrollo del frontend (Expo/React Native)
-└── backend   ← desarrollo del backend (Spring Boot)
-```
+  - Framework: JUnit 5 (spring-boot-starter-test).
+  - Situación actual: existe una única prueba de humo,
+    TheStallionsApplicationTests#contextLoads, que verifica que el contexto de
+    Spring arranca. No hay cobertura configurada ni tests unitarios de
+    servicios/controladores.
+  - Ejecutar:
 
-- **Pull requests:** se abren hacia `frontend` o `backend` (no a `main`), incluyendo qué se resuelve, cómo se probó y capturas si hay cambio visual. No se hace commit directo a `main`, `frontend` ni `backend`.
-- **Convención de commits** (verificada en el historial del repo): `{tipo}({ámbito}): {descripción}` con tipos `feat`, `fix`, `chore`, `docs`, `refactor`, `test`; ámbito indica la capa (`frontend`/`backend`). Mensajes de una sola línea, en español. Ejemplos reales: `feat: restyle ...`, `fix: corregir ...`, `docs(...)`.
-- **Antes del PR:** `./mvnw test` en backend y `npm run lint` en frontend.
-- Cada cambio de instalación/scripts/uso debe reflejarse en este README.
+      cd Backend/the_stallions
+      ./mvnw test
 
-**Flujo resumido:** 1) clonar el repo, 2) crear una rama feature desde `frontend` o `backend`, 3) hacer los cambios con commits descriptivos, 4) hacer push y abrir un PR hacia `frontend` o `backend`.
+Frontend:
 
-## 15. Licencia y autores
+  - No hay suite de pruebas configurada en el proyecto (sin jest/vitest en
+    package.json).
+  - Verificación por linter:
 
-**Uso privado.** No se permite la distribución ni el uso comercial sin autorización.
+      cd Frontend/The_Stallions
+      npm run lint
 
-> Nota: el archivo `Frontend/The_Stallions/LICENSE` corresponde a la licencia MIT del template de Expo incluido por `create-expo-app`, y no constituye la licencia del proyecto. Definir el archivo `LICENSE` propio en la raíz (ver sección 16).
 
-**Autores:**
+13. DESPLIEGUE
+--------------
 
-- **Eduard8813** — mantenedor principal ([GitHub](https://github.com/Eduard8813)) y el equipo de desarrollo "The Stallions".
+CI/CD: no configurado. El directorio .github/ del repositorio no contiene
+pipelines (workflows) para build, test o deploy. Debe definirse (por ejemplo,
+GitHub Actions para: build backend con Maven, build frontend con Expo/EAS, y
+despliegue de la imagen Docker del backend).
 
-## 16. Pendientes para completar manualmente
+Backend:
 
-Items detectados durante la auditoría que requieren confirmación o limpieza por parte del equipo:
+  - Existe un Dockerfile multietapa: build con maven:3.9.6-eclipse-temurin-21
+    y runtime eclipse-temurin:21-jre, expone el puerto 8080.
+  - CorsConfigurationSource ya permite, además de orígenes locales de desarrollo
+    (localhost:19006/8081/8082, exp://...), el origen
+    https://the-stallions.onrender.com, huella de un despliegue previo en
+    Render. Verificar si ese despliegue sigue vigente y si debe mantenerse
+    (ver sección 16).
+  - En producción es obligatorio sobrescribir por entorno los secretos de
+    application.properties (BD, JWT, admin, Firebase).
 
-- **Seguridad — no documentado en el README a propósito:** `Backend/the_stallions/src/main/resources/application.properties` contiene credenciales reales de BD y del panel de administración, y `src/main/resources/firebase-credentials.json` versiona el service account de Firebase. Recomendación: rotar las credenciales, eliminarlas del repositorio y moverlas a variables de entorno (ver sección 7 y `CONTRIBUTING.md`).
-- **Crear `Frontend/The_Stallions/.env.example`** con la plantilla de la sección 7.
-- **`src/app/explore.tsx`** es una pantalla de ejemplo del template de Expo sin relación con la app real; eliminarla o marcarla como fuera de uso.
-- **`mensajes.tsx`** es un placeholder (no hay controlador/mensajería en el backend); el tab está oculto (`href: null`). Definir si la funcionalidad de mensajes se implementa o se retira hasta nuevo aviso.
-- **`mockApi.ts`** indica que algunas funcionalidades siguen en simulación (`MOCK_FLAGS.sessionExpired`). Confirmar cuáles pantallas/servicios aún dependen del mock y migrarlas al backend real.
-- **`app.base-url` está vacía** en `application.properties`; en producción definirla para que las URLs de foto de perfil sean absolutas.
-- **Deploy en Render:** el origen `https://the-stallions.onrender.com` en CORS sugiere un despliegue previo; confirmar estado y documentarlo en la sección de despliegue junto con el CI/CD a crear.
-- **Tests:** solo existe `contextLoads` en backend y ninguno en frontend; ampliar cobertura y definir comandos.
-- **Convención de columnas JPA:** unificar `PascalCase` vs `snake_case` en las entidades.
-- **2FA por correo:** se retiró el flujo de código por correo; quedan campos legado (`CodeHash`) y usuarios con `TwoFactorEnabled` sin `TotpSecret` se desactivan automáticamente al iniciar sesión. Revisar si procede limpiar datos legado.
-- **Licencia:** definir el archivo `LICENSE` de la raíz.
+Frontend:
+
+  - Configuración nativa en app.json: paquete Android
+    com.eduard8813steam.thestallions, googleServicesFile apuntando a
+    ./google-services.json, tablets iOS soportadas.
+  - Builds nativos vía Expo/EAS o expo run:*; también publicable como web
+    (expo start --web / expo export).
+
+
+14. CONTRIBUCIÓN
+----------------
+
+Toda la información sobre el flujo de trabajo, estándares de código y cómo
+enviar cambios está en CONTRIBUTING.md.
+
+Modelo de ramas por capa:
+
+  main          rama principal, estable
+  |-- frontend  desarrollo del frontend (Expo/React Native)
+  |-- backend   desarrollo del backend (Spring Boot)
+
+  - Pull requests: se abren hacia frontend o backend (no a main), incluyendo
+    qué se resuelve, cómo se probó y capturas si hay cambio visual. No se hace
+    commit directo a main, frontend ni backend.
+  - Convención de commits (verificada en el historial del repo):
+    {tipo}({ámbito}): {descripción}, con tipos feat, fix, chore, docs, refactor,
+    test; el ámbito indica la capa (frontend/backend). Mensajes de una sola
+    línea, en español. Ejemplos reales: feat: restyle ..., fix: corregir ...,
+    docs(...).
+  - Antes del PR: ./mvnw test en backend y npm run lint en frontend.
+  - Cada cambio de instalación, scripts o uso debe reflejarse en este README.
+
+Flujo resumido: 1) clonar el repo, 2) crear una rama feature desde frontend o
+backend, 3) hacer los cambios con commits descriptivos, 4) hacer push y abrir
+un PR hacia frontend o backend.
+
+
+15. LICENCIA Y AUTORES
+----------------------
+
+Uso privado. No se permite la distribución ni el uso comercial sin
+autorización.
+
+Nota: el archivo Frontend/The_Stallions/LICENSE corresponde a la licencia MIT
+del template de Expo incluido por create-expo-app, y no constituye la licencia
+del proyecto. Definir un archivo LICENSE propio en la raíz (ver sección 16).
+
+Autores:
+
+  - Eduard8813, mantenedor principal (https://github.com/Eduard8813)
+  - Equipo de desarrollo "The Stallions".
+
+
+16. PENDIENTES PARA COMPLETAR MANUALMENTE
+-----------------------------------------
+
+Items detectados durante la auditoría que requieren confirmación o limpieza por
+parte del equipo:
+
+  - Seguridad (no documentado en el README a propósito):
+    Backend/the_stallions/src/main/resources/application.properties contiene
+    credenciales reales de BD y del panel de administración, y
+    src/main/resources/firebase-credentials.json versiona el service account de
+    Firebase. Recomendación: rotar las credenciales, eliminarlas del repositorio
+    y moverlas a variables de entorno (ver sección 7 y CONTRIBUTING.md).
+  - Crear Frontend/The_Stallions/.env.example con la plantilla de la sección 7.
+  - src/app/explore.tsx es una pantalla de ejemplo del template de Expo sin
+    relación con la app real; eliminarla o marcarla como fuera de uso.
+  - mensajes.tsx es un placeholder (no hay controlador/mensajería en el
+    backend); el tab está oculto (href: null). Definir si la funcionalidad de
+    mensajes se implementa o se retira hasta nuevo aviso.
+  - mockApi.ts indica que algunas funcionalidades siguen en simulación
+    (MOCK_FLAGS.sessionExpired). Confirmar cuáles pantallas/servicios aún
+    dependen del mock y migrarlas al backend real.
+  - app.base-url está vacía en application.properties; en producción definirla
+    para que las URLs de foto de perfil sean absolutas.
+  - Deploy en Render: el origen https://the-stallions.onrender.com en CORS
+    sugiere un despliegue previo; confirmar su estado y documentarlo en la
+    sección de despliegue junto con el CI/CD a crear.
+  - Tests: solo existe contextLoads en backend y ninguno en frontend; ampliar
+    cobertura y definir comandos.
+  - Convención de columnas JPA: unificar PascalCase vs snake_case en las
+    entidades.
+  - 2FA por correo: se retiró el flujo de código por correo; quedan campos
+    legado (CodeHash) y usuarios con TwoFactorEnabled sin TotpSecret se
+    desactivan automáticamente al iniciar sesión. Revisar si procede limpiar
+    datos legado.
+  - Licencia: definir el archivo LICENSE de la raíz.
