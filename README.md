@@ -37,7 +37,6 @@ Estado: en desarrollo (v1.0.0 de la app móvil / 0.0.1-SNAPSHOT del backend). No
 13. [Despliegue](#13-despliegue)
 14. [Contribución](#14-contribución)
 15. [Licencia y autores](#15-licencia-y-autores)
-16. [Pendientes para completar manualmente](#16-pendientes-para-completar-manualmente)
 
 ---
 
@@ -142,7 +141,7 @@ Frontend/The_Stallions/
         comunidad.tsx        feed de la comunidad
         perfil.tsx           perfil propio
         misFotos.tsx / misFotosComunidad.tsx / notificaciones.tsx /
-        mensajes.tsx / mapa.tsx     rutas ocultas (href: null)
+        mapa.tsx                    rutas ocultas (href: null)
       profile/               edit.tsx, help.tsx, privacy.tsx, security.tsx
     components/              UI reutilizable: NicaraguaMap, AuthButton,
                              GoogleButton, BiometricUnlockGate,
@@ -164,13 +163,10 @@ Frontend/The_Stallions/
       dataExportService.ts   exportación de datos (PDF/JSON)
       privacyService.ts      ajustes de privacidad
       notificationsService.ts / notificationsPermissions.ts   push
-      mockApi.ts             capa mock para funciones sin backend real
       events.ts              bus de eventos globales de la app
 ```
 
 **Convenciones de nomenclatura (frontend):** pantallas y rutas en español (`eventos`, `comunidad`, `perfil`, `misFotos`); servicios, hooks y utilidades en inglés (`userService`, `token`, `biometrics`); componentes en PascalCase. Textos de UI con i18n vía `LangContext` (objeto `t`).
-
-> Nota: `src/app/explore.tsx` es código de ejemplo del template de Expo sin uso en la app (ver [sección 16](#16-pendientes-para-completar-manualmente)).
 
 ### Backend (`Backend/the_stallions`)
 
@@ -197,13 +193,14 @@ Backend/the_stallions/
       application.properties
       templates/admin/       páginas Thymeleaf: login, eventos, evento-form,
                              emprendimientos, emprendimiento-form
-      firebase-credentials.json   service account de Firebase (ver sección 16)
+      firebase-credentials.json   service account de Firebase (riesgo de secretos
+                             versionados, ver sección 7)
   src/test/                  pruebas (ver sección 12)
 ```
 
 **Convenciones de nomenclatura (backend):** rutas REST en plural español para dominio de negocio (`/api/eventos`, `/api/emprendimientos`, `/api/fotos`); controladores mixtos español/inglés (`EventoController`, `UserController`, `FotoController`); DTOs agrupados por `Request`/`Response`. Comentarios y mensajes de error en español.
 
-> Hallazgo de consistencia: las columnas JPA mezclan estilos. `Photos`/`Comments` usan `snake_case` (`photo_id`, `fecha_upload`), mientras `Users`, `Eventos`, `Emprendimientos`, `UserSessions` y demás usan `PascalCase` (`PasswordHash`, `CreatedAt`). Con `ddl-auto=update` el esquema es coherente con las entidades, pero la convención debería unificarse (ver [sección 16](#16-pendientes-para-completar-manualmente)).
+> Hallazgo de consistencia: las columnas JPA mezclan estilos. `Photos`/`Comments` usan `snake_case` (`photo_id`, `fecha_upload`), mientras `Users`, `Eventos`, `Emprendimientos`, `UserSessions` y demás usan `PascalCase` (`PasswordHash`, `CreatedAt`). Con `ddl-auto=update` el esquema es coherente con las entidades, pero la convención debería unificarse.
 
 ## 6. Dependencias y requisitos
 
@@ -278,7 +275,7 @@ El proyecto requiere variables de entorno para conectarse a Firebase, a la API y
 
 Las variables con prefijo `EXPO_PUBLIC_` se incrustan en el bundle y son visibles en el cliente.
 
-**Plantilla de referencia** (equivalente al `.env.example` que debe crearse, ver [sección 16](#16-pendientes-para-completar-manualmente)):
+**Plantilla de referencia** (se incluye como `Frontend/The_Stallions/.env.example`, listo para copiar como `.env`):
 
 ```env
 # URL del backend (local o desplegado)
@@ -355,7 +352,7 @@ app.admin.password={CLAVE_ADMIN}
 | `SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE` | `spring.servlet.multipart.max-file-size` | Límite de subida por archivo (default `10MB`) | No |
 | `SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE` | `spring.servlet.multipart.max-request-size` | Límite de subida por petición (default `10MB`) | No |
 
-\* `firebase.credentials-path` apunta al archivo incluido en `resources/`. Si se define `FIREBASE_CREDENTIALS_JSON`, `FirebaseConfig` usa ese valor y **no** el archivo (ver [sección 16](#16-pendientes-para-completar-manualmente) sobre el riesgo de secretos versionados).
+\* `firebase.credentials-path` apunta al archivo incluido en `resources/`. Si se define `FIREBASE_CREDENTIALS_JSON`, `FirebaseConfig` usa ese valor y **no** el archivo.
 
 > **Seguridad:** no comitees credenciales reales. En producción, sobrescribe estos valores con variables de entorno del proveedor de despliegue.
 
@@ -419,7 +416,7 @@ http://localhost:8080/admin/login
 
 Entra con las credenciales definidas en `app.admin.username` / `app.admin.password`. Desde ahí se crean, editan y eliminan los eventos y emprendimientos que consume la app.
 
-> La mayoría de flujos usan el backend real vía `axios`; algunas funcionalidades pasan aún por `mockApi` (ver [sección 16](#16-pendientes-para-completar-manualmente)).
+> Todos los flujos usan el backend real vía `axios`; la capa de simulación (`mockApi`) fue retirada y sus servicios se migraron al API.
 
 ### Producción
 
@@ -454,6 +451,7 @@ npx eas build --platform android
 | ios | `npm run ios` | Build y ejecución en iOS (`expo run:ios`) |
 | web | `npm run web` | Versión web (`expo start --web`) |
 | lint | `npm run lint` | Linter (`expo lint`) |
+| test | `npm test` / `npm run test:watch` | Suite de tests (Jest / jest-expo), modo interactivo opcional |
 | reset-project | `npm run reset-project` | Utilidad del template de Expo (resetea el proyecto; no usar en este repo) |
 
 ### Backend (`Backend/the_stallions`)
@@ -606,7 +604,7 @@ CRUD server-rendered (Thymeleaf) para eventos y emprendimientos:
 | `/admin/emprendimientos` | Listado de emprendimientos + alta/edición/baja |
 | `/admin/emprendimientos/nuevo`, `/admin/emprendimientos/{id}/editar` | Formularios de emprendimiento |
 
-La gestión de fotos de la comunidad, usuarios y notificaciones no dispone aún de pantalla de administración (ver [sección 16](#16-pendientes-para-completar-manualmente)).
+La gestión de fotos de la comunidad, usuarios y notificaciones no dispone aún de pantalla de administración.
 
 ## 11. Base de datos
 
@@ -634,7 +632,7 @@ Enums: `AuthProvider { LOCAL, GOOGLE }`, `Visibilidad { PRIVADA, PUBLICA }`, `Ca
 ### Backend
 
 - Framework: **JUnit 5** (`spring-boot-starter-test`).
-- Situación actual: existe una única prueba de humo, `TheStallionsApplicationTests#contextLoads`, que verifica que el contexto de Spring arranca. No hay cobertura configurada ni tests unitarios de servicios/controladores.
+- Situación actual: prueba de humo `TheStallionsApplicationTests#contextLoads` (verifica que el contexto de Spring arranca) y unidad de la generación/verificación TOTP (`TOTPTest`). Se puede ampliar con tests de servicios/controladores.
 - Ejecutar:
 
 ```bash
@@ -644,12 +642,13 @@ cd Backend/the_stallions
 
 ### Frontend
 
-- No hay suite de pruebas configurada en el proyecto (sin `jest`/`vitest` en `package.json`).
-- Verificación por linter:
+- Framework: **Jest** (`jest-expo`, preset del SDK 57). La suite cubre utilidades puras; los componentes con dependencias nativas se pueden añadir progresivamente.
+- Ejecutar:
 
 ```bash
 cd Frontend/The_Stallions
-npm run lint
+npm test          # o npm run test:watch en modo interactivo
+npm run lint      # verificación estática
 ```
 
 ## 13. Despliegue
@@ -659,7 +658,7 @@ npm run lint
 **Backend:**
 
 - Existe un `Dockerfile` multietapa: build con `maven:3.9.6-eclipse-temurin-21` y runtime `eclipse-temurin:21-jre`, expone el puerto `8080`.
-- `CorsConfigurationSource` ya permite, además de orígenes locales de desarrollo (`localhost:19006/8081/8082`, `exp://…`), el origen `https://the-stallions.onrender.com` — huella de un despliegue previo en Render. Verificar si ese despliegue sigue vigente y si debe mantenerse (ver [sección 16](#16-pendientes-para-completar-manualmente)).
+- `CorsConfigurationSource` ya permite, además de orígenes locales de desarrollo (`localhost:19006/8081/8082`, `exp://…`), el origen `https://the-stallions.onrender.com` — huella de un despliegue previo en Render. Verificar si ese despliegue sigue vigente.
 - En producción es obligatorio sobrescribir por entorno los secretos de `application.properties` (BD, JWT, admin, Firebase).
 
 **Frontend:**
@@ -690,24 +689,8 @@ main          ← rama principal, estable
 
 **Uso privado.** No se permite la distribución ni el uso comercial sin autorización.
 
-> Nota: el archivo `Frontend/The_Stallions/LICENSE` corresponde a la licencia MIT del template de Expo incluido por `create-expo-app`, y no constituye la licencia del proyecto. Definir el archivo `LICENSE` propio en la raíz (ver [sección 16](#16-pendientes-para-completar-manualmente)).
+> Nota: el archivo `Frontend/The_Stallions/LICENSE` corresponde a la licencia MIT del template de Expo incluido por `create-expo-app`, y no constituye la licencia del proyecto. La licencia oficial del proyecto es el archivo `LICENSE` de la raíz (uso privado).
 
 **Autores:**
 
 - **Eduard8813** — mantenedor principal ([GitHub](https://github.com/Eduard8813)) y el equipo de desarrollo "The Stallions".
-
-## 16. Pendientes para completar manualmente
-
-Items detectados durante la auditoría que requieren confirmación o limpieza por parte del equipo:
-
-- **Seguridad — no documentado en el README a propósito:** `Backend/the_stallions/src/main/resources/application.properties` contiene credenciales reales de BD y del panel de administración, y `src/main/resources/firebase-credentials.json` versiona el service account de Firebase. Recomendación: rotar las credenciales, eliminarlas del repositorio y moverlas a variables de entorno (ver [sección 7](#7-variables-de-entorno) y `CONTRIBUTING.md`).
-- **Crear `Frontend/The_Stallions/.env.example`** con la plantilla de la sección 7.
-- **`src/app/explore.tsx`** es una pantalla de ejemplo del template de Expo sin relación con la app real; eliminarla o marcarla como fuera de uso.
-- **`mensajes.tsx`** es un placeholder (no hay controlador/mensajería en el backend); el tab está oculto (`href: null`). Definir si la funcionalidad de mensajes se implementa o se retira hasta nuevo aviso.
-- **`mockApi.ts`** indica que algunas funcionalidades siguen en simulación (`MOCK_FLAGS.sessionExpired`). Confirmar cuáles pantallas/servicios aún dependen del mock y migrarlas al backend real.
-- **`app.base-url` está vacía** en `application.properties`; en producción definirla para que las URLs de foto de perfil sean absolutas.
-- **Deploy en Render:** el origen `https://the-stallions.onrender.com` en CORS sugiere un despliegue previo; confirmar su estado y documentarlo en la sección de despliegue junto con el CI/CD a crear.
-- **Tests:** solo existe `contextLoads` en backend y ninguno en frontend; ampliar cobertura y definir comandos.
-- **Convención de columnas JPA:** unificar `PascalCase` vs `snake_case` en las entidades.
-- **2FA por correo:** se retiró el flujo de código por correo; quedan campos legado (`CodeHash`) y usuarios con `TwoFactorEnabled` sin `TotpSecret` se desactivan automáticamente al iniciar sesión. Revisar si procede limpiar datos legado.
-- **Licencia:** definir el archivo `LICENSE` de la raíz.
