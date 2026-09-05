@@ -1,0 +1,229 @@
+=== 1_ER_3FN.txt ===
+
+Project Wani Connect (The Stallions)
+
+-- Sistema: red social para emprendedores locales.
+-- Usuarios publican fotos de la comunidad, comentan, dan "me gusta",
+-- crean emprendimientos y eventos, gestionan privacidad, notificaciones,
+-- sesiones, bloqueos, exportacion de datos, 2FA (TOTP) y roles
+-- (RBAC: USER, ADMIN y AUDITOR con bitacora de auditoria).
+
+-- Reglas de normalizacion que resuelve cada tabla clave:
+--   1FN: PhotoLikes y NotificationChannelPreference eliminan grupos
+--        repetitivos / campos JSON denormalizados (usuarios_like,
+--        userNotifications.SettingsJson).
+--   2FN: Comments, Notifications y PhotoLikes con claves compuestas o
+--        atributos dependientes de la clave completa de la entidad hija.
+--   3FN: BlockedUsers FKs reales a Users; UserPrivacy 1:1 con Users
+--        (sin dependencias transitivas); atributos de contacto y foto
+--        encapsulados en sus tablas con dependencia directa de la PK.
+
+Table Users {
+  id bigint [pk, increment]
+  email varchar(150) [not null, unique]
+  password_hash varchar(255)
+  full_name varchar(150) [not null]
+  provider varchar(20) [not null] -- LOCAL | GOOGLE | FIREBASE
+  provider_id varchar(100)
+  photo_url varchar(500)
+  photo_data varbinary(max)
+  photo_content_type varchar(100)
+  username varchar(150) [unique]
+  phone varchar(40)
+  birth_date date
+  gender varchar(20)
+  city varchar(100)
+  bio varchar(2000)
+  two_factor_enabled bit [not null]
+  totp_secret varchar(64)
+  role varchar(20) [not null, default: 'USER'] -- USER | ADMIN | AUDITOR
+  is_enabled bit [not null]
+  created_at datetime2 [not null]
+  updated_at datetime2
+  -- Comentario 1FN/2FN: columna simple escalar, sin datos repetidos.
+}
+
+Table Photos {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  grupo_id bigint -- carrusel de un mismo post (fotos agrupadas)
+  visibilidad varchar(20) [not null]
+  url varchar(500)
+  photo_data varbinary(max)
+  content_type varchar(100)
+  descripcion varchar(1000)
+  fecha_upload datetime2 [not null]
+  -- 1FN: el "me gusta" vive en PhotoLikes (tabla intermedia), no en un
+  -- campo JSON (se elimina el grupo repetitivo usuarios_like).
+}
+
+Table PhotoGroups {
+  id bigint [pk, increment]
+  owner_user_id bigint
+  created_at datetime2 [not null]
+  -- 2FN: agrupa las fotos de un mismo post; cada foto depende de su grupo
+  -- via grupo_id, no de una clave concatenada.
+}
+
+Table PhotoLikes {
+  user_id bigint [pk]
+  photo_id bigint [pk]
+  created_at datetime2 [not null]
+  -- Tabla intermedia N:N (Usuarios - Fotos). PK compuesta elimina
+  -- duplicados (un usuario no puede dar dos likes a la misma foto).
+}
+
+Table Comments {
+  id bigint [pk, increment]
+  photo_id bigint [not null]
+  user_id bigint [not null]
+  texto nvarchar(max) [not null]
+  fecha datetime2 [not null]
+  editado bit [not null]
+}
+
+Table Notifications {
+  id bigint [pk, increment]
+  usuario_destino_id bigint [not null]
+  usuario_origen_id bigint
+  tipo varchar(50) [not null] -- like | comentario | evento | ...
+  mensaje varchar(255)
+  relacion_id varchar(100)
+  leida bit [not null]
+  fecha datetime2 [not null]
+}
+
+-- 1FN: sustituye a UserNotifications.SettingsJson por filas atomicas
+-- (categoria, canal), una fila por configuracion de canal.
+Table NotificationChannelPreference {
+  user_id bigint [pk]
+  categoria varchar(50) [pk]   -- likes | comments | new_events | messages | ...
+  canal varchar(20) [pk]       -- push | email | in_app
+  habilitado bit [not null]
+}
+
+-- 1:1 con Users: sin dependencias transitivas (las preferencias de
+-- privacidad dependen solo del usuario, no de otra entidad).
+Table UserPrivacy {
+  user_id bigint [pk]
+  visibility varchar(20) [not null]
+  show_email bit [not null]
+  show_phone bit [not null]
+  show_location bit [not null]
+  discoverable bit [not null]
+}
+
+-- Bitacora inmutable de asignacion de roles (RBAC/auditoria).
+-- 3FN: cada fila describe un cambio puntual sobre una clave (Users.id);
+-- guarda quien lo cambio (ChangedByEmail) y los roles anterior/nuevo,
+-- sin dependencias transitivas con otras tablas.
+Table RoleChangeAudit {
+  id bigint [pk, increment]
+  user_id bigint [not null]      -- usuario cuyo rol cambio
+  changed_by_id bigint [not null] -- administrador que hizo el cambio
+  changed_by_email varchar(150) [not null]
+  from_role varchar(20)
+  to_role varchar(20) [not null]
+  created_at datetime2 [not null]
+}
+
+Table BlockedUsers {
+  id bigint [pk, increment]
+  user_id bigint [not null]        -- usuario que bloquea
+  blocked_user_id bigint [not null] -- usuario bloqueado
+  name varchar(150)
+  username varchar(100)
+  created_at datetime2 [not null]
+  -- 3FN: el bloqueado es una FK real a Users (no un string suelto),
+  -- eliminando dependencia transitiva entre id, nombre y usuario.
+}
+
+Table DataExports {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  export_id varchar(64) [not null, unique]
+  status varchar(20) [not null]
+  available_for_hours int [not null]
+  created_at datetime2 [not null]
+}
+
+Table UserSessions {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  device varchar(150)
+  platform varchar(20)
+  location varchar(100)
+  last_active datetime2
+  is_active bit [not null]
+  token_id varchar(64) [unique]
+  created_at datetime2 [not null]
+}
+
+Table TwoFactorChallenges {
+  id bigint [pk, increment]
+  user_id bigint [not null]
+  challenge_id varchar(64) [not null, unique]
+  code_hash varchar(100) [not null]
+  expires_at datetime2 [not null]
+  used bit [not null]
+  created_at datetime2 [not null]
+}
+
+Table Emprendimientos {
+  id bigint [pk, increment]
+  nombre varchar(150) [not null]
+  tipo varchar(60) [not null]
+  descripcion varchar(500)
+  lat float [not null]
+  lng float [not null]
+  contacto_telefono varchar(40)
+  contacto_email varchar(120)
+  contacto_redes varchar(300)
+  foto_url varchar(500)
+  foto_data varbinary(max)
+  foto_content_type varchar(100)
+  created_at datetime2 [not null]
+  updated_at datetime2 [not null]
+}
+
+Table Eventos {
+  id bigint [pk, increment]
+  titulo varchar(150) [not null]
+  fecha date [not null]
+  fecha_fin date
+  categoria varchar(30) [not null]
+  descripcion varchar(500) [not null]
+  foto_url varchar(500)
+  foto_data varbinary(max)
+  foto_content_type varchar(100)
+  created_at datetime2 [not null]
+  updated_at datetime2 [not null]
+}
+
+-- Relaciones ---------------------------------------------------------
+Ref: Users.id < Photos.user_id          -- 1:N  (un usuario publica muchas fotos)
+Ref: Users.id < PhotoGroups.owner_user_id -- 1:N  (usuario propietario del grupo de fotos)
+Ref: PhotoGroups.id < Photos.grupo_id   -- 1:N  (un grupo contiene varias fotos)
+Ref: Users.id < Emprendimientos.id      -- 1:N  (opcional: autor de emprendimiento)
+Ref: Users.id < Eventos.id              -- 1:N  (opcional: creador de evento)
+
+Ref: Users.id < Comments.user_id        -- 1:N  usuario que comenta
+Ref: Photos.id < Comments.photo_id      -- 1:N  foto comentada
+
+Ref: Users.id <> Photos.id              -- N:N  a traves de PhotoLikes
+Ref: Users.id < PhotoLikes.user_id
+Ref: Photos.id < PhotoLikes.photo_id
+
+Ref: Users.id < Notifications.usuario_destino_id -- 1:N  destinatario
+Ref: Users.id < Notifications.usuario_origen_id  -- 1:N  generador del evento (opcional)
+
+Ref: Users.id < NotificationChannelPreference.user_id -- 1:N  preferencias por canal
+Ref: Users.id < UserPrivacy.user_id                     -- 1:1  configuracion de privacidad
+Ref: Users.id < RoleChangeAudit.user_id                 -- 1:N  bitacora de cambios de rol
+
+Ref: Users.id < BlockedUsers.user_id         -- 1:N  usuario que bloquea
+Ref: Users.id < BlockedUsers.blocked_user_id -- 1:N  usuario bloqueado
+
+Ref: Users.id < DataExports.user_id     -- 1:N
+Ref: Users.id < UserSessions.user_id    -- 1:N
+Ref: Users.id < TwoFactorChallenges.user_id -- 1:N

@@ -1,0 +1,93 @@
+=== 2_CASOS_DE_USO.txt ===
+
+@startuml
+' Wani Connect (The Stallions) - Diagrama de casos de uso
+left to right direction
+skinparam actorStyle awesome
+
+' Actores (primarios y secundarios)
+actor "Usuario" as U
+actor "Administrador" as A
+actor "Auditor" as Aud
+actor "Proveedor OAuth (Google/Firebase)" as OAuth
+actor "Sistema de Notificaciones Push" as Push
+
+' Limite 1: Aplicacion movil
+rectangle "Wani Connect (App movil)" {
+  usecase "Registrar cuenta" as UC01
+  usecase "Iniciar sesion" as UC02
+  usecase "Verificar codigo TOTP (2FA)" as UC03
+  usecase "Cerrar sesion / revocar sesion" as UC04
+  usecase "Gestionar perfil (foto y datos)" as UC05
+  usecase "Configurar privacidad" as UC06
+  usecase "Configurar notificaciones" as UC07
+  usecase "Publicar fotos en la comunidad" as UC08
+  usecase "Comentar una foto" as UC09
+  usecase "Dar / retirar me gusta a una foto" as UC10
+  usecase "Explorar el mapa (emprendimientos y eventos)" as UC11
+  usecase "Crear emprendimiento" as UC12
+  usecase "Publicar evento" as UC13
+  usecase "Bloquear / desbloquear usuario" as UC14
+  usecase "Exportar mis datos" as UC15
+  usecase "Eliminar mi cuenta" as UC16
+  usecase "Ver notificaciones" as UC17
+}
+
+' Limite 2: Panel de administracion
+rectangle "Wani Connect (Panel de administracion)" {
+  usecase "Acceder al panel" as A01
+  usecase "Gestionar fotos de la comunidad" as A02
+  usecase "Moderar usuarios (suspender / habilitar)" as A03
+  usecase "Enviar notificaciones a usuarios" as A04
+}
+
+' Limite 3: API de roles (RBAC)
+rectangle "Wani Connect (Administracion de roles)" {
+  usecase "Asignar rol a un usuario" as R01
+  usecase "Suspender / habilitar cuenta" as R02
+  usecase "Consultar usuarios y bitacora de roles" as R03
+}
+
+' Usuario primario
+U --> UC01
+U --> UC02
+U --> UC04
+U --> UC05
+U --> UC06
+U --> UC07
+U --> UC08
+U --> UC09
+U --> UC10
+U --> UC11
+U --> UC12
+U --> UC13
+U --> UC14
+U --> UC15
+U --> UC16
+U --> UC17
+
+' Incluye/extiende
+UC02 ..> UC03 : <<extend>> (solo si 2FA activo)
+UC02 ..> UC01 : <<include>> (crear cuenta si no existe)
+UC03 ..> UC02 : <<include>> (regresa al inicio de sesion)
+UC08 ..> UC07 : <<include>> (emitir notificacion a seguidores)
+UC09 ..> UC17 : <<include>> (notificar al autor)
+UC10 ..> UC17 : <<include>> (notificar al autor)
+UC05 ..> UC06 : <<include>> (la privacidad es parte del perfil)
+
+' Actores secundarios
+U --> OAuth : registro/login con Google
+OAuth --> UC01
+OAuth --> UC02
+A --> A01
+A01 ..> A02 : <<include>>
+A01 ..> A03 : <<include>>
+A01 ..> A04 : <<include>>
+A --> R01
+A --> R02
+A --> R03
+Aud --> R03
+Push ..> UC17 : envia notificacion
+U <-- Push
+
+@enduml

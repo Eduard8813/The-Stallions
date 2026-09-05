@@ -1,0 +1,121 @@
+=== 4_DIAGRAMA_ACTIVIDADES.txt ===
+
+@startuml
+' Wani Connect (The Stallions) - Diagrama de actividades
+' Proceso de negocio mas representativo: dar "me gusta" a una foto
+' de la comunidad (flujo principal con autenticacion y notificacion).
+' Swimlanes: Usuario | Sistema (backend)
+
+start
+
+|Usuario|
+: Abre la comunidad (feed de fotos);
+
+|Sistema|
+: Valida la sesion (token JWT);
+
+if (Que la sesion sea valida?) then (No)
+  |Usuario|
+  : Reingresa sus credenciales;
+  : Confirma 2FA si esta activo;
+  |Sistema|
+  : Genera token nuevo;
+  : Valida la sesion (token JWT);
+endif
+
+if (Que la foto sea visible para el usuario?) then (No)
+  |Sistema|
+  : Oculta la foto (privacy / bloqueo);
+  stop
+else (Si)
+endif
+
+|Usuario|
+: Abre la foto publicada;
+: Pulsa "me gusta" en la foto;
+
+|Sistema|
+if (Que el usuario ya haya dado like previamente?) then (Si)
+  : Elimina el registro del like;
+else (No)
+  : Registra el like (PhotoLikes);
+  : Crea una notificacion para el autor de la foto;
+  |Sistema de notificaciones|
+  : Envia push al autor (si tiene habilitado);
+endif
+
+|Sistema|
+: Actualiza el contador en todos los feeds;
+
+|Usuario|
+: Ve el contador actualizado;
+
+stop
+
+@enduml
+
+' ------------------------------------------------------------------
+' 2) Validacion de sesion con rol (RBAC) y expiracion por inactividad.
+@startuml
+left to right direction
+|Cliente|
+start
+: Envia peticion con token JWT;
+
+|Backend|
+: Lee el token y obtiene el id de sesion;
+: Carga el usuario por su correo;
+if (La sesion existe, esta activa y no expiro por inactividad?) then (No)
+  : Desactiva la sesion vencida;
+  : Responde 401 (no autenticado);
+  stop
+else (Si)
+endif
+
+if (El usuario esta habilitado?) then (No)
+  : Responde 401 (cuenta suspendida);
+  stop
+else (Si)
+endif
+
+: Asigna la autoridad ROLE_<rol> (releida de la BD);
+if (La ruta/metodo exige rol y el usuario lo tiene?) then (No)
+  : Responde 403 (sin permisos);
+  stop
+else (Si)
+endif
+
+: Procesa la peticion;
+|Cliente|
+: Recibe la respuesta;
+stop
+@enduml
+
+' ------------------------------------------------------------------
+' 3) Asignacion de rol por un administrador (con bitacora de auditoria).
+@startuml
+left to right direction
+|Cliente (admin)|
+start
+: Envia la asignacion de rol (usuario, nuevo rol);
+
+|Backend|
+if (El administrador tiene rol ADMIN?) then (No)
+  : Responde 403 (sin permisos);
+  stop
+else (Si)
+endif
+
+: Busca al usuario y valida el nuevo rol;
+if (El objetivo es el propio administrador o el rol ya esta asignado?) then (Si)
+  : Responde 400 (operacion no permitida);
+  stop
+else (No)
+endif
+
+: Guarda el nuevo rol y actualiza el usuario;
+: Registra el cambio en la bitacora de auditoria (usuario, admin, rol anterior y nuevo, fecha);
+|Cliente (admin)|
+: Recibe el usuario actualizado con su nuevo rol;
+stop
+@enduml

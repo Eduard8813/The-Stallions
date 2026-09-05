@@ -55,7 +55,8 @@ Wani Connect es una aplicación móvil (iOS, Android y web) para explorar las Ci
 - **Directorio de emprendimientos** por rubro con ubicación en mapa y contactos.
 - **Panel de administración web** (`/admin`) para crear, editar y eliminar eventos y emprendimientos, protegido con login propio independiente de la app.
 - **Perfil**: foto guardada en la base de datos y servida por URL pública con caché, edición de datos y ajustes de privacidad.
-- **Seguridad**: verificación en dos pasos con app autenticadora (TOTP), cambio de contraseña, sesiones activas revocables, usuarios bloqueados y exportación de datos.
+- **Seguridad**: verificación en dos pasos con app autenticadora (TOTP), cambio de contraseña, sesiones activas revocables y con caducidad por inactividad, usuarios bloqueados y exportación de datos.
+- **Control de acceso por roles** (RBAC): roles `USER`, `ADMIN` y `AUDITOR`, con API de asignación de roles, bitácora de auditoría y protección de rutas según permisos.
 - **Autenticación** por correo/contraseña y con Google (Firebase Auth + JWT).
 - **Desbloqueo biométrico** (huella / Face ID) con `expo-local-authentication`.
 - **Interfaz bilingüe** (español/inglés) y tema oscuro/claro.
@@ -114,6 +115,10 @@ Patrón general: SPA móvil (Expo) conectada a una API REST sin estado (JWT) má
 - **Autenticación**: correo+contraseña (BCrypt) o Google (ID token verificado con Firebase Admin). La cuenta queda ligada a su provider (`LOCAL` o `GOOGLE`).
 - **2FA**: TOTP (RFC 6238) verificable con Google Authenticator o Authy. El secreto se genera en el backend (`TOTP.generateSecret()`), se registra en el dispositivo con un QR `otpauth://` y se valida por `challengeId`.
 - **Tokens**: librería jjwt 0.12.5; vigencia configurable (`jwt.expiration-ms`, por defecto 1 hora).
+- **RBAC**: roles `USER`, `ADMIN` y `AUDITOR`. El filtro JWT carga el usuario desde la base de datos en cada petición y expone la autoridad `ROLE_<rol>`, de modo que un cambio de rol aplica de inmediato sin esperar la caducidad del token.
+- **API de administración** (`/api/admin/**`): protegida por reglas de ruta y a nivel de método (`@PreAuthorize`). `ADMIN` asigna roles (con bitácora de auditoría) y suspende/habilita cuentas; `ADMIN` y `AUDITOR` pueden leer el listado de usuarios y la bitácora.
+- **Sesiones**: además de la vigencia del token, cada sesión expira por inactividad (`app.session.max-inactivity-minutes`, por defecto 720 = 12 h). Un proceso programado marca como inactivas las sesiones vencidas y el filtro verifica en cada petición que la sesión esté activa, no expirada y que la cuenta siga habilitada.
+- **Errores de seguridad**: petición sin autenticación responde `401` y petición sin permisos responde `403`.
 
 ## 5. Estructura modular
 
@@ -324,6 +329,9 @@ spring.jpa.hibernate.ddl-auto=update
 
 jwt.secret={SECRETO_JWT_MINIMO_32_CARACTERES}
 jwt.expiration-ms=3600000
+
+# Inactividad máxima de una sesión (minutos) antes de expirarla
+app.session.max-inactivity-minutes=720
 
 firebase.credentials-path=firebase-credentials.json
 
@@ -606,33 +614,47 @@ CRUD server-rendered (Thymeleaf) para eventos y emprendimientos:
 
 La gestión de fotos de la comunidad, usuarios y notificaciones no dispone aún de pantalla de administración.
 
+### Administración de usuarios y roles — `/api/admin` (RBAC)
+
+Acceso con JWT según el rol: `ADMIN` puede escribir y leer; `AUDITOR` solo puede leer (listado de usuarios y bitácora).
+
+| Ruta | Método | Acceso | Descripción |
+|---|---|---|---|
+| `/api/admin/users` | GET | ADMIN, AUDITOR | Lista de usuarios (id, email, nombre, usuario, rol, estado, fecha de alta) |
+| `/api/admin/users/{id}/role` | PUT | ADMIN | Asigna el rol (`USER`, `ADMIN`, `AUDITOR`); prohíbe cambiarse el rol a sí mismo y deja registro en la bitácora |
+| `/api/admin/users/{id}/status` | PATCH | ADMIN | Habilita/suspende una cuenta; al suspender se revocan sus sesiones activas |
+| `/api/admin/roles/audit` | GET | ADMIN, AUDITOR | Últimos 200 cambios de rol (usuario, quién lo cambió, roles anterior/nuevo, fecha) |
+
+Los cambios de rol entran en vigor en la siguiente petición del usuario (el filtro JWT relee el rol desde la base de datos por cada request).
+
 ## 11. Base de datos
 
 Backend: **SQL Server** con **Hibernate** (`ddl-auto=update`), dialecto `SQLServerDialect`. Las imágenes se guardan como BLOB (`varbinary(max)`).
 
 | Tabla | Descripción | Campos destacados |
 |---|---|---|
-| `Users` | Usuarios | `id`, `email`, `PasswordHash`, `FullName`, `provider` (`LOCAL`/`GOOGLE`), `ProviderId`, `PhotoUrl`/`PhotoData`/`PhotoContentType`, `Username`, `Phone`, `BirthDate`, `Gender`, `City`, `Bio`, `TwoFactorEnabled`, `TotpSecret`, `IsEnabled`, `CreatedAt`, `UpdatedAt` |
+| `Users` | Usuarios | `id`, `email`, `PasswordHash`, `FullName`, `role` (`USER`/`ADMIN`/`AUDITOR`), `provider` (`LOCAL`/`GOOGLE`), `ProviderId`, `PhotoUrl`/`PhotoData`/`PhotoContentType`, `Username`, `Phone`, `BirthDate`, `Gender`, `City`, `Bio`, `TwoFactorEnabled`, `TotpSecret`, `IsEnabled`, `CreatedAt`, `UpdatedAt` |
 | `Eventos` | Eventos culturales | `id`, `titulo`, `fecha`, `FechaFin`, `categoria` (`FERIADO`/`CONMEMORACION`/`CELEBRACION`), `descripcion`, `FotoData`/`FotoContentType`/`FotoUrl`, `CreatedAt`, `UpdatedAt` |
 | `Emprendimientos` | Emprendimientos locales | `id`, `nombre`, `tipo` (rubro libre), `descripcion`, `lat`, `lng`, `ContactoTelefono`, `ContactoEmail`, `ContactoRedes`, `FotoData`/`FotoContentType`/`FotoUrl`, `CreatedAt`, `UpdatedAt` |
 | `Photos` | Fotos de la comunidad | `id`, `user_id` (FK), `visibilidad` (`PRIVADA`/`PUBLICA`), `url`, `photo_data` (BLOB), `content_type`, `descripcion`, `fecha_upload`, `grupo_id` (agrupa fotos de un mismo post/carrusel), `usuarios_like` (JSON, `nvarchar(max)`) |
 | `Comments` | Comentarios de fotos | `id`, `photo_id` (FK), `user_id` (FK), `texto` (`nvarchar(max)`), `fecha`, `editado` |
 | `Notifications` | Notificaciones in-app | `id`, `usuario_destino_id` (FK), `usuario_origen_id` (FK), `tipo` (like/comentario/…), `mensaje`, `relacion_id`, `leida`, `fecha` |
 | `UserSessions` | Sesiones activas | `id`, `UserId` (FK), `Device`, `Platform`, `Location`, `LastActive`, `IsActive`, `TokenId` (único), `CreatedAt` |
+| `RoleChangeAudits` | Bitácora de cambios de rol | `id`, `UserId` (FK), `ChangedById`, `ChangedByEmail`, `FromRole`, `ToRole`, `CreatedAt` |
 | `TwoFactorChallenges` | Desafíos 2FA pendientes | `id`, `ChallengeId` (único), `Email`, `CodeHash`, `ExpiresAt` (5 min), `Used`, `CreatedAt` |
 | `BlockedUsers` | Usuarios bloqueados | `id`, `UserId` (FK), `BlockedUserId`, `Name`, `Username` |
 | `UserNotifications` | Preferencias de notificaciones | `id`, `UserId` (FK), `SettingsJson` (`nvarchar(max)`) |
 | `UserPrivacy` | Preferencias de privacidad | `id`, `UserId` (FK), `Visibility`, `ShowEmail`, `ShowPhone`, `ShowLocation`, `Discoverable` |
 | `DataExports` | Solicitudes de exportación de datos | `id`, `UserId` (FK), `ExportId` (único), `Status` (default `processing`), `AvailableForHours` (default 48), `CreatedAt` |
 
-Enums: `AuthProvider { LOCAL, GOOGLE }`, `Visibilidad { PRIVADA, PUBLICA }`, `CategoriaEvento { FERIADO, CONMEMORACION, CELEBRACION }`.
+Enums: `AuthProvider { LOCAL, GOOGLE }`, `Visibilidad { PRIVADA, PUBLICA }`, `CategoriaEvento { FERIADO, CONMEMORACION, CELEBRACION }`, `Rol { USER, ADMIN, AUDITOR }`.
 
 ## 12. Pruebas
 
 ### Backend
 
 - Framework: **JUnit 5** (`spring-boot-starter-test`).
-- Situación actual: prueba de humo `TheStallionsApplicationTests#contextLoads` (verifica que el contexto de Spring arranca) y unidad de la generación/verificación TOTP (`TOTPTest`). Se puede ampliar con tests de servicios/controladores.
+- Situación actual: prueba de humo `TheStallionsApplicationTests#contextLoads` (verifica que el contexto de Spring arranca), generación/verificación TOTP (`TOTPTest`) y reglas de sesión y roles (`SessionSecurityTest`). Se puede ampliar con tests de servicios/controladores.
 - Ejecutar:
 
 ```bash
