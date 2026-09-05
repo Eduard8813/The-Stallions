@@ -479,6 +479,8 @@ npx eas build --platform android
 
 Base: `http://{host}:8080/api`. Salvo los marcados como públicos, todos requieren la cabecera `Authorization: Bearer {token}`.
 
+**Formato de errores:** todas las respuestas de error usan JSON `{ "message": "..." }`. Códigos: `400` validación/argumento inválido o operación no permitida, `401` no autenticado o cuenta suspendida, `403` sin permisos para el rol actual, `404` recurso no encontrado, `409` estado no permitido, `500` error interno.
+
 ### Autenticación — `/api/auth` (públicos)
 
 | Método | Ruta | Descripción | Parámetros |
@@ -497,19 +499,33 @@ Base: `http://{host}:8080/api`. Salvo los marcados como públicos, todos requier
   "token": "eyJhbGciOi...",
   "email": "usuario@example.com",
   "fullName": "Nombre Apellido",
+  "rol": "USER",
   "requiresTwoFactor": false,
   "challengeId": null
 }
 ```
 
+`rol` es el rol del usuario (`USER`, `ADMIN` o `AUDITOR`) y se usa en el cliente para habilitar acciones según permisos.
+
 Cuando el usuario tiene 2FA activo, `token` es `null`, `requiresTwoFactor` es `true` y llega `challengeId`; hay que completar el flujo con `/api/auth/2fa/verify`.
 
-Ejemplo:
+Ejemplos:
 
 ```bash
+# Iniciar sesión
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"usuario@example.com","password":"s3cr3t"}'
+
+# Registrar cuenta
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"usuario@example.com","password":"s3cr3t","fullName":"Nombre Apellido"}'
+
+# Verificar 2FA (cuando el login respondió con challengeId)
+curl -X POST http://localhost:8080/api/auth/2fa/verify \
+  -H "Content-Type: application/json" \
+  -d '{"challengeId":"abc123","code":"123456"}'
 ```
 
 ### Usuario — `/api/user`
@@ -533,6 +549,35 @@ curl -X POST http://localhost:8080/api/auth/login \
 | DELETE | `/api/user/blocked/{id}` | Desbloquea usuario |
 | POST | `/api/user/data-export` | Solicita exportación de datos |
 | DELETE | `/api/user/account` | Elimina la cuenta |
+
+**Respuesta de ejemplo — `GET /api/user/profile`:**
+
+```json
+{
+  "id": "1",
+  "firstName": "Nombre",
+  "lastName": "Apellido",
+  "username": "nombre.apellido",
+  "email": "usuario@example.com",
+  "phone": "+505 8888 8888",
+  "birthDate": "",
+  "gender": "",
+  "city": "Managua",
+  "bio": "Explorando las Ciudades Creativas",
+  "photoUrl": "http://localhost:8080/api/user/photo/1",
+  "rol": "USER",
+  "createdAt": "2026-01-15T10:30:00"
+}
+```
+
+Ejemplo — actualizar perfil:
+
+```bash
+curl -X PUT http://localhost:8080/api/user/profile \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{"firstName":"Nombre","lastName":"Apellido","city":"Managua","bio":"Explorando las Ciudades Creativas"}'
+```
 
 ### Eventos — `/api/eventos` (lectura pública)
 
@@ -626,6 +671,26 @@ Acceso con JWT según el rol: `ADMIN` puede escribir y leer; `AUDITOR` solo pued
 | `/api/admin/roles/audit` | GET | ADMIN, AUDITOR | Últimos 200 cambios de rol (usuario, quién lo cambió, roles anterior/nuevo, fecha) |
 
 Los cambios de rol entran en vigor en la siguiente petición del usuario (el filtro JWT relee el rol desde la base de datos por cada request).
+
+Ejemplos:
+
+```bash
+# Asignar rol a un usuario (solo ADMIN)
+curl -X PUT http://localhost:8080/api/admin/users/3/role \
+  -H "Authorization: Bearer {token-admin}" \
+  -H "Content-Type: application/json" \
+  -d '{"role":"AUDITOR"}'
+
+# Suspender / habilitar cuenta (solo ADMIN; enabled=true habilita, false suspende)
+curl -X PATCH http://localhost:8080/api/admin/users/3/status \
+  -H "Authorization: Bearer {token-admin}" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled":false}'
+
+# Listado de usuarios y bitácora (ADMIN o AUDITOR) — solo lectura
+curl -H "Authorization: Bearer {token}" http://localhost:8080/api/admin/users
+curl -H "Authorization: Bearer {token}" http://localhost:8080/api/admin/roles/audit
+```
 
 ## 11. Base de datos
 
