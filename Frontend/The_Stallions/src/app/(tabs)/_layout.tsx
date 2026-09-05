@@ -83,7 +83,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="misFotos"           options={{ href: null }} />
       <Tabs.Screen name="misFotosComunidad"  options={{ href: null }} />
       <Tabs.Screen name="notificaciones"     options={{ href: null }} />
-      <Tabs.Screen name="mensajes"           options={{ href: null }} />
       <Tabs.Screen name="mapa"               options={{ href: null }} />
     </Tabs>
   );
