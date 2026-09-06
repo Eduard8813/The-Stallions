@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "592809186063",
+    "project_id": "the-stallions-7c7c6",
+    "storage_bucket": "the-stallions-7c7c6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592809186063:android:d4198109282b34a218e47a",
+        "android_client_info": {
+          "package_name": "com.eduard8813steam.thestallions"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "592809186063-58aqukhlvicjdh2doks5jliqgduo19n8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.eduard8813steam.thestallions",
+            "certificate_hash": "595fbdf5d9441a54c8e9e4ac5c3ca9389316a268"
+          }
+        },
+        {
+          "client_id": "592809186063-tbgva99ooppf3a8mk6av13u82d5u5g0m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_3qRYN3qt8NJJt3dAQNM2hRUKUiocMF8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "592809186063-tbgva99ooppf3a8mk6av13u82d5u5g0m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
