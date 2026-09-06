@@ -13,6 +13,8 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import api, { resolveResourceUrl } from '../../services/api';
 import { EVENTS, events } from '../../services/events';
@@ -136,8 +138,9 @@ export default function ComunidadScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={mode === 'light' ? 'dark-content' : 'light-content'} backgroundColor={colors.surface} />
+    <LinearGradient colors={['#EDF2F8', '#DCE7F2', '#C9D8EA']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
+      <Image source={require('../../../assets/images/Comunidad.jpg')} style={styles.fondo} resizeMode="cover" />
+      <StatusBar barStyle={mode === 'light' ? 'dark-content' : 'light-content'} backgroundColor="transparent" translucent />
       <View style={styles.topBar}>
         <Text style={styles.title}>{t.tabCommunity}</Text>
       </View>
@@ -152,6 +155,7 @@ export default function ComunidadScreen() {
         <FlatList
           data={fotos}
           keyExtractor={(f) => `post-${f.id}`}
+          contentContainerStyle={styles.lista}
           onEndReached={() => {
             if (!loadingMore && hayMas) cargar(page + 1, false);
           }}
@@ -170,7 +174,7 @@ export default function ComunidadScreen() {
           )}
         />
       )}
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -226,12 +230,18 @@ function Publicacion({
 
       <View style={styles.acciones}>
         <TouchableOpacity style={styles.accionBtn} onPress={onLike}>
+          <MaterialCommunityIcons
+            name={post.likedByMe ? 'heart' : 'heart-outline'}
+            size={20}
+            color="#FF7F50"
+          />
           <Text style={[styles.accionTexto, post.likedByMe && styles.likeActivo]}>
-            {post.likedByMe ? '❤️' : '🤍'} {t.communityLike} ({post.likes})
+            {t.communityLike} ({post.likes})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.accionBtn} onPress={onToggleComentarios}>
-          <Text style={styles.accionTexto}>💬 {t.communityComment} ({post.comentarios})</Text>
+          <MaterialCommunityIcons name="comment-outline" size={19} color="#1B6CE0" />
+          <Text style={styles.accionComentar}>{t.communityComment} ({post.comentarios})</Text>
         </TouchableOpacity>
       </View>
 
@@ -246,7 +256,7 @@ function Publicacion({
 
 function Carrusel({ fotos, colors }: { fotos: Foto[]; colors: any }) {
   const styles = createStyles(colors);
-  const ancho = SCREEN_W;
+  const ancho = SCREEN_W - 32;
   if (fotos.length <= 1) {
     return <Image source={{ uri: resolveResourceUrl(fotos[0]?.url) }} style={styles.imagen} resizeMode="cover" />;
   }
@@ -429,13 +439,17 @@ function SeccionComentarios({
 
 const createStyles = (colors: any) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.bg },
+    container: { flex: 1 },
+    fondo: {
+      ...(StyleSheet.absoluteFill as object),
+      width: '100%',
+      height: '100%',
+      opacity: 0.18,
+    },
     topBar: {
       height: 56,
       justifyContent: 'center',
       alignItems: 'center',
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
       backgroundColor: colors.surface,
     },
     title: { color: colors.text, fontSize: 18, fontWeight: '700', fontFamily: 'Gilroy-Bold' },
@@ -443,15 +457,22 @@ const createStyles = (colors: any) =>
     empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
     emptyIcon: { fontSize: 48, marginBottom: 12 },
     emptyText: { color: colors.subtext, fontSize: 15 },
-
-    card: { backgroundColor: colors.surface, marginBottom: 10 },
+    lista: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 24 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: '#FF8A66',
+      overflow: 'hidden',
+      marginBottom: 16,
+    },
     header: { flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10 },
-    avatar: { width: 40, height: 40, borderRadius: 20 },
-    avatarFallback: { backgroundColor: colors.cameraBtn, justifyContent: 'center', alignItems: 'center' },
-    avatarInitial: { color: colors.text, fontSize: 16, fontWeight: '700' },
+    avatar: { width: 38, height: 38, borderRadius: 19 },
+    avatarFallback: { backgroundColor: '#FF8A66', justifyContent: 'center', alignItems: 'center' },
+    avatarInitial: { color: '#fff', fontSize: 16, fontWeight: '700' },
     nombre: { color: colors.text, fontSize: 14, fontWeight: '700' },
     fecha: { color: colors.subtext, fontSize: 12 },
-    multCount: { color: colors.accent, fontSize: 13, fontWeight: '700' },
+    multCount: { color: '#FF8A66', fontSize: 13, fontWeight: '700' },
 
     imagen: { width: '100%', aspectRatio: 1 },
 
@@ -466,24 +487,37 @@ const createStyles = (colors: any) =>
     },
     masIndicadorText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
-    descBox: { paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: colors.border },
+    descBox: { paddingHorizontal: 12, paddingVertical: 10 },
     descTexto: { color: colors.text, fontSize: 14, lineHeight: 20 },
 
-    acciones: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border },
-    accionBtn: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-    accionTexto: { color: colors.subtext, fontSize: 13, fontWeight: '600' },
-    likeActivo: { color: '#F3961C' },
+    acciones: {
+      flexDirection: 'row',
+      borderTopWidth: 1,
+      borderTopColor: '#F0E4DC',
+      paddingVertical: 8,
+    },
+    accionBtn: {
+      flex: 1,
+      paddingVertical: 6,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    accionTexto: { color: '#FF7F50', fontSize: 13, fontWeight: '700' },
+    likeActivo: { color: '#FF5A36' },
+    accionComentar: { color: '#1B6CE0', fontSize: 13, fontWeight: '700' },
 
-    comentariosBox: { paddingHorizontal: 12, paddingBottom: 12, backgroundColor: colors.inputBg },
+    comentariosBox: { paddingHorizontal: 12, paddingBottom: 12, backgroundColor: colors.surfaceAlt },
     sinComentarios: { color: colors.subtext, fontSize: 13, paddingVertical: 10 },
     comentario: { flexDirection: 'row', gap: 8, paddingVertical: 6 },
     avatarSmall: { width: 28, height: 28, borderRadius: 14 },
-    comentarioAutor: { color: colors.text, fontSize: 12, fontWeight: '700' },
+    comentarioAutor: { color: '#1B6CE0', fontSize: 12, fontWeight: '700' },
     comentarioFecha: { color: colors.subtext, fontSize: 11, fontWeight: '400' },
-    comentarioTexto: { color: colors.text, fontSize: 13, marginTop: 2 },
+    comentarioTexto: { color: '#1B6CE0', fontSize: 13, marginTop: 2 },
     linkEditar: { color: colors.accent, fontSize: 12 },
     linkEliminar: { color: colors.danger, fontSize: 12 },
-    linkGuardar: { color: colors.success, fontSize: 12, fontWeight: '700' },
+    linkGuardar: { color: '#2E7D32', fontSize: 12, fontWeight: '700' },
     linkCancelar: { color: colors.subtext, fontSize: 12 },
 
     inputRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
@@ -498,5 +532,5 @@ const createStyles = (colors: any) =>
       fontSize: 13,
     },
     enviarBtn: { justifyContent: 'center', paddingHorizontal: 8 },
-    enviarTexto: { color: '#5B8C30', fontWeight: '700', fontSize: 13 },
+    enviarTexto: { color: '#1B6CE0', fontWeight: '700', fontSize: 13 },
   });

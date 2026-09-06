@@ -1,5 +1,5 @@
 import { Tabs, Redirect } from 'expo-router';
-import { View, ActivityIndicator, StyleSheet, type ColorValue } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Image, type ColorValue } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
@@ -13,8 +13,14 @@ function TabIcon({ name, color, size }: { name: string; color: ColorValue; size:
 const icon = (name: string, nameFocused: string) => {
   function Icono({ color, size, focused }: IconoProps) {
     const n = focused ? nameFocused : name;
-    const s = focused ? (size ?? 24) + 6 : size ?? 24;
-    return <TabIcon name={n} color={color} size={s} />;
+    const base = size ?? 24;
+    const s = focused ? base - 2 : base - 4;
+    const iconColor = focused ? '#ffffff' : color;
+    return (
+      <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+        <TabIcon name={n} color={iconColor} size={s} />
+      </View>
+    );
   }
   return Icono;
 };
@@ -28,9 +34,23 @@ function CameraIcon({ color }: { color: ColorValue }) {
   );
 }
 
+function ImageTabIcon({ src, color, size, focused, extra = 0 }: IconoProps & { src: number; extra?: number }) {
+  const base = (size ?? 26) + extra;
+  const s = focused ? base : base - 3;
+  const tint = focused ? '#ffffff' : color;
+  return (
+    <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+      <Image
+        source={src}
+        style={{ width: s, height: s, tintColor: tint }}
+        resizeMode="contain"
+      />
+    </View>
+  );
+}
+
 const BRAND_BAR = '#69B6E6';
-const ACTIVE_TINT = '#ffffff';
-const INACTIVE_TINT = 'rgba(255,255,255,0.6)';
+const BLUE = '#1B6CE0';
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
@@ -50,10 +70,11 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: { ...styles.tabBar, backgroundColor: BRAND_BAR, borderTopColor: BRAND_BAR },
-        tabBarActiveTintColor: ACTIVE_TINT,
-        tabBarInactiveTintColor: INACTIVE_TINT,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.tabBarLabel,
+        tabBarStyle: { ...styles.tabBar, backgroundColor: '#ffffff', borderTopColor: '#e8eef5' },
+        tabBarActiveTintColor: BLUE,
+        tabBarInactiveTintColor: BLUE,
       }}
     >
       <Tabs.Screen
@@ -74,7 +95,18 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="comunidad"
-        options={{ title: t.tabCommunity, tabBarIcon: icon('earth', 'earth') }}
+        options={{
+          title: t.tabCommunity,
+          tabBarIcon: ({ color, focused, size }) => (
+            <ImageTabIcon
+              src={require('../../../assets/images/tabIcons/comunidad.png')}
+              color={color}
+              focused={focused}
+              size={size}
+              extra={4}
+            />
+          ),
+        }}
       />
       <Tabs.Screen
         name="perfil"
@@ -93,14 +125,31 @@ const styles = StyleSheet.create({
     height: 80,
     paddingBottom: 8,
   },
+  tabBarLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: BLUE,
+    marginTop: 2,
+  },
+  iconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  iconWrapActive: {
+    backgroundColor: BLUE,
+  },
   cameraBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: BRAND_BAR,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: BLUE,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -20,
-    boxShadow: '0 4px 12px rgba(105, 182, 230, 0.4)',
+    marginTop: -14,
+    boxShadow: '0 4px 12px rgba(27, 108, 224, 0.4)',
   },
 });

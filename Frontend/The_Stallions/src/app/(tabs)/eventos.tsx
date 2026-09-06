@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAsync } from '../../hooks/useAsync';
@@ -54,10 +54,9 @@ export default function EventosScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.titulo}>Eventos</Text>
+      <View style={styles.fondoWrap}>
+        <Image source={require('../../../assets/images/Evento.jpg')} style={styles.fondo} resizeMode="cover" />
       </View>
-
       <FlatList
         data={eventosDelMes}
         keyExtractor={(e) => e.id}
@@ -78,9 +77,12 @@ export default function EventosScreen() {
               anio={mesVisible.anio}
               onMesChange={(anio, mes) => setMesVisible({ anio, mes })}
             />
-            {eventosDelMes.length > 0 && (
-              <Text style={styles.tituloMes}>Eventos de {MESES[mesVisible.mes]}</Text>
-            )}
+            <View style={styles.tituloEventoBloque}>
+              <Text style={styles.tituloEvento}>Evento</Text>
+              <Text style={styles.tituloMes}>
+                {MESES[mesVisible.mes]} {mesVisible.anio}
+              </Text>
+            </View>
             {eventosDelMes.length === 0 && mesesConEventos.length > 0 && (
               <View style={styles.sinEventosBox}>
                 <Text style={styles.sinEventosTexto}>
@@ -120,20 +122,34 @@ export default function EventosScreen() {
 
 const createStyles = (colors: any) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  header: { paddingHorizontal: 16, paddingTop: 8 },
-  titulo: { color: colors.text, fontSize: 26, fontWeight: '800', fontFamily: 'Gilroy-Bold' },
+  fondoWrap: {
+    ...(StyleSheet.absoluteFill as object),
+    opacity: 0.22,
+  },
+  fondo: { width: '100%', height: '100%' },
   lista: { paddingBottom: 24 },
   itemWrap: { paddingHorizontal: 16 },
+  tituloEventoBloque: {
+    marginTop: 14,
+    marginBottom: 12,
+    alignItems: 'center',
+    gap: 2,
+  },
+  tituloEvento: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '800',
+    fontFamily: 'Gilroy-Bold',
+    textAlign: 'center',
+  },
   tituloMes: {
-    color: '#5B8C30',
-    fontSize: 13,
-    fontWeight: '700',
-    fontFamily: 'Gilroy-Medium',
+    color: '#1562A2',
+    fontSize: 15,
+    fontWeight: '800',
+    fontFamily: 'Gilroy-Bold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: 18,
-    marginBottom: 10,
-    paddingHorizontal: 16,
+    textAlign: 'center',
   },
   sinEventosBox: {
     marginHorizontal: 16,

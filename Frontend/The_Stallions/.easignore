@@ -7,3 +7,9 @@ ios
 *.apk
 *.aab
 .expo
+
+# Originales de cámara (RAW/HEIC) sin uso en la app — evitan redundancia
+**/*.CR2
+**/*.cr2
+**/*.HEIC
+**/*.heic

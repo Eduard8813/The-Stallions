@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAsync } from '../../hooks/useAsync';
 import {
@@ -11,10 +11,17 @@ import {
   diasHasta,
   obtenerEventoPorId,
   programarNotificacionEvento,
-  subirFotoEvento,
 } from '../../services/eventosService';
 import { notificationsPermissions, openNotificationSettings } from '../../services/notificationsPermissions';
 import { useTheme } from '../../context/ThemeContext';
+
+const MESES = [
+  'ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO',
+  'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE',
+];
+const ROJO = '#C0392B';
+const AZUL = '#1B6CE0';
+const VERDE = '#2E7D32';
 
 export default function EventoDetalleScreen() {
   const { colors } = useTheme();
@@ -24,7 +31,6 @@ export default function EventoDetalleScreen() {
   const { data: evento, loading, error, setData } = useAsync(() => obtenerEventoPorId(id!), [id]);
   const [notifActiva, setNotifActiva] = useState(false);
   const [notifBusy, setNotifBusy] = useState(false);
-  const [fotoBusy, setFotoBusy] = useState(false);
 
   if (loading) {
     return (
@@ -46,44 +52,14 @@ export default function EventoDetalleScreen() {
     );
   }
 
-  const formatoLargo = (iso: string) =>
-    new Date(`${iso}T12:00:00`).toLocaleDateString('es-AR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  const fecha = evento.fechaFin
-    ? `del ${formatoLargo(evento.fecha)} al ${formatoLargo(evento.fechaFin)}`
-    : formatoLargo(evento.fecha);
+  const [ay, am, ad] = evento.fecha.split('-').map(Number);
+  const mesNombre = MESES[am - 1];
+  const mesCorto = mesNombre.slice(0, 3);
+  const diaNumero = String(ad).padStart(2, '0');
+  const tieneImagen = !!evento.fotoUrl;
   const dias = diasHasta(evento.fecha);
   const enCurso =
     !!evento.fechaFin && dias <= 0 && diasHasta(evento.fechaFin) >= 0;
-
-  const agregarFoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permiso necesario', 'Se necesita acceso a la galería para elegir una foto.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
-    setFotoBusy(true);
-    try {
-      const { fotoUrl } = await subirFotoEvento(evento.id, asset.uri, asset);
-      setData((prev) => (prev ? { ...prev, fotoUrl } : prev));
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'No se pudo subir la foto.');
-    } finally {
-      setFotoBusy(false);
-    }
-  };
 
   const toggleNotificacion = async (valor: boolean) => {
     setNotifBusy(true);
@@ -116,135 +92,178 @@ export default function EventoDetalleScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <TouchableOpacity style={styles.back} onPress={() => router.back()} hitSlop={12}>
-        <Text style={styles.backTexto}>‹ Volver</Text>
-      </TouchableOpacity>
-
-      <ScrollView contentContainerStyle={styles.contenido}>
-        {evento.fotoUrl ? (
-          <Image source={{ uri: evento.fotoUrl }} style={styles.foto} contentFit="cover" />
-        ) : (
-          <TouchableOpacity style={styles.fotoPlaceholder} onPress={agregarFoto} disabled={fotoBusy} activeOpacity={0.7}>
-            <Text style={styles.fotoPlaceholderTexto}>
-              {fotoBusy ? 'Subiendo foto...' : '📷 Agregar foto'}
-            </Text>
-          </TouchableOpacity>
-        )}
-        <Text style={[styles.categoria, styles[evento.categoria]]}>{evento.categoria}</Text>
-        <Text style={styles.titulo}>{evento.titulo}</Text>
-        <Text style={styles.fecha}>{fecha}</Text>
-
-        {enCurso && (
-          <View style={styles.enCursoBox}>
-            <Text style={styles.enCursoTexto}>En curso</Text>
+    <LinearGradient colors={['#FBF6EC', '#F3E8D6', '#EFDFC6']} style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={styles.contenido} showsVerticalScrollIndicator={false}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeTexto}>Eventos de {mesNombre}</Text>
           </View>
-        )}
 
-        {dias >= 0 && (
-          <View style={styles.countdownBox}>
-            <Text style={styles.countdownNumero}>
-              {dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : `${dias}`}
-            </Text>
-            {dias > 1 && <Text style={styles.countdownLabel}>días para este evento</Text>}
+          <View style={styles.fotoWrap}>
+            {tieneImagen ? (
+              <Image source={{ uri: evento.fotoUrl! }} style={styles.foto} contentFit="cover" />
+            ) : (
+              <View style={styles.fotoPlaceholder}>
+                <Text style={styles.fotoPlaceholderTexto}>No hay foto</Text>
+              </View>
+            )}
           </View>
-        )}
 
-        <Text style={styles.descripcion}>{evento.descripcion}</Text>
-
-        <View style={styles.notifRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.notifTitulo}>Notificarme</Text>
-            <Text style={styles.notifSub}>Te avisamos el día del evento</Text>
+          <View style={styles.tarjetaInfo}>
+            <Text style={[styles.categoria, styles[evento.categoria]]}>{evento.categoria}</Text>
+            <Text style={styles.titulo}>{evento.titulo}</Text>
+            <Text style={styles.descripcion} numberOfLines={5}>{evento.descripcion}</Text>
+            <View style={styles.pillsRow}>
+              {enCurso ? (
+                <View style={styles.pillVerde}>
+                  <Text style={styles.pillVerdeTexto}>En curso</Text>
+                </View>
+              ) : (
+                <View style={styles.pillFecha}>
+                  <Text style={styles.pillFechaTexto}>{mesCorto} {diaNumero}</Text>
+                </View>
+              )}
+            </View>
           </View>
-          <Switch
-            value={notifActiva}
-            disabled={notifBusy}
-            onValueChange={(v) => {
-              setNotifActiva(v);
-              toggleNotificacion(v);
-            }}
-            trackColor={{ true: colors.accent, false: colors.border }}
-            thumbColor="#fff"
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+
+          <View style={styles.tarjetaNotif}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.notifTitulo}>Notificarme</Text>
+              <Text style={styles.notifSub}>Te avisaremos el día del evento</Text>
+            </View>
+            <Switch
+              value={notifActiva}
+              disabled={notifBusy}
+              onValueChange={(v) => {
+                setNotifActiva(v);
+                toggleNotificacion(v);
+              }}
+              trackColor={{ true: AZUL, false: '#D8CBB8' }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          <View style={{ height: 60 }} />
+        </ScrollView>
+
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={12}>
+          <Text style={styles.backBtnTexto}>←</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.bg },
+  safe: { flex: 1 },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   vacioTexto: { color: colors.subtext, fontSize: 14 },
-  back: { paddingHorizontal: 16, paddingTop: 12 },
-  backTexto: { color: colors.accent, fontSize: 16, fontWeight: '700' },
-  contenido: { padding: 20, paddingBottom: 40 },
+  contenido: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  badge: {
+    backgroundColor: 'rgba(255,255,255,0.60)',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(192,57,43,0.35)',
+    marginBottom: 16,
+  },
+  badgeTexto: {
+    color: ROJO,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  fotoWrap: { width: '100%', marginBottom: 16 },
   foto: {
     width: '100%',
-    height: 200,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 18,
+    height: 230,
+    borderRadius: 26,
+    borderWidth: 3,
+    borderColor: '#C97B5A',
   } as const,
   fotoPlaceholder: {
     width: '100%',
-    height: 120,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
+    height: 170,
+    borderRadius: 26,
+    borderWidth: 2,
+    borderColor: '#C97B5A',
     borderStyle: 'dashed',
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.50)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 18,
   } as const,
-  fotoPlaceholderTexto: { color: colors.subtext, fontSize: 14, fontWeight: '700' },
-  enCursoBox: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(34,197,94,0.14)',
+  fotoPlaceholderTexto: { color: '#8A6F4D', fontSize: 14, fontWeight: '700' },
+  tarjetaInfo: {
+    width: '100%',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.success,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    borderColor: 'rgba(192,57,43,0.35)',
+    padding: 18,
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  categoria: { fontSize: 12, fontWeight: '800', letterSpacing: 1, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  FERIADO: { color: ROJO, backgroundColor: 'rgba(192,57,43,0.12)' },
+  CONMEMORACION: { color: '#B45309', backgroundColor: 'rgba(245,158,11,0.16)' },
+  CELEBRACION: { color: VERDE, backgroundColor: 'rgba(46,125,50,0.14)' },
+  titulo: {
+    color: ROJO,
+    fontSize: 24,
+    fontWeight: '800',
+    marginTop: 10,
+    fontFamily: 'Gilroy-Bold',
+  },
+  descripcion: {
+    color: '#5A5144',
+    fontSize: 14,
+    lineHeight: 22,
     marginTop: 10,
   },
-  enCursoTexto: { color: colors.success, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
-  categoria: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
-  FERIADO: { color: colors.danger },
-  CONMEMORACION: { color: '#F59E0B' },
-  CELEBRACION: { color: colors.success },
-  titulo: { color: colors.text, fontSize: 28, fontWeight: '800', marginTop: 8, fontFamily: 'Gilroy-Bold' },
-  fecha: {
-    color: colors.subtext,
-    fontSize: 15,
-    textTransform: 'capitalize',
-    marginTop: 6,
-  },
-  countdownBox: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(243,150,28,0.16)',
+  pillsRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  pillVerde: {
+    backgroundColor: '#DDF0DC',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     borderWidth: 1,
-    borderColor: '#F3961C',
-    borderRadius: 14,
-    paddingVertical: 14,
-    marginTop: 18,
+    borderColor: '#9DCE9B',
   },
-  countdownNumero: { color: '#F3961C', fontSize: 32, fontWeight: '900' },
-  countdownLabel: { color: colors.subtext, fontSize: 13, marginTop: 2 },
-  descripcion: { color: colors.text, fontSize: 15, lineHeight: 24, marginTop: 20 },
-  notifRow: {
+  pillVerdeTexto: { color: VERDE, fontSize: 12, fontWeight: '800' },
+  pillFecha: {
+    backgroundColor: 'rgba(255,255,255,0.80)',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(27,108,224,0.4)',
+  },
+  pillFechaTexto: { color: AZUL, fontSize: 12, fontWeight: '800' },
+  tarjetaNotif: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: 'transparent',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
+    borderColor: 'rgba(192,57,43,0.35)',
     padding: 16,
-    marginTop: 24,
+    marginBottom: 24,
   },
-  notifTitulo: { color: colors.text, fontSize: 15, fontWeight: '700' },
-  notifSub: { color: colors.subtext, fontSize: 13, marginTop: 2 },
+  notifTitulo: { color: ROJO, fontSize: 15, fontWeight: '700' },
+  notifSub: { color: '#7A6F5E', fontSize: 13, marginTop: 2 },
+  backBtn: {
+    position: 'absolute',
+    bottom: 12,
+    left: 16,
+    padding: 8,
+    zIndex: 10,
+  },
+  backBtnTexto: { color: ROJO, fontSize: 42, fontWeight: '900', marginTop: -5 },
 });
