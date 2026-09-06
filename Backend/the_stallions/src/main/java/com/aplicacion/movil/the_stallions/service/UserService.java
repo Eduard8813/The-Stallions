@@ -37,6 +37,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
     private final BlockedUserRepository blockedUserRepository;
+    private final NotificationRepository notificationRepository;
     private final NotificationCategoryPreferenceRepository categoryPreferenceRepository;
     private final NotificationChannelPreferenceRepository channelPreferenceRepository;
     private final NotificationQuietHoursRepository notificationQuietHoursRepository;
@@ -50,6 +51,7 @@ public class UserService {
 
     public UserService(UserRepository userRepository, UserSessionRepository userSessionRepository,
                        BlockedUserRepository blockedUserRepository,
+                       NotificationRepository notificationRepository,
                        NotificationCategoryPreferenceRepository categoryPreferenceRepository,
                        NotificationChannelPreferenceRepository channelPreferenceRepository,
                        NotificationQuietHoursRepository notificationQuietHoursRepository,
@@ -59,6 +61,7 @@ public class UserService {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
         this.blockedUserRepository = blockedUserRepository;
+        this.notificationRepository = notificationRepository;
         this.categoryPreferenceRepository = categoryPreferenceRepository;
         this.channelPreferenceRepository = channelPreferenceRepository;
         this.notificationQuietHoursRepository = notificationQuietHoursRepository;
@@ -340,7 +343,7 @@ public class UserService {
 
         userSessionRepository.deactivateAllByUserId(userId);
         dataExportRepository.deleteByUserId(userId);
-        userNotificationsRepository.deleteByUserId(userId);
+        notificationRepository.deleteByUsuarioDestinoId(userId);
         userPrivacyRepository.deleteByUserId(userId);
         blockedUserRepository.deleteByUserId(userId);
 
@@ -461,31 +464,31 @@ public class UserService {
     private void persistNotifications(User user, ObjectNode merged) {
         Long userId = user.getId();
 
-        notificationCategoryPreferenceRepository.deleteByIdUserId(userId);
-        notificationChannelPreferenceRepository.deleteByIdUserId(userId);
+        categoryPreferenceRepository.deleteByIdUserId(userId);
+        channelPreferenceRepository.deleteByIdUserId(userId);
         notificationQuietHoursRepository.deleteById(userId);
 
         JsonNode categories = merged.get("categories");
         if (categories instanceof ObjectNode cats) {
-            cats.fields().forEachRemaining(entry -> {
+            for (Map.Entry<String, JsonNode> entry : cats.properties()) {
                 String category = entry.getKey();
                 JsonNode value = entry.getValue();
 
                 NotificationCategoryPreference catPref = new NotificationCategoryPreference();
                 catPref.setId(new NotificationCategoryPreferenceId(userId, category));
                 catPref.setEnabled(value.path("enabled").asBoolean(false));
-                notificationCategoryPreferenceRepository.save(catPref);
+                categoryPreferenceRepository.save(catPref);
 
                 JsonNode channels = value.get("channels");
                 if (channels instanceof ObjectNode chans) {
-                    chans.fields().forEachRemaining(ce -> {
+                    for (Map.Entry<String, JsonNode> ce : chans.properties()) {
                         NotificationChannelPreference chanPref = new NotificationChannelPreference();
                         chanPref.setId(new NotificationChannelPreferenceId(userId, category, ce.getKey()));
                         chanPref.setEnabled(ce.getValue().asBoolean(false));
-                        notificationChannelPreferenceRepository.save(chanPref);
-                    });
+                        channelPreferenceRepository.save(chanPref);
+                    }
                 }
-            });
+            }
         }
 
         JsonNode quiet = merged.get("quietHours");
