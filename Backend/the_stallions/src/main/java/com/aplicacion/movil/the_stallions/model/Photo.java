@@ -44,9 +44,6 @@ public class Photo {
     @Column(name = "grupo_id")
     private Long grupoId;
 
-    @Column(name = "usuarios_like", columnDefinition = "nvarchar(max)")
-    private String usuariosLike; // Almacenaremos los token/userId como JSON simple
-
     @OneToMany(mappedBy = "photo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Comment> comentarios;
 
@@ -130,13 +127,5 @@ public class Photo {
 
     public void setGrupoId(Long grupoId) {
         this.grupoId = grupoId;
-    }
-
-    public String getUsuariosLike() {
-        return usuariosLike;
-    }
-
-    public void setUsuariosLike(String usuariosLike) {
-        this.usuariosLike = usuariosLike;
     }
 }

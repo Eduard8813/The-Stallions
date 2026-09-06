@@ -8,10 +8,13 @@ import com.aplicacion.movil.the_stallions.exception.NotFoundException;
 import com.aplicacion.movil.the_stallions.model.Comment;
 import com.aplicacion.movil.the_stallions.model.Notification;
 import com.aplicacion.movil.the_stallions.model.Photo;
+import com.aplicacion.movil.the_stallions.model.PhotoLike;
+import com.aplicacion.movil.the_stallions.model.PhotoLikeId;
 import com.aplicacion.movil.the_stallions.model.User;
 import com.aplicacion.movil.the_stallions.model.Visibilidad;
 import com.aplicacion.movil.the_stallions.repository.CommentRepository;
 import com.aplicacion.movil.the_stallions.repository.NotificationRepository;
+import com.aplicacion.movil.the_stallions.repository.PhotoLikeRepository;
 import com.aplicacion.movil.the_stallions.repository.PhotoRepository;
 import com.aplicacion.movil.the_stallions.repository.UserRepository;
 import com.aplicacion.movil.the_stallions.security.JwtUtils;
@@ -28,7 +31,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,6 +47,9 @@ public class FotoService {
 
     @Autowired
     private CommentRepository commentRepository;
+
+    @Autowired
+    private PhotoLikeRepository photoLikeRepository;
 
     @Autowired
     private NotificationRepository notificationRepository;
@@ -92,7 +97,6 @@ public class FotoService {
         photo.setPhotoData(bytes);
         // Content type real del archivo, o fallback razonable según extensión.
         photo.setContentType(resolverContentType(file));
-        photo.setUsuariosLike("");
         // La columna `url` es NOT NULL en la BD, así que nunca se inserta null:
         // se usa un placeholder y se reemplaza por la URL definitiva tras obtener el id.
         photo.setUrl(publicBaseUrl() + "/api/fotos/pending/imagen");
@@ -183,12 +187,12 @@ public class FotoService {
         long likes = 0;
         long comentarios = 0;
         boolean likedByMe = false;
-        String miId = actual != null ? String.valueOf(actual.getId()) : null;
+        Long miId = actual != null ? actual.getId() : null;
         for (Photo f : fotos) {
-            List<String> ids = idsDeLikes(f);
-            likes += ids.size();
+            likes += photoLikeRepository.countByIdPhotoId(f.getId());
             comentarios += commentRepository.countByPhoto(f);
-            if (!likedByMe && miId != null && ids.contains(miId)) {
+            if (!likedByMe && miId != null
+                    && photoLikeRepository.existsByIdPhotoIdAndIdUserId(f.getId(), miId)) {
                 likedByMe = true;
             }
         }
@@ -214,31 +218,33 @@ public class FotoService {
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
         validarDueno(photo, usuario);
         commentRepository.findByPhotoOrderByFechaAsc(photo).forEach(commentRepository::delete);
+        photoLikeRepository.deleteByIdPhotoId(fotoId);
         photoRepository.delete(photo);
     }
 
     /**
      * Dar/quitar like (toggle) a una foto.
-     * Los likes se guardan como IDs de usuario separados por coma.
+     * Los likes se guardan en la tabla normalizada PhotoLikes (photo_id, user_id).
      * Genera notificación para el dueño si quien da like no es él mismo.
      */
     public PhotoResponse darLike(Long fotoId, User usuario) {
         Photo photo = photoRepository.findById(fotoId)
                 .orElseThrow(() -> new NotFoundException("Foto no encontrada"));
 
-        List<String> ids = idsDeLikes(photo);
-        String miId = String.valueOf(usuario.getId());
-        boolean yaDioLike = ids.contains(miId);
+        PhotoLikeId id = new PhotoLikeId(fotoId, usuario.getId());
+        boolean yaDioLike = photoLikeRepository.existsById(id);
 
         if (yaDioLike) {
-            ids.remove(miId);
+            photoLikeRepository.deleteById(id);
         } else {
-            ids.add(miId);
+            PhotoLike like = new PhotoLike();
+            like.setId(id);
+            like.setFecha(LocalDateTime.now());
+            photoLikeRepository.save(like);
             notificar(photo.getUser(), usuario, "like", photo);
         }
 
-        photo.setUsuariosLike(String.join(",", ids));
-        return desde(photoRepository.save(photo), usuario);
+        return desde(photo, usuario);
     }
 
     // ==================== IMAGEN ====================
@@ -409,13 +415,6 @@ public class FotoService {
         }
     }
 
-    private List<String> idsDeLikes(Photo photo) {
-        if (photo.getUsuariosLike() == null || photo.getUsuariosLike().isBlank()) {
-            return new ArrayList<>();
-        }
-        return new ArrayList<>(Arrays.asList(photo.getUsuariosLike().split(",")));
-    }
-
     private void notificar(User destino, User origen, String tipo, Photo photo) {
         if (destino.getId().equals(origen.getId())) {
             return; // no notificarse a sí mismo
@@ -431,8 +430,9 @@ public class FotoService {
     }
 
     private PhotoResponse desde(Photo p, User actual) {
-        List<String> ids = idsDeLikes(p);
-        boolean likedByMe = actual != null && ids.contains(String.valueOf(actual.getId()));
+        Long miId = actual != null ? actual.getId() : null;
+        boolean likedByMe = miId != null
+                && photoLikeRepository.existsByIdPhotoIdAndIdUserId(p.getId(), miId);
         User dueno = p.getUser();
         PhotoResponse response = new PhotoResponse(
                 p.getId(),
@@ -442,7 +442,7 @@ public class FotoService {
                 p.getFechaUpload() != null ? p.getFechaUpload().format(FECHA_FORMATO) : null,
                 p.getVisibilidad() == Visibilidad.PUBLICA ? "publica" : "privada",
                 p.getDescripcion(),
-                ids.size(),
+                photoLikeRepository.countByIdPhotoId(p.getId()),
                 likedByMe,
                 commentRepository.countByPhoto(p)
         );

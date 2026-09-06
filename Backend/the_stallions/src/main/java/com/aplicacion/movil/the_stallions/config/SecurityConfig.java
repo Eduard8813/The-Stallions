@@ -103,6 +103,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/user/photo/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/ping").permitAll()
+                .requestMatchers(HttpMethod.HEAD, "/api/ping").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/fotos/*/imagen").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/eventos/**").permitAll()
                 .requestMatchers("/api/eventos/**").authenticated()
