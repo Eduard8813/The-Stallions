@@ -740,6 +740,8 @@ npm run lint      # verificación estática
 
 ## 13. Despliegue
 
+**Despliegue de Producción:** [Despliegue de Producción](Despliegue%20de%20Produccion.docx)
+
 **CI/CD:** no configurado. El directorio `.github/` del repositorio no contiene pipelines (workflows) para build, test o deploy. Debe definirse (p. ej., GitHub Actions para: build backend con Maven, build frontend con Expo/EAS, y despliegue de la imagen Docker del backend).
 
 **Backend:**
