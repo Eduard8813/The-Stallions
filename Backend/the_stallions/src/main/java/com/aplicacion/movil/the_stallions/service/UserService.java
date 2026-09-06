@@ -37,7 +37,9 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
     private final BlockedUserRepository blockedUserRepository;
-    private final UserNotificationsRepository userNotificationsRepository;
+    private final NotificationCategoryPreferenceRepository categoryPreferenceRepository;
+    private final NotificationChannelPreferenceRepository channelPreferenceRepository;
+    private final NotificationQuietHoursRepository notificationQuietHoursRepository;
     private final UserPrivacyRepository userPrivacyRepository;
     private final DataExportRepository dataExportRepository;
     private final PasswordEncoder passwordEncoder;
@@ -48,13 +50,18 @@ public class UserService {
 
     public UserService(UserRepository userRepository, UserSessionRepository userSessionRepository,
                        BlockedUserRepository blockedUserRepository,
-                       UserNotificationsRepository userNotificationsRepository, UserPrivacyRepository userPrivacyRepository,
+                       NotificationCategoryPreferenceRepository categoryPreferenceRepository,
+                       NotificationChannelPreferenceRepository channelPreferenceRepository,
+                       NotificationQuietHoursRepository notificationQuietHoursRepository,
+                       UserPrivacyRepository userPrivacyRepository,
                        DataExportRepository dataExportRepository, PasswordEncoder passwordEncoder,
                        ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
         this.blockedUserRepository = blockedUserRepository;
-        this.userNotificationsRepository = userNotificationsRepository;
+        this.categoryPreferenceRepository = categoryPreferenceRepository;
+        this.channelPreferenceRepository = channelPreferenceRepository;
+        this.notificationQuietHoursRepository = notificationQuietHoursRepository;
         this.userPrivacyRepository = userPrivacyRepository;
         this.dataExportRepository = dataExportRepository;
         this.passwordEncoder = passwordEncoder;
@@ -245,14 +252,7 @@ public class UserService {
         ObjectNode current = loadNotifications(user);
         ObjectNode patchNode = objectMapper.convertValue(patch, ObjectNode.class);
         mergeNodes(current, patchNode);
-
-        UserNotifications entity = userNotificationsRepository.findByUserId(user.getId()).orElseGet(() -> {
-            UserNotifications created = new UserNotifications();
-            created.setUser(user);
-            return created;
-        });
-        entity.setSettingsJson(current.toString());
-        userNotificationsRepository.save(entity);
+        persistNotifications(user, current);
 
         return current;
     }
@@ -423,20 +423,80 @@ public class UserService {
 
     private ObjectNode loadNotifications(User user) {
         ObjectNode defaults = defaultNotifications();
-        return userNotificationsRepository.findByUserId(user.getId())
-                .map(entity -> {
-                    try {
-                        JsonNode parsed = objectMapper.readTree(entity.getSettingsJson());
-                        ObjectNode base = defaults.deepCopy();
-                        if (parsed instanceof ObjectNode node) {
-                            mergeNodes(base, node);
-                        }
-                        return base;
-                    } catch (Exception e) {
-                        return defaults;
-                    }
-                })
-                .orElse(defaults);
+        ObjectNode stored = objectMapper.createObjectNode();
+
+        ObjectNode categories = stored.putObject("categories");
+        for (NotificationCategoryPreference cat : categoryPreferenceRepository.findByIdUserId(user.getId())) {
+            ObjectNode node = categories.putObject(cat.getId().getCategory());
+            node.put("enabled", cat.isEnabled());
+        }
+        for (NotificationChannelPreference chan : channelPreferenceRepository.findByIdUserId(user.getId())) {
+            ObjectNode category = (ObjectNode) categories.get(chan.getId().getCategory());
+            if (category == null) {
+                category = categories.putObject(chan.getId().getCategory());
+            }
+            ObjectNode channels = (ObjectNode) category.get("channels");
+            if (channels == null) {
+                channels = category.putObject("channels");
+            }
+            channels.put(chan.getId().getChannel(), chan.isEnabled());
+        }
+
+        ObjectNode quiet = stored.putObject("quietHours");
+        notificationQuietHoursRepository.findById(user.getId()).ifPresent(qh -> {
+            quiet.put("enabled", qh.isEnabled());
+            quiet.put("start", qh.getStart() != null ? qh.getStart() : "");
+            quiet.put("end", qh.getEnd() != null ? qh.getEnd() : "");
+        });
+
+        ObjectNode base = defaults.deepCopy();
+        mergeNodes(base, stored);
+        return base;
+    }
+
+    /**
+     * Persiste las preferencias de notificaciones en las tablas normalizadas
+     * (mapeadas desde el árbol JSON de configuración resultante).
+     */
+    private void persistNotifications(User user, ObjectNode merged) {
+        Long userId = user.getId();
+
+        notificationCategoryPreferenceRepository.deleteByIdUserId(userId);
+        notificationChannelPreferenceRepository.deleteByIdUserId(userId);
+        notificationQuietHoursRepository.deleteById(userId);
+
+        JsonNode categories = merged.get("categories");
+        if (categories instanceof ObjectNode cats) {
+            cats.fields().forEachRemaining(entry -> {
+                String category = entry.getKey();
+                JsonNode value = entry.getValue();
+
+                NotificationCategoryPreference catPref = new NotificationCategoryPreference();
+                catPref.setId(new NotificationCategoryPreferenceId(userId, category));
+                catPref.setEnabled(value.path("enabled").asBoolean(false));
+                notificationCategoryPreferenceRepository.save(catPref);
+
+                JsonNode channels = value.get("channels");
+                if (channels instanceof ObjectNode chans) {
+                    chans.fields().forEachRemaining(ce -> {
+                        NotificationChannelPreference chanPref = new NotificationChannelPreference();
+                        chanPref.setId(new NotificationChannelPreferenceId(userId, category, ce.getKey()));
+                        chanPref.setEnabled(ce.getValue().asBoolean(false));
+                        notificationChannelPreferenceRepository.save(chanPref);
+                    });
+                }
+            });
+        }
+
+        JsonNode quiet = merged.get("quietHours");
+        if (quiet instanceof ObjectNode q) {
+            NotificationQuietHours qh = new NotificationQuietHours();
+            qh.setUserId(userId);
+            qh.setEnabled(q.path("enabled").asBoolean(false));
+            qh.setStart(q.path("start").asText(""));
+            qh.setEnd(q.path("end").asText(""));
+            notificationQuietHoursRepository.save(qh);
+        }
     }
 
     private ObjectNode defaultNotifications() {
