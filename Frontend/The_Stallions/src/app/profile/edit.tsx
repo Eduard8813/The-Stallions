@@ -4,7 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAsync } from '../../hooks/useAsync';
 import { userService } from '../../services/userService';
 import { useAuth } from '../../context/AuthContext';
-import { validateEmail } from '../../utils/validators';
+import { validateBirthDate, validateEmail, validatePhone, validateUsername } from '../../utils/validators';
 import { useTheme } from '../../context/ThemeContext';
 import type { Gender, UpdateProfileInput, UserProfile } from '../../services/userTypes';
 import CenterLoading from '../../components/profile/CenterLoading';
@@ -92,12 +92,12 @@ function EditProfileForm({ initialProfile }: { initialProfile: UserProfile }) {
     if (!form.firstName.trim()) next.firstName = 'Ingresá tu nombre.';
     if (!form.lastName.trim()) next.lastName = 'Ingresá tu apellido.';
     if (!form.username.trim()) next.username = 'Ingresá tu nombre de usuario.';
-    else if (!/^[a-zA-Z0-9_.]{3,20}$/.test(form.username.trim()))
+    else if (!validateUsername(form.username.trim()))
       next.username = 'Entre 3 y 20 caracteres (letras, números, . o _).';
     if (!validateEmail(form.email.trim())) next.email = 'Ingresá un correo válido.';
-    if (form.phone.trim() && !/^\+?[0-9()\-\s]{7,20}$/.test(form.phone.trim()))
+    if (form.phone.trim() && !validatePhone(form.phone.trim()))
       next.phone = 'Formato de teléfono inválido.';
-    if ((form.birthDate ?? '').trim() && !/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/.test((form.birthDate ?? '').trim()))
+    if ((form.birthDate ?? '').trim() && !validateBirthDate((form.birthDate ?? '').trim()))
       next.birthDate = 'Usá el formato DD/MM/AAAA.';
     if (form.bio.length > 160) next.bio = 'Máximo 160 caracteres.';
     setErrors(next);

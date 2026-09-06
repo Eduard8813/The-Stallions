@@ -7,6 +7,7 @@ import AuthButton from '../../components/AuthButton';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
+import { validateTotpCode } from '../../utils/validators';
 import { brandGradient } from '../../constants/ui';
 
 export default function TwoFactorScreen() {
@@ -20,7 +21,7 @@ export default function TwoFactorScreen() {
   const handleVerify = async () => {
     setError('');
     const clean = code.trim();
-    if (!/^\d{6}$/.test(clean)) {
+    if (!validateTotpCode(clean)) {
       setError(t.twoFactorError);
       return;
     }

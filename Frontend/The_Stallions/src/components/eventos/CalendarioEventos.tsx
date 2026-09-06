@@ -1,5 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import type { Evento } from '../../types/evento';
 import { fechasDelEvento } from '../../services/eventosService';
@@ -21,14 +22,22 @@ interface Props {
 export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: Props) {
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const [pickerAbierto, setPickerAbierto] = useState(false);
   // Días (del mes visible) que están cubiertos por el rango de algún evento.
   const diasConEvento = new Set<number>();
+  const setAnios = new Set<number>();
   for (const e of eventos) {
     for (const fechaISO of fechasDelEvento(e)) {
       const [y, m, d] = fechaISO.split('-').map(Number);
       if (y === anio && m - 1 === mes) diasConEvento.add(d);
+      setAnios.add(y);
     }
   }
+  setAnios.add(new Date().getFullYear());
+  const anioMin = Math.min(...setAnios);
+  const anioMax = Math.max(...setAnios) + 1;
+  const anios: number[] = [];
+  for (let a = anioMin; a <= anioMax; a++) anios.push(a);
 
   const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
   const diasDelMes = new Date(anio, mes + 1, 0).getDate();
@@ -41,22 +50,12 @@ export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: P
   const hoy = new Date();
   const esMesActual = hoy.getFullYear() === anio && hoy.getMonth() === mes;
 
-  const mover = (delta: number) => {
-    const nuevo = new Date(anio, mes + delta, 1);
-    onMesChange(nuevo.getFullYear(), nuevo.getMonth());
-  };
-
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => mover(-1)} hitSlop={12}>
-          <Text style={styles.flecha}>‹</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.header} onPress={() => setPickerAbierto(true)} activeOpacity={0.7}>
         <Text style={styles.mesTitulo}>{MESES[mes]} {anio}</Text>
-        <TouchableOpacity onPress={() => mover(1)} hitSlop={12}>
-          <Text style={styles.flecha}>›</Text>
-        </TouchableOpacity>
-      </View>
+        <MaterialCommunityIcons name="chevron-down" size={18} color="#1562A2" />
+      </TouchableOpacity>
 
       <View style={styles.grilla}>
         {DIAS_SEMANA.map((d, i) => (
@@ -78,17 +77,75 @@ export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: P
           );
         })}
       </View>
+
+      <Modal
+        visible={pickerAbierto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerAbierto(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitulo}>Escoge el mes</Text>
+            <ScrollView style={styles.modalLista}>
+              {MESES.map((m, i) => (
+                <TouchableOpacity
+                  key={m}
+                  style={[
+                    styles.opcion,
+                    i === mes && styles.opcionActiva,
+                  ]}
+                  onPress={() => {
+                    onMesChange(anio, i);
+                    setPickerAbierto(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.opcionTexto, i === mes && styles.opcionTextoActivo]}>{m}</Text>
+                  {i === mes && <MaterialCommunityIcons name="check" size={16} color="#fff" />}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <View style={styles.modalLinea} />
+            <Text style={styles.modalTitulo}>Escoge el año</Text>
+            <View style={styles.aniosRow}>
+              {anios.map((a) => (
+                <TouchableOpacity
+                  key={a}
+                  style={[styles.opcionAnio, a === anio && styles.opcionActiva]}
+                  onPress={() => {
+                    onMesChange(a, mes);
+                    setPickerAbierto(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.opcionTexto, a === anio && styles.opcionTextoActivo]}>{a}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={styles.modalCerrar}
+              onPress={() => setPickerAbierto(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.modalCerrarTexto}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const createStyles = (colors: any) => StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    paddingVertical: 14,
+    alignSelf: 'center',
+    width: '78%',
+    minWidth: 250,
+    marginTop: 10,
+    paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 16,
+    borderRadius: 14,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -96,30 +153,76 @@ const createStyles = (colors: any) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    gap: 6,
     paddingHorizontal: 10,
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  mesTitulo: { color: '#F3961C', fontSize: 16, fontWeight: '800', fontFamily: 'Gilroy-Bold' },
-  flecha: { color: colors.accent, fontSize: 26, fontWeight: '700', paddingHorizontal: 8 },
-  grilla: { flexDirection: 'row', flexWrap: 'wrap' },
-  celda: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 2 } as const,
-  diaSemana: { color: colors.subtext, fontSize: 11, fontWeight: '700' },
+  mesTitulo: { color: '#1562A2', fontSize: 16, fontWeight: '800', fontFamily: 'Gilroy-Bold' },
+  grilla: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  celda: {
+    width: `${100 / 7}%`,
+    alignItems: 'center',
+    paddingVertical: 1,
+  } as const,
+  diaSemana: { color: colors.subtext, fontSize: 10, fontWeight: '700' },
   diaBox: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
   },
   diaHoy: { backgroundColor: '#1562A2' },
-  diaTexto: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  diaTexto: { color: colors.text, fontSize: 12, fontWeight: '600' },
   diaTextoHoy: { color: '#fff', fontWeight: '800' },
   punto: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.accent,
-    marginTop: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#F3961C',
+    marginTop: -2,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCard: {
+    width: '82%',
+    maxHeight: '78%',
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    padding: 16,
+  },
+  modalTitulo: { color: colors.subtext, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8 },
+  modalLista: { maxHeight: 240 },
+  opcion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
+  opcionActiva: { backgroundColor: '#1562A2' },
+  opcionTexto: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  opcionTextoActivo: { color: '#fff', fontWeight: '800' },
+  modalLinea: { height: 1, backgroundColor: colors.border, marginVertical: 12 },
+  aniosRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  opcionAnio: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  modalCerrar: {
+    marginTop: 16,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  modalCerrarTexto: { color: colors.subtext, fontSize: 13, fontWeight: '700' },
 });

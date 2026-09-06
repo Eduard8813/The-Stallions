@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { GoogleAuthProvider, signInWithCredential, signInWithPopup } from 'firebase/auth';
-import { firebaseAuth } from '../config/firebaseConfig';
+import { getFirebaseAuth } from '../config/firebaseConfig';
 
 let GoogleSignin;
 if (Platform.OS !== 'web') {
@@ -17,7 +17,7 @@ if (Platform.OS !== 'web' && GoogleSignin) {
 export function useGoogleAuth(onIdTokenReady) {
   const handlePrompt = async () => {
     if (Platform.OS === 'web') {
-      const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      const result = await signInWithPopup(getFirebaseAuth(), new GoogleAuthProvider());
       const idToken = await result.user.getIdToken();
       const googleProfile = {
         name: result.user.displayName ?? '',
@@ -43,7 +43,7 @@ export function useGoogleAuth(onIdTokenReady) {
       photo: account.photo ?? account.photoURL ?? null,
     };
     const credential = GoogleAuthProvider.credential(idToken);
-    const userCredential = await signInWithCredential(firebaseAuth, credential);
+    const userCredential = await signInWithCredential(getFirebaseAuth(), credential);
     const firebaseIdToken = await userCredential.user.getIdToken();
     await onIdTokenReady(firebaseIdToken, googleProfile);
   };
