@@ -1,13 +1,22 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, View, StyleSheet, StatusBar, ActivityIndicator } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useNavigation } from 'expo-router';
 import NicaraguaMap from '../../components/NicaraguaMap';
 
 export default function ExplorarScreen() {
   const [cargando, setCargando] = useState(true);
   const [resetCount, setResetCount] = useState(0);
+  const navigation = useNavigation();
 
   const onMapaListo = useCallback(() => setCargando(false), []);
+
+  // Cuando se pulsa el tab "Explorar" estando ya en él, reiniciar el mapa.
+  useEffect(() => {
+    const unsub = navigation.addListener('tabPress' as any, () => {
+      setResetCount((n) => n + 1);
+    });
+    return unsub;
+  }, [navigation]);
 
   // Cada vez que se enfoca la pestaña "Explorar" se pide al mapa volver a la vista inicial.
   useFocusEffect(

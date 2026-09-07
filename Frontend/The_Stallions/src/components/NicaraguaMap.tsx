@@ -3201,6 +3201,7 @@ function NativeMap({ onReady, resetToken }: { onReady?: () => void; resetToken?:
   const router = useRouter();
   const locationRef = useRef<{ lat: number; lng: number } | null>(null);
   const loadedRef = useRef(false);
+  const pendingResetRef = useRef(false);
   const [cityImages, setCityImages] = useState<Record<string, string>>({});
   const [mapBg, setMapBg] = useState('');
   const [tourImages, setTourImages] = useState<Record<string, string[]>>({});
@@ -3265,6 +3266,8 @@ function NativeMap({ onReady, resetToken }: { onReady?: () => void; resetToken?:
     if (!resetToken) return;
     if (loadedRef.current) {
       webViewRef.current?.injectJavaScript?.('window.resetToHome && window.resetToHome();');
+    } else {
+      pendingResetRef.current = true;
     }
   }, [resetToken]);
 
@@ -3305,6 +3308,10 @@ function NativeMap({ onReady, resetToken }: { onReady?: () => void; resetToken?:
           webViewRef.current?.postMessage(imagesPayloadRef.current);
         }
         sendLocation();
+        if (pendingResetRef.current) {
+          pendingResetRef.current = false;
+          webViewRef.current?.injectJavaScript?.('setTimeout(function(){ window.resetToHome && window.resetToHome(); }, 400);');
+        }
       }}
       onMessage={(e: any) => {
         if (e.nativeEvent.data === 'logout') {

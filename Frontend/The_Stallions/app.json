@@ -42,7 +42,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Permitir que Wani Connect acceda a tus fotos para cambiar tu foto de perfil.",
-          "cameraPermission": false,
+          "cameraPermission": "Permitir que Wani Connect acceda a tu camara para tomar fotos.",
           "microphonePermission": false
         }
       ],
