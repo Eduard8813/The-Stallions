@@ -128,7 +128,8 @@ public class SecurityConfig {
             "http://localhost:8082",
             "exp://192.168.0.14:8081",
             "exp://localhost:8081",
-            "https://the-stallions.onrender.com"
+            "https://the-stallions.onrender.com",
+            "null"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
