@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
@@ -1120,11 +1120,11 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     .nc-ph-slide {
       flex: 0 0 100%; scroll-snap-align: center;
       display: flex; align-items: center; justify-content: center;
-      max-height: 45vh; overflow: hidden;
+      height: min(38vh, 210px); overflow: hidden;
     }
+    .nc-tp-photos .nc-ph-slide { height: 115px; }
     .nc-ph-slide img {
-      width: auto; height: auto; max-width: 100%; max-height: 45vh;
-      object-fit: contain; display: block;
+      width: 100%; height: 100%; object-fit: contain; display: block;
       border-radius: 8px; background: #0a1219;
     }
     .nc-ph-slide img.nc-img-broken { display: none; }
@@ -1286,11 +1286,11 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     var API_BASE = '${apiBase}';
-    var CITY_IMAGES = ${JSON.stringify(cityImages)};
+    var CITY_IMAGES = {};
     var MUNICIPIOS = ${JSON.stringify(MUNICIPIOS_GEO)};
     var NATIONAL_RINGS = ${JSON.stringify(NICARAGUA_GEO)};
-    var MAP_BG = '${mapBg}';
-    var TOUR_IMAGES = ${JSON.stringify(tourImages)};
+    var MAP_BG = '';
+    var TOUR_IMAGES = {};
 
     var borderDrawn = false;
     function drawNationalBorder() {
@@ -1412,6 +1412,21 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         var msg = JSON.parse(e.data);
         if (msg && msg.type === 'location' && typeof msg.lat === 'number' && typeof msg.lng === 'number') {
           setUserLocation(msg.lat, msg.lng);
+        }
+        if (msg && msg.type === 'images') {
+          if (typeof msg.mapBg === 'string' && msg.mapBg) {
+            MAP_BG = msg.mapBg;
+            var bgUrl = 'url("' + msg.mapBg + '")';
+            document.body.style.backgroundImage = bgUrl;
+            var mapEl = document.getElementById('map');
+            if (mapEl) mapEl.style.backgroundImage = bgUrl;
+          }
+          if (msg.cityImages) CITY_IMAGES = msg.cityImages;
+          if (msg.tourImages) {
+            TOUR_IMAGES = msg.tourImages;
+            tourismData = buildTourismData();
+            refreshTourViews();
+          }
         }
       } catch (err) {}
     });
@@ -2119,7 +2134,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
     }
 
     function TI(k) { var a = TOUR_IMAGES[k] || []; a.img = a[0] || ''; return a; }
-    var tourismData = {
+    function buildTourismData() { return {
       'Chontales': {
         general: [
           { name: 'Lago de Apanas', desc: 'El lago mas grande de Nicaragua, ideal para pesca deportiva y observacion de aves.', img: 'https://picsum.photos/seed/apanas/400/250', lat: 12.2415, lng: -85.4850 },
@@ -2410,7 +2425,42 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         { name: 'Muelle de los Bueyes', desc: 'Municipio ganadero con rio Coco y tradiciones mesitena.', img: 'https://picsum.photos/seed/muelle/400/250', lat: 12.1400, lng: -83.8800 },
         { name: 'Bocana de Paiwas', desc: 'Comunidad riberena con selva virgen y biodiversidad unica.', img: 'https://picsum.photos/seed/bocanapaiwas/400/250', lat: 12.1200, lng: -83.9300 }
       ]
-    };
+    }; }
+    var tourismData = buildTourismData();
+
+    function refreshTourViews() {
+      if (!tourCurrentDep) return;
+      var panel = document.getElementById('tour-panel');
+      if (!panel || !panel.classList.contains('show')) return;
+      var base = tourismData[tourCurrentDep];
+      if (!base) return;
+      var fresh = null;
+      if (Array.isArray(base)) {
+        if (tourActiveStops && tourActiveStops.length === base.length) fresh = base;
+      } else {
+        for (var mk in base) {
+          var arr = base[mk];
+          if (tourActiveStops && arr && arr.length === tourActiveStops.length && tourActiveStops[0] && arr[0] &&
+              arr[0].lat === tourActiveStops[0].lat && arr[0].lng === tourActiveStops[0].lng) {
+            fresh = arr;
+            break;
+          }
+        }
+      }
+      if (!fresh) return;
+      tourActiveStops = fresh;
+      var numEl = document.getElementById('tour-num');
+      var cur = 0;
+      if (numEl && numEl.textContent) {
+        var mm = numEl.textContent.match(/\\d+/);
+        if (mm) cur = parseInt(mm[0], 10) - 1;
+      }
+      cur = Math.max(0, Math.min(fresh.length - 1, cur));
+      var dep = departamentos.find(function(d) { return d.name === tourCurrentDep; });
+      var color = dep ? dep.color : '#69B6E6';
+      updateTourPanel(fresh, cur);
+      showTourStopPopup(fresh[cur], cur, fresh.length, color);
+    }
 
     var tourMarkers = [];
     var tourPolyline = null;
@@ -2769,6 +2819,7 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
         clearTourism();
         map.closePopup();
         unfocusAll();
+        map.setView([${center}], 7);
       };
       document.getElementById('tour-header').onclick = function(e) {
         if (e && e.target && e.target.id === 'tour-close') return;
@@ -2871,6 +2922,15 @@ const leafletHtml = (center: string, apiBase: string, lang: 'es' | 'en' = 'es', 
       if (t && t.closest && t.closest('.leaflet-marker-icon, .leaflet-interactive, .leaflet-control, .leaflet-popup, .leaflet-control-container')) return;
       minimizeTourPanel();
     });
+
+    document.addEventListener('click', function(e) {
+      var tp = document.getElementById('tour-panel');
+      if (!tp || !tp.classList.contains('show') || tp.classList.contains('minimized')) return;
+      var t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest('#tour-panel, .leaflet-popup, .leaflet-marker-icon, .leaflet-control, .leaflet-control-container, #biz-view, #route-sel-panel, #route-pick-panel, .nc-loc-box')) return;
+      minimizeTourPanel();
+    }, true);
 
     map.on('popupclose', function() {
       clearTimeout(popupTimer);
@@ -3208,6 +3268,19 @@ function NativeMap({ onReady, resetToken }: { onReady?: () => void; resetToken?:
     }
   }, [resetToken]);
 
+  const webHtml = useMemo(
+    () => leafletHtml(MAP_CENTER, getMapApiBase(), lang, {}, '', {}),
+    [lang]
+  );
+  const imagesPayloadRef = useRef('');
+
+  useEffect(() => {
+    imagesPayloadRef.current = JSON.stringify({ type: 'images', mapBg, cityImages, tourImages });
+    if (loadedRef.current && imagesPayloadRef.current) {
+      webViewRef.current?.postMessage(imagesPayloadRef.current);
+    }
+  }, [cityImages, mapBg, tourImages]);
+
   if (!WebView || !Location) {
     return (
       <View style={styles.locationFallback}>
@@ -3223,11 +3296,14 @@ function NativeMap({ onReady, resetToken }: { onReady?: () => void; resetToken?:
       key={lang}
       style={{ flex: 1 }}
       originWhitelist={['*']}
-      source={{ html: leafletHtml(MAP_CENTER, getMapApiBase(), lang, cityImages, mapBg, tourImages) }}
+      source={{ html: webHtml }}
       javaScriptEnabled
       scrollEnabled={false}
       onLoadEnd={() => {
         loadedRef.current = true;
+        if (imagesPayloadRef.current) {
+          webViewRef.current?.postMessage(imagesPayloadRef.current);
+        }
         sendLocation();
       }}
       onMessage={(e: any) => {
