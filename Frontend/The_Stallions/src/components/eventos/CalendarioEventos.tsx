@@ -25,19 +25,21 @@ export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: P
   const [pickerAbierto, setPickerAbierto] = useState(false);
   // Días (del mes visible) que están cubiertos por el rango de algún evento.
   const diasConEvento = new Set<number>();
-  const setAnios = new Set<number>();
+  const mesesPorAnio = new Map<number, Set<number>>();
   for (const e of eventos) {
     for (const fechaISO of fechasDelEvento(e)) {
       const [y, m, d] = fechaISO.split('-').map(Number);
       if (y === anio && m - 1 === mes) diasConEvento.add(d);
-      setAnios.add(y);
+      const meses = mesesPorAnio.get(y) ?? new Set<number>();
+      meses.add(m - 1);
+      mesesPorAnio.set(y, meses);
     }
   }
-  setAnios.add(new Date().getFullYear());
-  const anioMin = Math.min(...setAnios);
-  const anioMax = Math.max(...setAnios) + 1;
-  const anios: number[] = [];
-  for (let a = anioMin; a <= anioMax; a++) anios.push(a);
+  const anioHoy = new Date().getFullYear();
+  const aniosLista = [...new Set([...mesesPorAnio.keys(), anioHoy])].sort((a, b) => a - b);
+  // Año en curso: meses que faltan para terminar el año. Otros años: todos los meses.
+  const opcionesMes =
+    anio === anioHoy ? MESES.filter((_, i) => i >= new Date().getMonth()) : MESES;
 
   const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
   const diasDelMes = new Date(anio, mes + 1, 0).getDate();
@@ -88,28 +90,31 @@ export default function CalendarioEventos({ eventos, mes, anio, onMesChange }: P
           <View style={styles.modalCard}>
             <Text style={styles.modalTitulo}>Escoge el mes</Text>
             <ScrollView style={styles.modalLista}>
-              {MESES.map((m, i) => (
-                <TouchableOpacity
-                  key={m}
-                  style={[
-                    styles.opcion,
-                    i === mes && styles.opcionActiva,
-                  ]}
-                  onPress={() => {
-                    onMesChange(anio, i);
-                    setPickerAbierto(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.opcionTexto, i === mes && styles.opcionTextoActivo]}>{m}</Text>
-                  {i === mes && <MaterialCommunityIcons name="check" size={16} color="#fff" />}
-                </TouchableOpacity>
-              ))}
+              {opcionesMes.map((m, i) => {
+                const idx = MESES.indexOf(m);
+                return (
+                  <TouchableOpacity
+                    key={m}
+                    style={[
+                      styles.opcion,
+                      idx === mes && styles.opcionActiva,
+                    ]}
+                    onPress={() => {
+                      onMesChange(anio, idx);
+                      setPickerAbierto(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.opcionTexto, idx === mes && styles.opcionTextoActivo]}>{m}</Text>
+                    {idx === mes && <MaterialCommunityIcons name="check" size={16} color="#fff" />}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
             <View style={styles.modalLinea} />
             <Text style={styles.modalTitulo}>Escoge el año</Text>
             <View style={styles.aniosRow}>
-              {anios.map((a) => (
+              {aniosLista.map((a) => (
                 <TouchableOpacity
                   key={a}
                   style={[styles.opcionAnio, a === anio && styles.opcionActiva]}

@@ -1,8 +1,25 @@
 import api from './api';
-import * as Notifications from 'expo-notifications';
-import { SchedulableTriggerInputTypes } from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { CategoriaEvento, Evento } from '../types/evento';
+
+type NotificationsModule = typeof import('expo-notifications');
+
+let cachedNotificationsModule: NotificationsModule | null | undefined;
+
+function getNotificationsModule(): NotificationsModule | null {
+  if (cachedNotificationsModule !== undefined) return cachedNotificationsModule;
+  if (Platform.OS === 'web') {
+    cachedNotificationsModule = null;
+    return null;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    cachedNotificationsModule = require('expo-notifications') as NotificationsModule;
+  } catch {
+    cachedNotificationsModule = null;
+  }
+  return cachedNotificationsModule;
+}
 
 export async function obtenerEventos(categoria?: CategoriaEvento): Promise<Evento[]> {
   // GET /api/eventos (con ?categoria=FERIADO opcional)
@@ -73,13 +90,16 @@ export async function programarNotificacionEvento(evento: Evento): Promise<strin
   const fechaDisparo = new Date(y, m - 1, d, 9, 0, 0, 0);
   if (fechaDisparo.getTime() <= Date.now()) return null;
 
+  const Notifications = getNotificationsModule();
+  if (!Notifications) return null;
+
   const id = await Notifications.scheduleNotificationAsync({
     content: {
       title: evento.titulo,
       body: `Hoy es ${evento.titulo}.`,
     },
     trigger: {
-      type: SchedulableTriggerInputTypes.DATE,
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: fechaDisparo,
     },
   });
@@ -91,6 +111,8 @@ export async function programarNotificacionEvento(evento: Evento): Promise<strin
 export async function cancelarNotificacionEvento(evento: Evento): Promise<void> {
   const id = notificacionesActivas.get(evento.id);
   if (!id) return;
+  const Notifications = getNotificationsModule();
+  if (!Notifications) return;
   await Notifications.cancelScheduledNotificationAsync(id);
   notificacionesActivas.delete(evento.id);
 }

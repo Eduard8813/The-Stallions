@@ -25,19 +25,10 @@ export default function EventosScreen() {
   const router = useRouter();
   const hoy = new Date();
   const [mesVisible, setMesVisible] = useState({ anio: hoy.getFullYear(), mes: hoy.getMonth() });
+  const [mesElegido, setMesElegido] = useState(false);
   const { data, loading, refetch } = useAsync(() => obtenerEventos(), []);
 
   const eventos = useMemo(() => data ?? [], [data]);
-  const eventosDelMes = useMemo(
-    () =>
-      eventos.filter((e) =>
-        fechasDelEvento(e).some((f) => {
-          const [y, m] = f.split('-').map(Number);
-          return y === mesVisible.anio && m - 1 === mesVisible.mes;
-        })
-      ),
-    [eventos, mesVisible]
-  );
 
   const mesesConEventos = useMemo<MesConEventos[]>(() => {
     const mapa = new Map<string, MesConEventos>();
@@ -51,6 +42,30 @@ export default function EventosScreen() {
     }
     return [...mapa.values()].sort((a, b) => a.anio - b.anio || a.mes - b.mes);
   }, [eventos]);
+
+  const mesMostrado = useMemo(() => {
+    if (mesElegido || !data || !mesesConEventos.length) return mesVisible;
+    const tiene = (anio: number, mes: number) =>
+      mesesConEventos.some((m) => m.anio === anio && m.mes === mes);
+    if (tiene(mesVisible.anio, mesVisible.mes)) return mesVisible;
+    const ahora = new Date();
+    const proximos = mesesConEventos.filter(
+      (m) => m.anio > ahora.getFullYear() || (m.anio === ahora.getFullYear() && m.mes >= ahora.getMonth())
+    );
+    const objetivo = (proximos.length ? proximos : [mesesConEventos[mesesConEventos.length - 1]])[0];
+    return { anio: objetivo.anio, mes: objetivo.mes };
+  }, [data, mesesConEventos, mesElegido, mesVisible]);
+
+  const eventosDelMes = useMemo(
+    () =>
+      eventos.filter((e) =>
+        fechasDelEvento(e).some((f) => {
+          const [y, m] = f.split('-').map(Number);
+          return y === mesMostrado.anio && m - 1 === mesMostrado.mes;
+        })
+      ),
+    [eventos, mesMostrado]
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -73,20 +88,23 @@ export default function EventosScreen() {
           <>
             <CalendarioEventos
               eventos={eventos}
-              mes={mesVisible.mes}
-              anio={mesVisible.anio}
-              onMesChange={(anio, mes) => setMesVisible({ anio, mes })}
+              mes={mesMostrado.mes}
+              anio={mesMostrado.anio}
+              onMesChange={(anio, mes) => {
+                setMesElegido(true);
+                setMesVisible({ anio, mes });
+              }}
             />
             <View style={styles.tituloEventoBloque}>
               <Text style={styles.tituloEvento}>Evento</Text>
               <Text style={styles.tituloMes}>
-                {MESES[mesVisible.mes]} {mesVisible.anio}
+                {MESES[mesMostrado.mes]} {mesMostrado.anio}
               </Text>
             </View>
             {eventosDelMes.length === 0 && mesesConEventos.length > 0 && (
               <View style={styles.sinEventosBox}>
                 <Text style={styles.sinEventosTexto}>
-                  No hay eventos en {MESES[mesVisible.mes]} de {mesVisible.anio}.
+                  No hay eventos en {MESES[mesMostrado.mes]} de {mesMostrado.anio}.
                 </Text>
                 <Text style={styles.hayEnTexto}>Hay eventos en:</Text>
                 <View style={styles.chipsRow}>
@@ -95,7 +113,7 @@ export default function EventosScreen() {
                       key={`${m.anio}-${m.mes}`}
                       style={[
                         styles.mesChip,
-                        m.anio === mesVisible.anio && m.mes === mesVisible.mes && styles.mesChipActivo,
+                        m.anio === mesMostrado.anio && m.mes === mesMostrado.mes && styles.mesChipActivo,
                       ]}
                       onPress={() => setMesVisible({ anio: m.anio, mes: m.mes })}
                       activeOpacity={0.7}
